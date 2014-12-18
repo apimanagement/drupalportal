@@ -1,0 +1,79 @@
+name = IBM API Management Developer Portal
+description = Provides modules to access the content in an API Manager node and a skeleton site which application developers can use to browse APIs. 
+core = 7.x
+distribution_name = IBM API Management Developer Portal
+
+;Force our installation profile to be the default and only profile
+exclusive = TRUE
+
+;Standard drupal dependencies will be added by running the standard install as part of this profile install
+dependencies[] = block
+dependencies[] = color
+dependencies[] = comment
+dependencies[] = contextual
+dependencies[] = dashboard
+dependencies[] = help
+dependencies[] = image
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = number
+dependencies[] = options
+dependencies[] = path
+dependencies[] = taxonomy
+dependencies[] = dblog
+dependencies[] = search
+dependencies[] = shortcut
+dependencies[] = toolbar
+dependencies[] = overlay
+dependencies[] = field_ui
+dependencies[] = file
+dependencies[] = rdf
+dependencies[] = tracker
+
+;Additions to the standard modules
+dependencies[] = blog
+dependencies[] = poll
+dependencies[] = contact
+
+;We require forum support for advanced forums
+dependencies[] = forum
+
+;All the other modules we want to pull in
+dependencies[] = at_tools
+dependencies[] = addtoany
+dependencies[] = advanced_forum
+dependencies[] = autologout
+dependencies[] = bean
+dependencies[] = block_class
+dependencies[] = block_class_styles
+dependencies[] = ctools
+dependencies[] = entity
+dependencies[] = faq
+dependencies[] = fivestar
+dependencies[] = group
+dependencies[] = libraries
+dependencies[] = panels
+dependencies[] = phpmailer
+dependencies[] = jquery_update
+dependencies[] = password_policy
+dependencies[] = tagclouds
+dependencies[] = twitter_timeline
+dependencies[] = views
+dependencies[] = votingapi
+dependencies[] = wysiwyg
+dependencies[] = pathologic
+dependencies[] = flot
+dependencies[] = support
+dependencies[] = module_filter
+dependencies[] = captcha
+dependencies[] = login_redirect
+dependencies[] = search404
+dependencies[] = sliderfield
+
+;Enable the apim module
+dependencies[] = ibm_apim
+
+version = VERSION
+
+;php version check
+php = 5.4.0

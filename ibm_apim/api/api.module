@@ -1,0 +1,745 @@
+<?php
+
+/**
+ * IBM API Management Integration
+ *
+ * Adds the API node content type to Drupal for representing APIs from IBM APIM
+ */
+
+/**
+ * Implements hook_node_info().
+ */
+function api_node_info() {
+  return array(
+    'api' => array(
+      'name' => t('API'),
+      'base' => 'api',
+      'description' => t('An API in IBM API Management.')));
+}
+
+/**
+ * Implements hook_help().
+ */
+function api_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#api' :
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t("The api module provides a new custom node type for use with IBM API Management.") . '</p>';
+      $output .= '<h3>' . t('Uses') . '</h3>';
+      $output .= '<dl>';
+      $output .= '<dt>' . t('List APIs') . '</dt>';
+      $output .= '<dd>' . t("This content type is used to represent APIs in IBM API Management in Drupal.") . '</dd>';
+      $output .= '<dt>' . t('Search APIs') . '</dt>';
+      $output .= '<dd>' . t("Summary information about the APIs in IBM API Management is used to create these nodes in Drupal which enables the use of drupal search to index IBM API Management content.") . '</dd>';
+      $output .= '<dt>' . t('Swagger UI') . '</dt>';
+      $output .= '<dd>' . t("It is possible to use an embedded Swagger UI client to browse the methods of an API and test them from within this site.") . '</dd>';
+      $output .= '</dl>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_form().
+ */
+function api_form($node, $form_state) {
+  return node_content_form($node, $form_state);
+}
+
+/**
+ * Implements hook_view().
+ */
+function api_view($node, $view_mode) {
+  return $node;
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function api_node_view($node, $view_mode) {
+}
+
+/**
+ * Implements hook_menu().
+ */
+function api_menu() {
+  $items = array();
+  $items['api'] = array(
+    'title' => t('APIs'),
+    'page callback' => 'api_collection_callback',
+    'menu_name' => 'main-menu',
+    'weight' => 5,
+    'description' => t('See how you can use our data'),
+    'access callback' => TRUE);
+  $items['api/docdownload/%/%/%'] = array(
+    'title' => 'API Documents Proxy',
+    'page callback' => '_api_document_proxy_callback',
+    'page arguments' => array(2, 3, 4),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK);
+  return $items;
+}
+
+/**
+ * Implements hook_node_access().
+ * This is checking if the specified api is returned from apim, if not it blocks access.
+ */
+function api_access($node, $op, $account) {
+  $type = is_string($node) ? $node : $node->type;
+  $apifound = FALSE;
+  $apis = api_list_contents();
+  if ($apis) {
+    foreach ($apis as $api) {
+      if (isset($node->api_apiid) && $api['id'] == $node->api_apiid[$node->language][0]['value']) {
+        $apifound = TRUE;
+      }
+    }
+  }
+  if ($apifound == TRUE) {
+    return NODE_ACCESS_ALLOW;
+  }
+  else {
+    return NODE_ACCESS_DENY;
+  }
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function api_preprocess_node(&$variables) {
+  if ($variables['node']->type == 'api' && $variables['view_mode'] == 'teaser') {
+    $variables['theme_hook_suggestions'][] = 'node__api__teaser';
+  }
+  if ($variables['node']->type == 'api' && $variables['view_mode'] == 'search_result') {
+    $variables['theme_hook_suggestions'][] = 'node__api__search_result';
+  }
+  if ($variables['node']->type == 'api') {
+    $variables['titlelink'] = '<span class="apimTitle"> <a href="' . url('api/' . $variables['api_apiid'][0]['safe_value'] . '/' . $variables['api_version'][0]['safe_value']) . '">' . $variables['title'] . '</a> </span>';
+    if ($variables['view_mode'] == 'full') {
+      $plans = _api_get_plans_for_api($variables['api_apiid'][0]['value'], $variables['api_version'][0]['value']);
+      $variables['plans'] = $plans;
+      $forumID = taxonomy_get_term_by_name(_api_sanitise_apiname(html_entity_decode($variables['title']), ENT_QUOTES));
+      if (!empty($forumID)) {
+        reset($forumID);
+        $first_key = key($forumID);
+        $variables['apiforumlink'] = '<a href="' . url('forum/' . $forumID[$first_key]->tid) . '">' . t('Discuss this API in the forum') . '</a>';
+      }
+      $apps = application_list_contents();
+      $variables['apps'] = $apps;
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_search_result
+ *
+ * @param type $variables
+ */
+function api_preprocess_search_result(&$variables) {
+  $node = $variables['result']['node'];
+  if ($node->nid && $node->type == 'api') { // if the result is an api node we can load the teaser
+    $variables['teaser'] = node_view($node, 'teaser');
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ * Adds our custom submit handler
+ */
+function api_form_comment_form_alter(&$form, &$form_state) {
+  // Add a custom submit handler to act when the form submits.
+  $form['#submit'][] = 'api_custom_comment_submit_handler';
+}
+
+/**
+ * Custom submit handler for the comment form.
+ * This is to redirect users back to our custom path after posting a comment
+ * e.g. to api/xxx instead of node/nid
+ */
+function api_custom_comment_submit_handler($form, &$form_state) {
+  // Redirect the user after submission
+  $nid = arg(2);
+  if (isset($nid)) {
+    $nodes = node_load_multiple(array($nid));
+    if (is_array($nodes)) {
+      reset($nodes);
+      $first_key = key($nodes);
+      if ($first_key) {
+        $node = $nodes[$first_key];
+        if (isset($node) && $node->type == 'api') {
+          $form_state['redirect'] = 'api/' . $node->api_apiid[$node->language][0]['value'] . '/' . $node->api_version[$node->language][0]['value'];
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Menu callback;
+ * if a specific api has been requested will display that as full viewmode,
+ * else it will show teaser viewmode for all available apis
+ */
+function api_collection_callback($apiid = NULL, $apiversion = NULL) {
+  global $user;
+  $build = array();
+  $host = variable_get('ibm_apim_host');
+  if (empty($host)) {
+    drupal_set_message(t('IBM APIM Module is not correctly configured. Specify a valid hostname and try again.'), 'error');
+    return;
+  }
+
+  if ($apiid == NULL || $apiversion == NULL) {
+    $nodes = array();
+
+    $query = db_select('node', 'n')->extend('PagerDefault');
+    $nids = $query->fields('n', array('nid'))->condition('type', 'api')->condition('status', 1)->limit(variable_get('default_nodes_main', 100))->addTag('node_access')->execute()->fetchCol();
+    if (!empty($nids)) {
+      $nodes = node_load_multiple($nids);
+    }
+
+    $apis = api_list_contents();
+
+    if ($apis) {
+      foreach ($apis as $api) {
+        $apifound = FALSE;
+        if ($nodes) {
+          foreach ($nodes as $node) {
+            if (isset($node->api_apiid) && isset($node->api_version) && $api['id'] == $node->api_apiid[$node->language][0]['value'] && $api['version'] == $node->api_version[$node->language][0]['value']) {
+              $apifound = TRUE;
+              _api_updateExistingAPINode($node, $api);
+            }
+          }
+        }
+        if ($apifound == FALSE) {
+          _api_createNewAPINode($api);
+        }
+      }
+    }
+    // rerun query now we've created entries for any new APIs we found
+    $nids = $query->fields('n', array('nid'))->condition('type', 'api')->condition('status', 1)->limit(variable_get('default_nodes_main', 100))->addTag('node_access')->execute()->fetchCol();
+    $finalnids = array();
+
+    if (!empty($nids)) {
+      // now remove the nodes that weren't in our list of APIs
+      if ($apis) {
+        $nodes = node_load_multiple($nids);
+        if ($nodes) {
+          foreach ($nodes as $node) {
+            foreach ($apis as $api) {
+              if (isset($node->api_apiid) && isset($node->api_version) && $api['id'] == $node->api_apiid[$node->language][0]['value'] && $api['version'] == $node->api_version[$node->language][0]['value']) {
+                array_push($finalnids, $node->nid);
+              }
+            }
+          }
+        }
+      }
+
+      $finalnodes = node_load_multiple($finalnids);
+      if ($finalnodes) {
+        $build = array(
+          'nodes' => node_view_multiple($finalnodes),
+          'pager' => array('#markup' => theme('pager')));
+      }
+      else {
+        drupal_set_message(t('No apis have been found.'), 'warning');
+      }
+    }
+    else {
+      drupal_set_message(t('No apis have been found.'), 'warning');
+    }
+  }
+  else {
+    // specific api
+    $api = api_details_contents($apiid, $apiversion);
+    if (isset($api)) {
+      $query = new EntityFieldQuery();
+      $query->entityCondition('entity_type', 'node')->entityCondition('bundle', 'api')->fieldCondition('api_apiid', 'value', $apiid)->fieldCondition('api_version', 'value', $apiversion);
+
+      $results = $query->execute();
+
+      if (isset($results['node'])) {
+        $node = node_load(array_keys($results['node'])[0]);
+        _api_updateExistingAPINode($node, $api);
+        $node = node_load($node->nid);
+        // load it again now we've updated it
+        // $build = node_page_view($node);
+        $build = node_page_view($node, 'full', NULL);
+        $more = module_invoke_all('node_view', $node, 'full', NULL);
+        // Only append comments when we are building a node on its own node detail
+        // page. Hardcoded here as comment module will do a node_is_page check which we wouldnt pass
+        // since path is /api not /node
+        $comments_enabled = variable_get('comment_api', 1);
+        if ($node->comment && empty($node->in_preview) && ($comments_enabled == 1)) {
+          $node->content['comments'] = comment_node_page_additions($node);
+        }
+        $build_all = array_merge($build, $more);
+        return $build_all;
+      }
+      else {
+        // no existing node for this API so create one
+        $nid = _api_createNewApiNode($api);
+        $node = node_load($nid);
+
+        $build = node_page_view($node, 'full', NULL);
+        $more = module_invoke_all('node_view', $node, 'full', NULL);
+        // Only append comments when we are building a node on its own node detail
+        // page. Hardcoded here as comment module will do a node_is_page check which we wouldnt pass
+        // since path is /api not /node
+        $comments_enabled = variable_get('comment_api', 1);
+        if ($node->comment && empty($node->in_preview) && ($comments_enabled == 1)) {
+          $node->content['comments'] = comment_node_page_additions($node);
+        }
+        $build_all = array_merge($build, $more);
+        return $build_all;
+      }
+    }
+    else {
+      drupal_set_message(t('The specified API could not be found.'), 'error');
+    }
+  }
+  return $build;
+}
+
+/**
+ * Create a new API node
+ * Used to create the new placeholder nodes for any new APIs returned by APIm
+ */
+function _api_createNewAPINode($api) {
+  global $user;
+  $node = new stdClass();
+  $node->title = $api['name'];
+  $node->type = "api";
+  node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
+  $node->language = LANGUAGE_NONE;
+  $node->uid = $user->uid;
+  $node->status = 1;
+  $node->promote = 0;
+  $node->comment = 2;
+
+  $node->api_apiid[$node->language][] = array(
+    'value' => $api['id'],
+    'format' => 'plain_text');
+  $node->api_version[$node->language][] = array(
+    'value' => $api['version'],
+    'format' => 'plain_text');
+  $node->api_description[$node->language][] = array(
+    'value' => $api['description'],
+    'format' => 'plain_text');
+  $node->api_context[$node->language][] = array(
+    'value' => $api['context'],
+    'format' => 'plain_text');
+  $node->api_protocol[$node->language][] = array(
+    'value' => $api['protocol'],
+    'format' => 'plain_text');
+  $node->api_authorization[$node->language][] = array(
+    'value' => $api['authorization'],
+    'format' => 'plain_text');
+  $node->api_authentication[$node->language][] = array(
+    'value' => $api['authentication'],
+    'format' => 'plain_text');
+  $node->api_authorizationTokenURL[$node->language][] = array(
+    'value' => $api['authorizationTokenURL'],
+    'format' => 'plain_text');
+  $node->api_authorizationurl[$node->language][] = array(
+    'value' => $api['authorizationURL'],
+    'format' => 'plain_text');
+  $node->api_url[$node->language][] = array(
+    'value' => $api['url'],
+    'format' => 'plain_text');
+  $node->api_updated[$node->language][] = array(
+    'value' => $api['updatedAt'],
+    'format' => 'plain_text');
+  $node = node_submit($node); // Prepare node for saving
+  node_save($node);
+
+  $autocreate_forum = variable_get('ibm_apim_autocreate_apiforum', 1);
+  if ($autocreate_forum == 1) {
+    _api_create_forum($api['name'], $api['description']);
+  }
+  return $node->nid;
+}
+
+/**
+ * Update an existing API node
+ * Used to update the placeholder node for any new API details returned by APIm
+ */
+function _api_updateExistingAPINode($node, $api) {
+  $node->title = $api['name'];
+  $node->api_apiid[$node->language][0]['value'] = $api['id'];
+  $node->api_version[$node->language][0]['value'] = $api['version'];
+  $node->api_description[$node->language][0]['value'] = $api['description'];
+  $node->api_context[$node->language][0]['value'] = $api['context'];
+  $node->api_protocol[$node->language][0]['value'] = $api['protocol'];
+  $node->api_authorization[$node->language][0]['value'] = $api['authorization'];
+  $node->api_authentication[$node->language][0]['value'] = $api['authentication'];
+  $node->api_authorizationTokenURL[$node->language][0]['value'] = $api['authorizationTokenURL'];
+  $node->api_authorizationurl[$node->language][0]['value'] = $api['authorizationURL'];
+  $node->api_url[$node->language][0]['value'] = $api['url'];
+  $node->api_updated[$node->language][0]['value'] = $api['updatedAt'];
+  node_save($node);
+}
+
+/*
+ * Create a forum for this API
+ */
+function _api_create_forum($apiname = NULL, $apidescription = NULL) {
+  if (isset($apiname)) {
+    // sanitise api name
+    $cleanname = _api_sanitise_apiname($apiname);
+
+    module_load_include('inc', 'forum', 'forum.admin');
+    // get the container ID
+    $containerID = taxonomy_get_term_by_name('APIs');
+    if (empty($containerID)) {
+      _api_create_forum_container();
+      $containerID = taxonomy_get_term_by_name('APIs');
+      if (empty($containerID)) {
+        // container doesnt exist and failed to create it. abort.
+        drupal_set_message(t('Failed to find or create the forum container for this API.'), 'error');
+        return;
+      }
+    }
+    $forumID = taxonomy_get_term_by_name($cleanname);
+    if (!empty($forumID)) {
+      // forum by this name already exists. abort (silently).
+      return;
+    }
+    else {
+      reset($containerID);
+      $first_key = key($containerID);
+      $forum_form_fields = array();
+      $forum_form_fields['values']['name'] = $cleanname;
+      $forum_form_fields['values']['description'] = $apidescription;
+      $forum_form_fields['values']['parent'][0] = $containerID[$first_key]->tid;
+      $forum_form_fields['values']['weight'] = 0;
+      $forum_form_fields['values']['vid'] = variable_get('forum_nav_vocabulary', 1);
+      $form_state = form_state_defaults();
+      $forum = forum_form_forum($forum_form_fields, $form_state);
+      $forum['form_id']['#value'] = "forum-form-forum";
+      forum_form_submit($forum, $forum_form_fields);
+    }
+  }
+
+  // Don't show a confirmation, error, etc. message about this in the UI, put them in the log instead
+  $messages = drupal_get_messages();
+
+  $type_to_severity = array(
+    'status' => WATCHDOG_NOTICE,
+    'warning' => WATCHDOG_WARNING,
+    'error' => WATCHDOG_ERROR);
+
+  foreach ($messages as $type => $type_messages) {
+    foreach ($type_messages as $msg) {
+      watchdog(__FUNCTION__, '%type: %msg', array(
+        '%type' => $type,
+        '%msg' => $msg), $type_to_severity[$type]);
+    }
+  }
+}
+
+/*
+ * Create the APIs Forum Container if it doesn't already exist.
+ */
+function _api_create_forum_container() {
+  module_load_include('inc', 'forum', 'forum.admin');
+
+  $form_state = form_state_defaults();
+  $forum_container_fields = array();
+  $forum_container_fields['values']['form_id'] = "forum_form_container";
+  $forum_container_fields['values']['name'] = 'APIs';
+  $forum_container_fields['values']['description'] = 'Get help and advice on the use of our APIs.';
+  $forum_container_fields['values']['parent'][0] = 0;
+  $forum_container_fields['values']['weight'] = 0;
+  $forum_container_fields['values']['vid'] = variable_get('forum_nav_vocabulary', 1);
+  $container = forum_form_container($forum_container_fields, $form_state);
+  $container['form_id']['#value'] = 'forum_form_container';
+  forum_form_submit($container, $forum_container_fields);
+}
+/*
+ * This method sanitises the API names to ensure that it is a valid forum name
+ */
+function _api_sanitise_apiname($apiname = NULL) {
+  if (isset($apiname)) {
+    $cleanname = preg_replace('/\%/', ' percentage', $apiname);
+    $cleanname = preg_replace('/\@/', ' at ', $cleanname);
+    $cleanname = preg_replace('/\&/', ' and ', $cleanname);
+    $cleanname = preg_replace('/\s[\s]+/', '-', $cleanname); // Strip off multiple spaces
+    $cleanname = preg_replace('/[^A-Za-z0-9-_.,:\s]+/', '-', $cleanname); // Strip off non-alpha-numeric
+    $cleanname = preg_replace('/^[\-]+/', '', $cleanname); // Strip off the starting hyphens
+    $cleanname = preg_replace('/[\-]+$/', '', $cleanname); // // Strip off the ending hyphens
+    $cleanname = mb_strimwidth($cleanname, 0, 128, "..."); // truncate string at 128 characters
+  }
+  return $cleanname;
+}
+
+/**
+ * A function to lookup all the APIs a user can see and return the basic
+ * information for each of them.
+ *
+ * @return array NULL if an error occurs otherwise an array with data for each API found.
+ */
+function api_list_contents() {
+  $api_data = NULL;
+  $developerOrgs = ibm_apim_get_current_developer_org()['id'];
+
+  if (isset($developerOrgs)) {
+    $developer_org_url = '/orgs/' . $developerOrgs;
+  }
+  else {
+    $developer_org_url = '';
+  }
+  $url = '/v1/portal' . $developer_org_url . '/apis';
+
+  $result = _ibm_apim_call($url);
+  if (isset($result) && isset($result->data)) {
+    $api_data = $result->data;
+  }
+  return $api_data;
+}
+
+/**
+ * A function to retrieve the details for a specified API
+ *
+ * @param
+ *          string apiid
+ *          The API ID
+ *
+ * @param
+ *          int apiversion
+ *          The API version
+ *
+ * @return array NULL if an error occurs otherwise an array with data for the API.
+ */
+function api_details_contents($apiid, $apiversion) {
+  $returnValue = NULL;
+  $apim_session = &_ibm_apim_get_apim_session();
+  if (isset($apim_session['portalURL'])) {
+    $base_url = $apim_session['portalURL'];
+  }
+  else {
+    $base_url = '';
+  }
+
+  $developerOrgs = ibm_apim_get_current_developer_org()['id'];
+
+  if (isset($developerOrgs)) {
+    $developer_org_url = '/orgs/' . $developerOrgs;
+  }
+  else {
+    $developer_org_url = '';
+  }
+
+  $url = '/v1/portal' . $developer_org_url . '/apis/' . $apiid . '/v' . $apiversion;
+  $result = _ibm_apim_call($url);
+  if (isset($result) && isset($result->data)) {
+    $returnValue = $result->data;
+    $returnValue['base_url'] = $base_url;
+  }
+  return $returnValue;
+}
+
+/**
+ * A function to retrieve the documents associated with a specified API
+ *
+ * @param
+ *          string apiid
+ *          The API ID
+ *
+ * @param
+ *          int apiversion
+ *          The API version
+ *
+ * @return array NULL if an error occurs otherwise an array with data.
+ */
+function api_documents_contents($apiid, $apiversion) {
+  $returnValue = NULL;
+  $developerOrgs = ibm_apim_get_current_developer_org()['id'];
+
+  if (isset($developerOrgs)) {
+    $developer_org_url = '/orgs/' . $developerOrgs;
+  }
+  else {
+    $developer_org_url = '';
+  }
+
+  $url = '/v1/portal' . $developer_org_url . '/apis/' . $apiid . '/v' . $apiversion . '/documents';
+  $result = _ibm_apim_call($url);
+  if (isset($result) && isset($result->data)) {
+    $returnValue = $result->data;
+  }
+  return $returnValue;
+}
+
+/**
+ * A function to return the CSS class for a specified mimetype
+ *
+ * @param
+ *          string mimetype
+ *          The mimetype of the document
+ *
+ * @return string The CSS classname
+ */
+function api_getCSSforMimetype($mimetype) {
+  $class = null;
+  switch ($mimetype) {
+    case "application/pdf" :
+      $class = "pdfDocType";
+      break;
+    case "application/msword" :
+      $class = "docDocType";
+      break;
+    case "application/powerpoint" :
+      $class = "pptDocType";
+      break;
+    case "application/vnd.ms-powerpoint" :
+      $class = "pptDocType";
+      break;
+    case "application/vnd.ms-excel" :
+      $class = "xlsDocType";
+      break;
+    case "application/excel" :
+      $class = "xlsDocType";
+      break;
+    case "text/plain" :
+      $class = "txtDocType";
+      break;
+    case "application/rtf" :
+      $class = "rtfDocType";
+      break;
+    case "text/richtext" :
+      $class = "rtfDocType";
+      break;
+    case "image/gif" :
+      $class = "gifDocType";
+      break;
+    case "image/jpeg" :
+      $class = "jpgDocType";
+      break;
+    case "image/png" :
+      $class = "pngDocType";
+      break;
+    case "image/bmp" :
+      $class = "bmpDocType";
+      break;
+    case "application/xml" :
+      $class = "xmlDocType";
+      break;
+    case "text/xml" :
+      $class = "xmlDocType";
+      break;
+    case "text/html" :
+      $class = "htmlDocType";
+      break;
+    case "text/css" :
+      $class = "cssDocType";
+      break;
+    case "application/xslt+xml" :
+      $class = "xslDocType";
+      break;
+    case "application/x-gzip" :
+      $class = "zipDocType";
+      break;
+    case "application/zip" :
+      $class = "zipDocType";
+      break;
+    case "application/x-zip-compressed" :
+      $class = "zipDocType";
+      break;
+    case "application/x-tar" :
+      $class = "zipDocType";
+      break;
+    default :
+      $class = "defaultDocType";
+  }
+  return $class;
+}
+
+/**
+ * A function to return an array of plans which feature the specified API.
+ *
+ * @param
+ *          string apiid
+ *          The api id
+ *
+ * @param
+ *          int apiversion
+ *          The api version
+ * @return array of the matching plan details.
+ */
+function _api_get_plans_for_api($apiid, $apiversion) {
+  $results = array();
+  $plans_data = plan_list_contents();
+  if ($plans_data) {
+    foreach ($plans_data as $plan) {
+      $plan_details = plan_details_contents($plan['id'], $plan['version']);
+      if (!isset($plan['displayName'])) {
+        $plan['displayName'] == '';
+      }
+      if (!isset($plan['name'])) {
+        $plan['name'] == '';
+      }
+      if (isset($plan_details['apis'])) {
+        foreach ($plan_details['apis'] as $api) {
+          if ($api['id'] == $apiid && $api['version'] == $apiversion) {
+            array_push($results, array(
+              'id' => $plan['id'],
+              'version' => $plan['version'],
+              'name' => $plan['name'],
+              'displayName' => $plan['displayName'],
+              'version' => $plan['version'],
+              'updatedAt' => $plan['updatedAt'],
+              'requiresApproval' => $plan['requiresApproval'],
+              'url' => $plan['url']));
+          }
+        }
+      }
+    }
+  }
+  return $results;
+}
+
+function _api_document_proxy_callback($apiid, $apiversion, $filename) {
+  // Make sure we have the session variables set
+  _ibm_apim_check_and_get_config();
+  $apim_session = &_ibm_apim_get_apim_session();
+  $host = variable_get('ibm_apim_host');
+  if (empty($host)) {
+    drupal_set_message(t('IBM APIM Module is not correctly configured. Specify a valid hostname and try again.'), 'error');
+    return;
+  }
+  $url = 'https://' . $host . '/v1/portal/apis/' . $apiid . '/' . $apiversion . '/documents/' . $filename . '/file';
+
+  $ch = curl_init($url);
+  if (isset($apim_session['auth'])) {
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+    "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env'],
+    "Authorization: Basic " . $apim_session['auth']));
+  } else {
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+    "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env']));
+  }
+
+
+  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+  curl_setopt($ch, CURLOPT_HEADER, true);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+  // Enable auto-accept of self-signed certificates if this
+  // has been set in the module config by an admin.
+  _ibm_apim_curl_set_accept_ssl($ch);
+
+  list($header, $contents) = preg_split('/([\r\n][\r\n])\\1/', curl_exec($ch), 2);
+  $status = curl_getinfo($ch);
+  curl_close($ch);
+
+  // Split header text into an array.
+  $header_text = preg_split('/[\r\n]+/', $header);
+
+  // Propagate headers to response.
+  foreach ($header_text as $header) {
+    if (preg_match('/^(?:Content-Disposition|Content-Length|Content-Type|Content-Language|Set-Cookie):/i', $header)) {
+      header($header);
+    }
+  }
+
+  print $contents;
+}

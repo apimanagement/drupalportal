@@ -1,0 +1,2503 @@
+<?php
+
+/**
+ * IBM API Management Integration
+ *
+ * Makes the API developer functions from a IBM API Management node
+ * available in Drupal.
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function ibm_apim_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#api' :
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t("This module provides tight integration with IBM API Management.") . '</p>';
+      $output .= '<h3>' . t('Uses') . '</h3>';
+      $output .= '<dl>';
+      $output .= '<dt>' . t('Authentication') . '</dt>';
+      $output .= '<dd>' . t("This module changes the login procedure so users are authenticated against IBM API Management.") . '</dd>';
+      $output .= '<dt>' . t('User Management') . '</dt>';
+      $output .= '<dd>' . t("Developers already members of the provider organization in IBM API Management will have IDs in this portal created for them automatically when they login.") . '</dd>';
+      $output .= '<dt>' . t('Self sign up') . '</dt>';
+      $output .= '<dd>' . t("It is possible for developers to sign up for an account in Drupal which will create an account and a developer organization in IBM API Management.") . '</dd>';
+      $output .= '<dt>' . t('Developer Organisation Management') . '</dt>';
+      $output .= '<dd>' . t("It is possible to invite other users to your developer organization or remove existing ones.") . '</dd>';
+      $output .= '</dl>';
+      return $output;
+  }
+}
+
+/**
+ * Implementation of hook_preprocess_html().
+ *
+ * Set some css classes which we can use to format the html based on whether we are
+ * showing a collection of nodes or a single node
+ */
+function ibm_apim_preprocess_html(&$vars) {
+  // Add class for whether we are a teaser of full detail view
+  // $vars['classes_array'][] = 'node-view-' . $vars['view_mode'];
+  $path = drupal_get_path_alias();
+  if (isset($path)) {
+    $aliases = explode('/', $path);
+    if ($aliases[0] == "application" || $aliases[0] == "api" || $aliases[0] == "plan") {
+      if (isset($aliases[1])) {
+        $vars['classes_array'][] = drupal_clean_css_identifier('full-mode');
+      }
+      else {
+        $vars['classes_array'][] = drupal_clean_css_identifier('teaser-mode');
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of hook_theme().
+ *
+ * Tell Drupal that we have template files for the content types that we define in the module.
+ * A theme can override these template files if it wishes to do so, but we include them
+ * in our module so that the nodes render correctly when used with a theme that doesn't know
+ * about them.
+ */
+function ibm_apim_theme($existing, $type, $theme, $path) {
+  $theme = array();
+  $templates_path = drupal_get_path('module', 'ibm_apim') . '/templates';
+  $theme['node__api'] = array(
+    'render element' => 'content',
+    'base hook' => 'node',
+    'template' => 'node--api',
+    'path' => $templates_path);
+  $theme['node__api__teaser'] = array(
+    'render element' => 'content',
+    'base hook' => 'node',
+    'template' => 'node--api--teaser',
+    'path' => $templates_path);
+  $theme['node__application'] = array(
+    'render element' => 'content',
+    'base hook' => 'node',
+    'template' => 'node--application',
+    'path' => $templates_path);
+  $theme['node__application__teaser'] = array(
+    'render element' => 'content',
+    'base hook' => 'node',
+    'template' => 'node--application--teaser',
+    'path' => $templates_path);
+  $theme['node__plan'] = array(
+    'render element' => 'content',
+    'base hook' => 'node',
+    'template' => 'node--plan',
+    'path' => $templates_path);
+  $theme['node__plan__teaser'] = array(
+    'render element' => 'content',
+    'base hook' => 'node',
+    'template' => 'node--plan--teaser',
+    'path' => $templates_path);
+  return $theme;
+}
+
+/**
+ * Implementation of hook_form_user_login_block_alter().
+ */
+function ibm_apim_form_user_login_block_alter(&$form, &$form_state) {
+  _ibm_apim_user_login_form_alter($form, $form_state);
+}
+
+/**
+ * Implementation of hook_form_user_login_alter().
+ */
+function ibm_apim_form_user_login_alter(&$form, &$form_state) {
+  _ibm_apim_user_login_form_alter($form, $form_state);
+}
+
+/**
+ * Alter the login form to use a custom validator that authenticates against
+ * the IBM API Management API
+ *
+ * @param $form The
+ *          form
+ *
+ * @param $form_state The
+ *          state of the form
+ */
+function _ibm_apim_user_login_form_alter(&$form, &$form_state) {
+  $saveForm = $form;
+  $form = array();
+
+  if ($saveForm) {
+    foreach ($saveForm as $key => $value) {
+      if ($key == '#validate') {
+        $form[$key] = array();
+        if ($value) {
+          foreach ($value as $validator) {
+            if ($validator == 'user_login_authenticate_validate') {
+              $validator = 'ibm_apim_authenticate_validate';
+            }
+            $form[$key][] = $validator;
+          }
+        }
+      }
+      else {
+        $form[$key] = $value;
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function ibm_apim_form_alter(&$form, &$form_state, $form_id) {
+  switch ($form_id) {
+    case 'user_profile_form' :
+      unset($form['account']['mail']);
+      $form['account']['mail'] = array();
+      $form['account']['current_pass']['#description'] = t('Enter your current password to change the <em class="placeholder">Password</em>. ') . l(t('Request new password'), 'user/password', array(
+        'attributes' => array('title' => 'Request new password via email.')));
+      $email = "";
+      if (isset($form['#user']->data['email'])) {
+        $email = $form['#user']->data['email'];
+      }
+      $first_name = "";
+      if (isset($form['#user']->data['first_name'])) {
+        $first_name = $form['#user']->data['first_name'];
+      }
+      $last_name = "";
+      if (isset($form['#user']->data['last_name'])) {
+        $last_name = $form['#user']->data['last_name'];
+      }
+      $devorg = "";
+      if (isset($form['#user']->data['devorg'])) {
+        $devorg = $form['#user']->data['devorg'];
+      }
+      $form['account']['email'] = array(
+        '#type' => 'textfield',
+        '#title' => 'E-mail address',
+        '#required' => TRUE,
+        '#disabled' => TRUE,
+        '#default_value' => $email);
+      $form['account']['first_name'] = array(
+        '#type' => 'textfield',
+        '#title' => 'First name',
+        '#required' => TRUE,
+        '#default_value' => $first_name);
+      $form['account']['last_name'] = array(
+        '#type' => 'textfield',
+        '#title' => 'Last name',
+        '#required' => TRUE,
+        '#default_value' => $last_name);
+      $form['account']['devorg'] = array(
+        '#type' => 'textfield',
+        '#title' => 'Developer organization',
+        '#required' => TRUE,
+        '#disabled' => TRUE,
+        '#default_value' => $devorg);
+      $form['account']['remote_id'] = array(
+        '#type' => 'hidden',
+        '#value' => $form['#user']->data['remote_id']);
+
+      $form['#validate'] = array_diff($form['#validate'], array(
+        'user_account_form_validate',
+        'user_validate_current_pass'));
+      $form['#submit'] = array('_ibm_apim_user_profile_form_submit_handler');
+      break;
+  }
+}
+
+/**
+ * Use a custom submit handler for the user profile form, adding extra values
+ * from the IBM API Management account.
+ *
+ * @param $form The
+ *          form
+ *
+ * @param $form_state The
+ *          state of the form
+ */
+function _ibm_apim_user_profile_form_submit_handler($form, &$form_state) {
+  $account = $form_state['user'];
+  $category = $form['#user_category'];
+
+  // Remove unneeded values.
+  form_state_values_clean($form_state);
+
+  // Before updating the account entity, keep an unchanged copy for use with
+  // user_save() later. This is necessary for modules implementing the user
+  // hooks to be able to react on changes by comparing the values of $account
+  // and $edit.
+  $account_unchanged = clone $account;
+
+  entity_form_submit_build_entity('user', $account, $form, $form_state);
+
+  // Populate $edit with the properties of $account, which have been edited on
+  // this form by taking over all values, which appear in the form values too.
+  $edit = array_intersect_key((array) $account, $form_state['values']);
+
+  if (is_array($edit['signature'])) {
+    $edit['signature_format'] = $edit['signature']['format'];
+    $edit['signature'] = $edit['signature']['value'];
+  }
+
+  if (!isset($edit['data'])) {
+    $edit['data'] = array();
+  }
+  $edit['data']['first_name'] = $form_state['values']['first_name'];
+  $edit['data']['last_name'] = $form_state['values']['last_name'];
+
+  user_save($account_unchanged, $edit, $category);
+  $form_state['values']['uid'] = $account->uid;
+
+  if ($category == 'account' && !empty($edit['pass'])) {
+    // Remove the password reset tag since a new password was saved.
+    unset($_SESSION['pass_reset_' . $account->uid]);
+  }
+  // Clear the page cache because pages can contain usernames and/or profile information:
+  cache_clear_all();
+
+  if (($form_state['values']['pass'] != $form_state['values']['current_pass']) && $form_state['values']['current_pass'] != '') {
+    _ibm_apim_change_user_password($form_state['values']['pass'], $form_state['values']['remote_id'], $form_state['values']['email'], $form_state['values']['current_pass']);
+  }
+
+  drupal_set_message(t('The changes have been saved.'));
+}
+
+/**
+ * Implementation of hook_user_view().
+ * Add our custom fields to those displayed for users
+ */
+function ibm_apim_user_view($account, $view_mode, $langcode) {
+  $email = "";
+  if (isset($account->data['email'])) {
+    $email = $account->data['email'];
+  }
+  $first_name = "";
+  if (isset($account->data['first_name'])) {
+    $first_name = $account->data['first_name'];
+  }
+  $last_name = "";
+  if (isset($account->data['last_name'])) {
+    $last_name = $account->data['last_name'];
+  }
+  $devorg = "";
+  if (isset($account->data['devorg'])) {
+    $devorg = $account->data['devorg'];
+  }
+
+  $account->content['ibm_apim'] = array(
+    '#type' => 'user_profile_category',
+    '#title' => 'IBM API Management');
+
+  $account->content['ibm_apim']['email'] = array(
+    '#type' => 'user_profile_item',
+    '#title' => 'E-Mail',
+    '#markup' => $email,
+    '#weight' => 1);
+  $account->content['ibm_apim']['first_name'] = array(
+    '#type' => 'user_profile_item',
+    '#title' => 'First name',
+    '#markup' => $first_name,
+    '#weight' => 2);
+  $account->content['ibm_apim']['last_name'] = array(
+    '#type' => 'user_profile_item',
+    '#title' => 'Last name',
+    '#markup' => $last_name,
+    '#weight' => 3);
+  $account->content['ibm_apim']['devorg'] = array(
+    '#type' => 'user_profile_item',
+    '#title' => 'Developer Organization',
+    '#markup' => $devorg,
+    '#weight' => 5);
+}
+
+/**
+ * Implements hook_user_logout()
+ * Save a cookie we can use to display the user registration activation message when user is logged out.
+ */
+function ibm_apim_user_logout($account) {
+  user_cookie_save(array('logoff' => 1));
+}
+
+/**
+ * Implementation of hook_user_presave().
+ * This method checks for the global variables that indicate we're here as a result of a forgotten
+ * password link. It then updates the backend APIm system with the new password using the temp
+ * auth credentials from the incoming URL.
+ */
+function ibm_apim_user_presave(&$edit, $account, $category) {
+  if (isset($tempUser) && isset($tempPwd)) {
+    _ibm_apim_change_user_password($_REQUEST['pass']['pass1'], $tempUser, $account->mail, $tempPwd);
+    // clear the temp global vars
+    unset($GLOBALS['tempUser']);
+    unset($GLOBALS['tempPwd']);
+  }
+}
+
+/**
+ * Validate the user authenticated with the IBM API Management environment
+ * correctly and load a user with the data.
+ * from the IBM API Management account.
+ *
+ * @param $form The
+ *          form
+ *
+ * @param $form_state The
+ *          state of the form
+ */
+function ibm_apim_authenticate_validate($form, &$form_state) {
+  $name = $form_state['values']['name'];
+  $pass = trim($form_state['values']['pass']);
+
+  // use Drupal authentication for this user
+  $admin_user_fields = user_load(1);
+  $admin_name = $admin_user_fields->name;
+  if ($name == $admin_name) {
+    return user_login_authenticate_validate($form, $form_state);
+  }
+
+  // Flood protection code from user.module copied here as wouldn't be run otherwise
+  if (!empty($name) && !empty($pass)) {
+    // Do not allow any login from the current user's IP if the limit has been
+    // reached. Default is 50 failed attempts allowed in one hour. This is
+    // independent of the per-user limit to catch attempts from one IP to log
+    // in to many different user accounts. We have a reasonably high limit
+    // since there may be only one apparent IP for all users at an institution.
+    if (!flood_is_allowed('failed_login_attempt_ip', variable_get('user_failed_login_ip_limit', 50), variable_get('user_failed_login_ip_window', 3600))) {
+      $form_state['flood_control_triggered'] = 'ip';
+      return;
+    }
+    $account = db_query("SELECT * FROM {users} WHERE name = :name AND status = 1", array(
+      ':name' => $name))->fetchObject();
+    if ($account) {
+      if (variable_get('user_failed_login_identifier_uid_only', FALSE)) {
+        // Register flood events based on the uid only, so they apply for any
+        // IP address. This is the most secure option.
+        $identifier = $account->uid;
+      }
+      else {
+        // The default identifier is a combination of uid and IP address. This
+        // is less secure but more resistant to denial-of-service attacks that
+        // could lock out all users with public user names.
+        $identifier = $account->uid . '-' . ip_address();
+      }
+      $form_state['flood_control_user_identifier'] = $identifier;
+
+      // Don't allow login if the limit for this user has been reached.
+      // Default is to allow 5 failed attempts every 6 hours.
+      if (!flood_is_allowed('failed_login_attempt_user', variable_get('user_failed_login_user_limit', 5), variable_get('user_failed_login_user_window', 21600), $identifier)) {
+        $form_state['flood_control_triggered'] = 'user';
+        return;
+      }
+    }
+    // We are not limited by flood control, so try to authenticate.
+    $authenticated = ibm_apim_authenticate($name, $pass);
+    if ($authenticated) {
+      // this sets up the external user with Drupal by creating a local entry. If they don't exist they are added
+      user_external_login_register($name, "ibm_apim");
+
+      // we must set the 'uid' to pass back. this looks up the logged in user and sets the Drupal UID
+      $account = user_external_load($name);
+
+      $result = _ibm_apim_call('/v1/portal/orgs');
+      if (isset($result) && isset($result->data)) {
+        $orgs = $result->data;
+      }
+      $devorg = '';
+      $org_ids = array();
+      $json_user_info = $authenticated;
+
+      if (isset($orgs)) {
+        foreach ($orgs as $org) {
+          if ($devorg != '') {
+            $devorg .= ', ';
+          }
+          $devorg .= $org['name'];
+          $org_ids[$org['id']] = array();
+          $org_ids[$org['id']] = ($org['owner'] ? 'owner' : 'member');
+        }
+      }
+
+      $fields = array();
+      $fields['data'] = array(
+        'remote_id' => $json_user_info['id'],
+        'email' => $json_user_info['email'],
+        'devorg' => $devorg,
+        'last_login' => $json_user_info['lastLoginTime'],
+        'status' => $json_user_info['status'],
+        'first_name' => isset($json_user_info['firstName']) ? $json_user_info['firstName'] : '',
+        'last_name' => isset($json_user_info['lastName']) ? $json_user_info['lastName'] : '');
+
+      user_save($account, $fields);
+      // Set $form_state['uid'] as a flag for user_login_final_validate().
+      $form_state['uid'] = $account->uid;
+    }
+  }
+}
+
+/**
+ * Authenticate with the IBM API Management environment.
+ *
+ * @param $form The
+ *          form
+ *
+ * @param $form_state The
+ *          state of the form
+ */
+function ibm_apim_authenticate($name, $pass) {
+
+  // Make sure we have the session variables set
+  _ibm_apim_check_and_get_config();
+  $apim_session = &_ibm_apim_get_apim_session();
+  $url = 'https://' . variable_get('ibm_apim_host') . '/v1/portal/me';
+  $headers = array(
+    'Content-Type: application/json',
+    'Accept: application/json',
+    "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env'],
+    'Authorization: Basic ' . base64_encode($name . ':' . $pass));
+
+  $result = _ibm_apim_json_http_request($url, 'GET', $headers);
+
+  // Must get the session again now as it may have changed when we logged in
+  $apim_session = &_ibm_apim_get_apim_session();
+  watchdog(__FUNCTION__, '%user login return code %data', array(
+    '%data' => $result->code,
+    '%user' => $name), WATCHDOG_NOTICE);
+  if (isset($result) && ($result->code == 200) && $result->data != '') {
+    $apim_session['auth'] = base64_encode($name . ':' . $pass);
+    if (isset($result->data['id'])) {
+      $apim_session['memberid'] = $result->data['id'];
+    }
+    return $result->data;
+  }
+  return null;
+}
+
+/**
+ * Implementation of hook_form().
+ * The module admin configuration settings.
+ */
+function ibm_apim_config_form($form, &$form_state) {
+  global $base_url;
+  $form = array();
+  $form['ibm_apim_host'] = array(
+    '#type' => 'textfield',
+    '#title' => t('IBM API Management Hostname'),
+    '#description' => t('To configure this Developer Portal to work with the API Manager host you must go to /apimanager on the API Manager host, select the environment for this Developer Portal and ensure that the "Custom Developer Portal URL" is set to: ' . $base_url),
+    '#required' => TRUE,
+    '#default_value' => variable_get('ibm_apim_host'));
+
+  $form['ibm_apim_insecure'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Accept Self-Signed SSL Certificates (Developer Mode)'),
+    '#default_value' => variable_get('ibm_apim_insecure', FALSE),
+    '#weight' => -4,
+    '#description' => t('WARNING: This should only be used for testing and development purporses as it leaves you vulnerable to a man-in-the-middle attack. Check this if the API Manager uses a self-signed SSL certificate.'));
+
+  $form['ibm_apim_autocreate_apiforum'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Automatically create a forum per API'),
+    '#default_value' => variable_get('ibm_apim_autocreate_apiforum', TRUE),
+    '#weight' => -4,
+    '#description' => t('If checked then a new forum will be created for each API that is available to a developer. Note that the forums will only be created when a developer first sees the APIs listed in the Developer Portal.'));
+
+  return system_settings_form($form);
+}
+
+/**
+ * Implementation of hook_init().
+ */
+function ibm_apim_init() {
+  drupal_add_css(drupal_get_path('module', 'ibm_apim') . '/css/ibm_apim.css');
+}
+
+/**
+ * Setup our session storage.
+ */
+function &_ibm_apim_get_apim_session() {
+  $retSession = NULL;
+
+  // We need $_SESSION to always exist even when the user
+  // has not logged in yet
+  if (!isset($_SESSION)) {
+    $_SESSION = array();
+  }
+
+  // Ensure we have our storage area in the session
+  if (!isset($_SESSION['ibm_apim'])) {
+    $_SESSION['ibm_apim'] = array();
+  }
+
+  $retSession = &$_SESSION['ibm_apim'];
+
+  return $retSession;
+}
+
+/**
+ * Get basic APIM config and store it in the session.
+ */
+function _ibm_apim_check_and_get_config() {
+
+  // Ensure that we have a session variable as we require the _SESSION varaible
+  // so that we can store a few essential variables
+  $apim_session = &_ibm_apim_get_apim_session();
+
+  if (!isset($apim_session['config_done'])) {
+    $config_data = _ibm_apim_get_apim_config();
+
+    if (isset($config_data)) {
+      $apim_session['config_done'] = 'true';
+      $apim_session['gatewayURL'] = check_plain($config_data['gatewayURL']);
+      $apim_session['portalURL'] = check_plain($config_data['portalURL']);
+      $apim_session['env'] = check_plain($config_data['envName']);
+      $apim_session['org'] = check_plain($config_data['orgName']);
+    }
+    else {
+      // Clear any other messages as until this problem is fixed they will just muddy the water
+      drupal_get_messages();
+
+      // Throw an exception with a useful message so that we stop processing the request here
+      global $base_url;
+      throw new Exception(t('Could not retrieve portal configuration. Please ensure the Custom Developer Portal URL is set to "' . $base_url . '" in the API Manager.'));
+    }
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function ibm_apim_menu() {
+  $items = array();
+  $items['admin/config/system/ibm_apim'] = array(
+    'title' => 'IBM API Management',
+    'description' => 'Configuration for the IBM API Management module.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ibm_apim_config_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM);
+  $items['ibm_apim/swaggerjson/%/%'] = array(
+    'title' => 'Swagger UI JSON',
+    'page callback' => '_ibm_apim_swaggerjson_callback',
+    'page arguments' => array(2, 3),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK);
+  $items['ibm_apim/notifications'] = array(
+    'title' => 'Notifications',
+    'page callback' => '_ibm_apim_notifications_callback',
+    'access callback' => 'user_is_logged_in',
+    'type' => MENU_CALLBACK);
+  $items['ibm_apim/org/%'] = array(
+    'title' => 'Developer Organisation Selection',
+    'page callback' => 'ibm_apim_developer_org_callback',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK);
+  $items['ibm_apim/activate/%'] = array(
+    'title' => 'User ID Activation',
+    'page callback' => 'ibm_apim_activate_id_callback',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK);
+  $items['ibm_apim/forgotpwd/%'] = array(
+    'title' => 'User ID Password reset',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ibm_apim_forgotpwd_form', 2),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK);
+  $items['myorg'] = array(
+    'title' => 'My Organization',
+    'page callback' => '_ibm_apim_myorg_page',
+    'menu_name' => 'user-menu',
+    'weight' => 8,
+    'access callback' => '_ibm_apim_user_is_org_owner');
+  $items['myorg/%'] = array(
+    'title' => 'Ajax test callback',
+    'type' => MENU_CALLBACK,
+    'page callback' => '_ibm_apim_myorg_ajax_link_callback',
+    'page arguments' => array(1),
+    'access arguments' => array('access content'));
+  return $items;
+}
+
+/**
+ * Implementation of hook_form_user_register_form_alter().
+ */
+function ibm_apim_form_user_register_form_alter(&$form, &$form_state) {
+  unset($form['account']['name']);
+  $form['account']['mail']['#description'] = t('A valid e-mail address. All e-mails from the system will be sent to this address.  Your e-mail address will also be your username.');
+  $form['account']['fname'] = array(
+    '#title' => 'First Name',
+    '#description' => 'Enter your first name.',
+    '#type' => 'textfield',
+    '#required' => TRUE);
+  $form['account']['lname'] = array(
+    '#title' => 'Last Name',
+    '#description' => 'Enter your last name.',
+    '#type' => 'textfield',
+    '#required' => TRUE);
+  $form['account']['developerorg'] = array(
+    '#title' => 'Developer Organisation',
+    '#description' => 'Enter your developer organization.',
+    '#type' => 'textfield',
+    '#required' => TRUE);
+  $form['#submit'] = array('ibm_apim_register_user');
+}
+
+/**
+ * Use a custom submit handler for the register userform, adding extra values
+ * from the IBM API Management account.
+ *
+ * @param $form The
+ *          form
+ *
+ * @param $form_state The
+ *          state of the form
+ */
+function ibm_apim_register_user($form, &$form_state) {
+  $mail = $form_state['values']['mail'];
+  $pass = $form_state['values']['pass'];
+  $fname = $form_state['values']['fname'];
+  $lname = $form_state['values']['lname'];
+  $developerorg = $form_state['values']['developerorg'];
+
+  // Make sure we have the session variables set
+  _ibm_apim_check_and_get_config();
+  $apim_session = &_ibm_apim_get_apim_session();
+  $url = 'https://' . variable_get('ibm_apim_host') . '/v1/portal/users/register';
+  $headers = array(
+    'Content-Type: application/json',
+    "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env'],
+    'Accept: application/json');
+  $data = '{"emailURLSuffix": "?q=ibm_apim/activate/x", "organization": "' . $developerorg . '", "firstName": "' . $fname . '", "lastName": "' . $lname . '", "password": "' . $pass . '", "username": "' . $mail . '"}';
+
+  $result = _ibm_apim_json_http_request($url, 'POST', $headers, $data);
+
+  watchdog(__FUNCTION__, 'Register user %data, first name %fname, last name %lname, return code %code', array(
+    '%data' => $mail,
+    '%fname' => $fname,
+    '%lname' => $lname,
+    '%code' => $result->code), WATCHDOG_NOTICE);
+
+  if (isset($result) && in_array($result->code, array(201)) && $result->data != '') {
+    drupal_set_message(t('Your account was created successfully.'));
+    user_external_login_register($mail, "ibm_apim");
+    global $user;
+    $fields = array(
+      'first_name' => $fname,
+      'last_name' => $lname,
+      'email' => $mail,
+      'mail' => $mail,
+      'org_name' => $developerorg);
+    user_save($user, $fields);
+
+    // forcibly log the user out since drupal will automatically log them in
+    // and nothing will actually work until they have activated the account in the APIm backend
+    // we also save a cookie here so that we can use this alongside the logout cookie to display a suitable message.
+    module_load_include('pages.inc', 'user');
+    user_cookie_save(array('ibmapimactivate' => 1));
+    user_logout();
+  }
+  else {
+    watchdog(__FUNCTION__, 'Error registering user, return data %data', array(
+      '%data' => $result->data), WATCHDOG_NOTICE);
+    drupal_set_message(t('There was an error creating your account: %data', array(
+      '%data' => $result->data)), 'error');
+  }
+}
+
+/**
+ * Implementation of hook_boot().
+ */
+function ibm_apim_boot() {
+}
+
+/**
+ * Implementation of hook_block_info().
+ */
+function ibm_apim_block_info() {
+  $blocks['api_list'] = array(
+    'info' => t('API List'),
+    'status' => TRUE,
+    'region' => -1,
+    'visibility' => BLOCK_VISIBILITY_LISTED,
+    'pages' => "api\napi/*");
+  $blocks['plan_list'] = array(
+    'info' => t('Plan List'),
+    'status' => TRUE,
+    'region' => -1,
+    'visibility' => BLOCK_VISIBILITY_LISTED,
+    'pages' => "plan\nplan/*");
+  $blocks['app_list'] = array(
+    'info' => t('Application List'),
+    'status' => TRUE,
+    'region' => -1,
+    'visibility' => BLOCK_VISIBILITY_LISTED,
+    'pages' => "application\napplication/*");
+  $blocks['developer_org_select'] = array(
+    'info' => t('Developer Organization Selection'),
+    'status' => TRUE,
+    'region' => 'header');
+  // This block is to display the registration / activation message
+  // has to be a block as can't send messages once the user has been logged out.
+  $blocks['activatemessage'] = array(
+    'info' => t('Activation Message'),
+    'status' => TRUE,
+    'cache' => DRUPAL_NO_CACHE,
+    'region' => 'menu_bar');
+  $blocks['app_details_menu'] = array(
+    'info' => t('Application Menu'),
+    'status' => TRUE,
+    'cache' => DRUPAL_NO_CACHE,
+    'region' => 'secondary_content');
+  $blocks['apim_notification_count'] = array(
+    'info' => t('APIM Notification Count'),
+    'status' => TRUE,
+    'cache' => DRUPAL_NO_CACHE,
+    'region' => 'header');
+  return $blocks;
+}
+
+/**
+ * Implementation of hook_block_view().
+ */
+function ibm_apim_block_view($delta = '') {
+  global $user;
+  $block = array();
+  switch ($delta) {
+    case 'developer_org_select' :
+      $block['subject'] = NULL;
+      $markup = ibm_apim_select_developer_menu();
+      $block['content'] = array('#markup' => $markup);
+      break;
+    case 'api_list' :
+      $block['subject'] = t('APIs');
+      $result = api_list_contents();
+      $items = array();
+      if (is_array($result)) {
+        foreach ($result as $item) {
+          $items[] = array(
+            'data' => l(check_plain($item['name']), 'api/' . check_plain($item['id']) . '/' . check_plain($item['version'])));
+        }
+        $block['content'] = theme('item_list', array('items' => $items));
+      }
+      else {
+        $items[] = array('data' => $result);
+        $block['content'] = array(
+          '#markup' => '<p>' . check_plain($result) . '</p>');
+      }
+      break;
+    case 'plan_list' :
+      $block['subject'] = t('Plan List');
+      $result = plan_list_contents();
+      $items = array();
+      if (is_array($result)) {
+        foreach ($result as $item) {
+          $items[] = array(
+            'data' => l(check_plain($item['name']), 'plan/' . check_plain($item['id']) . '/' . check_plain($item['version'])));
+        }
+        $block['content'] = theme('item_list', array('items' => $items));
+      }
+      else {
+        $items[] = array('data' => $result);
+        $block['content'] = array(
+          '#markup' => '<p>' . check_plain($result) . '</p>');
+      }
+      break;
+    case 'app_list' :
+      $block['subject'] = t('Applications');
+      $result = application_list_contents();
+      $items = array();
+      if (is_array($result)) {
+        foreach ($result as $item) {
+          $items[] = array(
+            'data' => l(check_plain($item['name']), 'application/' . check_plain($item['id'])));
+        }
+      }
+      $items[] = array(
+        'data' => l(t('Register New Application'), 'application/new'));
+      $block['content'] = theme('item_list', array('items' => $items));
+      break;
+    case 'activatemessage' :
+      if (isset($_COOKIE['Drupal_visitor_logoff']) && isset($_COOKIE['Drupal_visitor_ibmapimactivate'])) {
+        if ($_COOKIE['Drupal_visitor_logoff'] == 1 && $_COOKIE['Drupal_visitor_ibmapimactivate'] == 1 && !user_is_logged_in()) {
+          drupal_set_message(t('You have been sent an account activation email. You need to click on the link in it to activate your account before you can login.'));
+          user_cookie_save(array('logoff' => 0));
+          user_cookie_save(array('ibmapimactivate' => 0));
+        }
+      }
+      $block = array('subject' => t('Activate'), 'content' => '');
+      break;
+    case 'app_details_menu' :
+
+      // Only show this link on the collection of applications
+      if ($user->uid && arg(0) == 'application' && arg(1) == NULL) {
+        $content = '<span class="registerApp"><a href="' . url("application/new") . '">' . t('Register new Application') . '</a></span>';
+        $block = array('subject' => '<none>', 'content' => $content);
+      }
+      break;
+    case 'apim_notification_count' :
+      if (user_is_logged_in()) {
+        $block['subject'] = NULL;
+        $markup = ibm_apim_notification_count_block();
+        $block['content'] = array('#markup' => $markup);
+      }
+      break;
+  }
+  return $block;
+}
+
+/**
+ * A function to get the APIm config
+ *
+ *
+ * @return string NULL if an error occurs otherwise an array of the apim config.
+ */
+function _ibm_apim_get_apim_config() {
+  global $base_url;
+  $url = '/v1/portal/config?originURL=' . drupal_encode_path($base_url);
+  $result = _ibm_apim_call($url, 'user', TRUE);
+  if (isset($result) && isset($result->data)) {
+    $config_data = $result->data;
+  }
+
+  return $config_data;
+}
+
+/**
+ * A helper function to use when submitted an IBM API GET call
+ *
+ * @param
+ *          string url
+ *          The IBM APIm API URL
+ *
+ * @param
+ *          string auth
+ *          The authorization string to use, the default is the current user
+ *
+ * @return array NULL if an error occurs otherwise an array with data from the API.
+ *
+ * @see _ibm_apim_call_base()
+ */
+function _ibm_apim_call($url, $auth = 'user', $getting_config = FALSE) {
+  $returnValue = NULL;
+  return _ibm_apim_call_base($url, 'GET', $auth, NULL, TRUE, FALSE, $getting_config);
+}
+
+/**
+ * A helper function to use when submitted an IBM API GET call.
+ * This
+ * function is only needed if you need the raw return data, for instance
+ * when retrieving an image.
+ *
+ * @param
+ *          string url
+ *          The IBM APIm API URL
+ *
+ * @param
+ *          string auth
+ *          The authorization string to use, the default is the current user
+ *
+ * @return array NULL if an error occurs otherwise a result object.
+ *
+ * @see _ibm_apim_call_base()
+ */
+function ibm_apim_raw_data($url, $auth = 'user') {
+  $returnValue = NULL;
+  return _ibm_apim_call_base($url, 'GET', $auth, NULL, FALSE, TRUE);
+}
+
+/**
+ * A helper function to use when submitted an IBM API POST call
+ *
+ * @param
+ *          string url
+ *          The IBM APIm API URL
+ *
+ * @param
+ *          string data
+ *          A string containing the JSON data to submit to the IBM API
+ *
+ * @param
+ *          string auth
+ *          The authorization string to use, the default is the current user
+ *
+ * @return array NULL if an error occurs otherwise an array with data from the API.
+ *
+ * @see _ibm_apim_call_base()
+ */
+function _ibm_apim_post($url, $data, $auth = 'user') {
+  $returnValue = NULL;
+  return _ibm_apim_call_base($url, 'POST', $auth, $data);
+}
+
+/**
+ * A helper function to use when submitted an IBM API PUT call
+ *
+ * @param
+ *          string url
+ *          The IBM APIm API URL
+ *
+ * @param
+ *          string data
+ *          A string containing the JSON data to submit to the IBM API
+ *
+ * @param
+ *          string auth
+ *          The authorization string to use, the default is the current user
+ *
+ * @return array NULL if an error occurs otherwise an array with data from the API.
+ *
+ * @see _ibm_apim_call_base()
+ */
+function ibm_apim_put($url, $data, $auth = 'user') {
+  $returnValue = NULL;
+  return _ibm_apim_call_base($url, 'PUT', $auth, $data);
+}
+
+/**
+ * A helper function to use when submitted an IBM API DELETE call
+ *
+ * @param
+ *          string url
+ *          The IBM APIm API URL
+ *
+ * @param
+ *          string auth
+ *          The authorization string to use, the default is the current user
+ *
+ * @return array NULL if an error occurs otherwise an array with data from the API.
+ *         Note that DELETE calls usually return nothing in which this function
+ *         will return an empty string.
+ *
+ * @see _ibm_apim_call_base()
+ */
+function _ibm_apim_delete($url, $auth = 'user') {
+  $returnValue = NULL;
+  return _ibm_apim_call_base($url, 'DELETE', $auth);
+}
+
+/**
+ * Turns a string of JSON into a PHP object.
+ */
+function _ibm_apim_get_json($string) {
+  $decoded = json_decode($string, TRUE);
+  return $decoded;
+}
+
+/**
+ * If the developer mode config parameter is true then sets options
+ * on a curl resource to enable auto-accept of self-signed
+ * certificates.
+ */
+function _ibm_apim_curl_set_accept_ssl($resource) {
+  if (variable_get('ibm_apim_insecure')) {
+    curl_setopt($resource, CURLOPT_SSL_VERIFYPEER, FALSE);
+    curl_setopt($resource, CURLOPT_SSL_VERIFYHOST, 0);
+  }
+}
+
+function _ibm_apim_json_http_request($url, $verb = 'GET', $headers = NULL, $data = NULL, $return_result = FALSE) {
+  // Use curl instead of drupal_http_request so that we can
+  // check the server certificates are genuine so that we
+  // do not fall foul of a man-in-the-middle attack.
+  $resource = curl_init();
+
+  curl_setopt($resource, CURLOPT_URL, $url);
+  curl_setopt($resource, CURLOPT_HTTPHEADER, $headers);
+  curl_setopt($resource, CURLOPT_RETURNTRANSFER, 1);
+
+  // Return the response header as part of the response
+  curl_setopt($resource, CURLOPT_HEADER, 1);
+
+  if ($verb != 'GET') {
+    curl_setopt($resource, CURLOPT_CUSTOMREQUEST, $verb);
+  }
+
+  if ($verb == 'PUT' || $verb == 'POST') {
+    curl_setopt($resource, CURLOPT_POSTFIELDS, $data);
+  }
+
+  // Enable auto-accept of self-signed certificates if this
+  // has been set in the module config by an admin.
+  _ibm_apim_curl_set_accept_ssl($resource);
+
+  $response = curl_exec($resource);
+  $http_status = curl_getinfo($resource, CURLINFO_HTTP_CODE);
+  $error = curl_error($resource);
+
+  // Construct the result object we expect
+  $result = new stdClass();
+
+  // Assign the response headers
+  $header_size = curl_getinfo($resource, CURLINFO_HEADER_SIZE);
+  $header_txt = substr($response, 0, $header_size);
+  $result->headers = array();
+
+  foreach (explode("\r\n", $header_txt) as $line) {
+    $parts = explode(': ', $line);
+    if (count($parts) == 2) {
+      $result->headers[$parts[0]] = $parts[1];
+    }
+  }
+
+  if ($error) {
+    // a return code of zero mostly likely means there has been a certificate error
+    // so make sure we surface this in the UI
+    if ($http_status == 0) {
+      throw new Exception(t('Could not communicate with server. Reason: ') . $error);
+    }
+  }
+
+  $result->data = substr($response, $header_size);
+
+  $result->code = $http_status;
+
+  curl_close($resource);
+
+  if (!$return_result) {
+    if ($result->data != '') {
+      $result->data = _ibm_apim_get_json($result->data);
+    }
+  }
+
+  return $result;
+}
+
+/**
+ * Where the real work to make a call to the IBM APIm API is done.
+ *
+ * @param
+ *          string url
+ *          The IBM APIm API URL
+ *
+ * @param
+ *          string verb
+ *          The HTTP verb to use, must be in the list: GET, PUT, DELETE, POST
+ *
+ * @param
+ *          string auth
+ *          The authorization string to use, the default is the current user. Other
+ *          options are:
+ *          admin - which will use the admin user registered in the
+ *          module configuration settings
+ *          NULL - use no authorization
+ *          any other value - will be included in the Authorization: Basic header
+ *          as is.
+ *
+ * @param
+ *          string data
+ *          A string containing the JSON data to submit to the IBM API
+ *
+ * @param
+ *          boolean message_errors
+ *          Should the function log errors?
+ *
+ * @param
+ *          boolean return_result
+ *          Normally only the result data is returned, if set to TRUE the entire
+ *          result object will be returned.
+ *
+ * @return array NULL if an error occurs otherwise an array with data from the API.
+ */
+function _ibm_apim_call_base($url, $verb, $auth = 'user', $data = NULL, $message_errors = TRUE, $return_result = FALSE, $getting_config = FALSE) {
+
+  // Ensure we have any necessary config
+  if ($getting_config == FALSE) {
+    _ibm_apim_check_and_get_config();
+  }
+  $apim_session = &_ibm_apim_get_apim_session();
+
+  $returnValue = NULL;
+  if (strpos($url, 'https://') !== 0) {
+    $url = 'https://' . variable_get('ibm_apim_host') . $url;
+  }
+
+  $headers = array('Content-Type: application/json', 'Accept: application/json');
+
+  if ($getting_config == FALSE) {
+    $headers[] = 'X-IBM-APIManagement-Context: ' . $apim_session['org'] . '.' . $apim_session['env'];
+  }
+
+  if ($auth == 'user') {
+    if (isset($apim_session['auth'])) {
+      $headers[] = 'Authorization: Basic ' . $apim_session['auth'];
+    }
+  }
+  elseif ($auth != NULL) {
+    $headers[] = 'Authorization: Basic ' . $auth;
+  }
+
+  $result = _ibm_apim_json_http_request($url, $verb, $headers, $data, $return_result);
+
+  watchdog(__FUNCTION__, '%verb %url %code', array(
+    '%verb' => $verb,
+    '%url' => $url,
+    '%code' => $result->code), WATCHDOG_NOTICE);
+
+  if ($getting_config && isset($result) && $result->code == 204) {
+    $result->data = NULL;
+    $returnValue = $result;
+  }
+  else {
+    if (isset($result) && $result->code >= 200 && $result->code < 300 && $return_result != true) {
+      $returnValue = $result;
+    }
+    else {
+      if ($message_errors) {
+        if ($return_result) {
+          // Need to convert to json if return_result was true as _ibm_apim_json_http_request()
+          // will not have done it
+          $result->data = _ibm_apim_get_json($result->data);
+        }
+        $json_result = $result->data;
+        $errors = $json_result['errors'];
+        if ($errors) {
+          foreach ($errors as $error) {
+            $keys = array_keys($error);
+            if ($keys) {
+              foreach ($keys as $key) {
+                if ($key != 'plans.planNotFound') {
+                  // Don't log errors about unpublished plans
+                  drupal_set_message(t('%data', array('%data' => $error[$key])), 'error');
+                  $returnValue = $result;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if ($return_result) {
+    return $result;
+  }
+  return $returnValue;
+}
+
+/**
+ * Load the user's developer organizations and store them in a session variable.
+ * The developer org is used in most IBM APIm API calls, storing it saves a lot
+ * of extra calls.
+ *
+ * @param
+ *          form
+ *          The form
+ *
+ * @param
+ *          form_state
+ *          The form state
+ *
+ * @param
+ *          string appId
+ *          The application ID that cooresponds to the secret
+ *
+ * @return array The form
+ */
+function _ibm_apim_load_developer_orgs() {
+  $apim_session = &_ibm_apim_get_apim_session();
+  if (isset($apim_session['developer_organizations'])) {
+    return $apim_session['developer_organizations'];
+  }
+  if (isset($apim_session['auth']) && !isset($apim_session['developer_organizations'])) {
+    $apim_session['developer_organizations'] = array();
+    $result = _ibm_apim_call('/v1/portal/orgs');
+    if (isset($result) && isset($result->data)) {
+      $apim_session['developer_organizations'] = $result->data;
+    }
+    return $apim_session['developer_organizations'];
+  }
+  return NULL;
+}
+
+/**
+ * Sets the current developer org in a session variable.
+ * Users may belong to
+ * multiple developer orgs.
+ *
+ * @param
+ *          string org_id
+ *          The org id
+ *
+ * @return array The form
+ */
+function _ibm_apim_set_current_developer_org($org_id) {
+  $orgs = _ibm_apim_load_developer_orgs();
+  $apim_session = &_ibm_apim_get_apim_session();
+  if ($orgs) {
+    foreach ($orgs as $org) {
+      if ($org['id'] == $org_id) {
+        $apim_session['current_developer_organizations'] = $org;
+        break;
+      }
+    }
+  }
+  watchdog(__FUNCTION__, 'Developer org set %data', array(
+    '%data' => json_encode($apim_session['current_developer_organizations'], JSON_PRETTY_PRINT)), WATCHDOG_NOTICE);
+  return $apim_session['current_developer_organizations'];
+}
+
+/**
+ * Gets the current developer org object from a session variable.
+ *
+ * @return array The the current developer org object or NULL if a user does not belong to a
+ *         developer org or one is not set.
+ */
+function ibm_apim_get_current_developer_org() {
+  $apim_session = &_ibm_apim_get_apim_session();
+  if (isset($apim_session['current_developer_organizations'])) {
+    return $apim_session['current_developer_organizations'];
+  }
+  return NULL;
+}
+
+/**
+ * Generate an array suitable as input for a form select box.
+ * The data will
+ * be the API methods available for an application id.
+ *
+ * @param
+ *          string appId
+ *          The application id
+ *
+ * @return array The array of methods available for the given appId
+ */
+function _ibm_apim_apis_for_app_select_options($appId) {
+  $returnValue = array();
+  if ($appId == '') {
+    return $returnValue;
+  }
+  $returnValue[''] = 'Select a method';
+  $developerOrg = ibm_apim_get_current_developer_org()['id'];
+  $url = '/v1/portal/orgs/' . $developerOrg . '/apps/' . $appId . '/subscriptions';
+  $result = _ibm_apim_call($url);
+  if (isset($result) && isset($result->data)) {
+    $plan_data = $result->data;
+  }
+  if (count($plan_data) == 0) {
+    return NULL;
+  }
+  foreach ($plan_data as $plan_details) {
+    if ($plan_details['approved'] == false) {
+      continue;
+    }
+    $result = _ibm_apim_call($plan_details['planURL']);
+    if (isset($result) && isset($result->data)) {
+      $plan_info = $result->data;
+    }
+    if ($plan_info['apis']) {
+      foreach ($plan_info['apis'] as $api) {
+        if ($api['resources']) {
+          foreach ($api['resources'] as $resource) {
+            $returnValue[$api['api']['id'] . ':' . $api['api']['version'] . ':' . $developerOrg . ':' . $resource['id']] = $resource['verb'] . ' ' . $api['api']['name'] . '/' . $resource['name'];
+          }
+        }
+      }
+    }
+  }
+  return $returnValue;
+}
+
+/**
+ * Change a user password.
+ *
+ * @param
+ *          string new_password
+ *          The new password to set
+ *
+ * @param
+ *          string user_id
+ *          The user ID
+ *
+ * @param
+ *          string email
+ *          The email for the user
+ *
+ * @param
+ *          string current_pass
+ *          The users current password
+ */
+function _ibm_apim_change_user_password($new_password, $user_id, $email, $current_pass) {
+  $url = '/v1/portal/me/password';
+  $data = '{"newPassword": "' . $new_password . '", "oldPassword": "' . $current_pass . '"}';
+  $custom_auth = base64_encode($email . ':' . $current_pass);
+
+  $result = ibm_apim_put($url, $data, $custom_auth);
+  if (isset($result)) {
+    $apim_session = &_ibm_apim_get_apim_session();
+    $apim_session['auth'] = base64_encode($email . ':' . $new_password);
+  }
+}
+
+/**
+ * Reset a user's password.
+ * This generates an e-mail from the IBM APIm
+ * system.
+ *
+ * @param
+ *          string email
+ *          The email of the user to reset
+ */
+function _ibm_apim_reset_user_password($email) {
+  $url = '/v1/portal/users/forgot-password';
+  $data = '{"emailURLSuffix": "?q=ibm_apim/forgotpwd/x", "name": "' . $email . '"}';
+  $result = _ibm_apim_post($url, $data);
+  if (isset($result)) {
+    drupal_set_message(t('Password reset e-mail successfully sent.'));
+  }
+}
+
+/**
+ * Implementation of hook_form_user_pass_alter
+ */
+function ibm_apim_form_user_pass_alter(&$form, &$form_state) {
+  $form['#submit'] = array('ibm_apim_user_pass_submit');
+}
+
+/**
+ * Submit handler to reset a user's password
+ */
+function ibm_apim_user_pass_submit(&$form, &$form_state) {
+  _ibm_apim_reset_user_password($form_state['values']['name']);
+}
+
+/**
+ * Callback to handle forgotten passwords
+ * This is to handle a specific URL that APIm will send out as its
+ * forgotten password link.
+ * The URL will include base64 encoded JSON with the username
+ * and some temporary credentials allocated by the server to enable us to update the
+ * saved password once the user has specified a new one.
+ */
+function ibm_apim_activate_id_callback($path = NULL) {
+  global $_GET;
+  if (isset($_GET['activationToken'])) {
+    $actToken = $_GET['activationToken'];
+  }
+
+  if (isset($actToken)) {
+    // ACTIVATE USER LINK
+
+    // decode the base64 encoded JSON in the incoming URL
+    $activationObj = json_decode(base64_decode($actToken));
+    // set global variables with the temp auth credentials from the incoming URL payload
+    global $tempUser;
+    global $tempPwd;
+    $tempUser = $activationObj->{'authentication'}->{'username'};
+    $tempPwd = $activationObj->{'authentication'}->{'password'};
+    $org = $activationObj->{'providerContext'}->{'orgID'};
+    $env = $activationObj->{'providerContext'}->{'environmentID'};
+    $userid = $activationObj->{'username'};
+
+    // verify the temp userid and password are valid
+    $url = $activationObj->{'url'};
+    if (!isset($url)) {
+      drupal_set_message(t('Token did not contain a valid URL. Contact the system administrator for assistance.'), 'error');
+      drupal_goto();
+    }
+    $headers = array(
+      'Content-Type: application/json',
+      'Accept: application/json',
+      "X-IBM-APIManagement-Context: " . $org . '.' . $env,
+      'Authorization: Basic ' . base64_encode($tempUser . ':' . $tempPwd));
+
+    $data = '{}';
+    $result = _ibm_apim_json_http_request($url, 'POST', $headers, $data);
+
+    if (isset($result) && $result->code >= 200 && $result->code < 300) {
+      drupal_set_message(t('Account successfully activated, please login to continue.'));
+      drupal_goto('user/login');
+    }
+    else {
+      // invalid credentials, redirect to login form
+      drupal_set_message(t('Invalid authentication token. Contact the system administrator.'), 'error');
+      drupal_goto('user/login');
+    }
+  }
+  else {
+    drupal_set_message(t('Invalid URL. Contact the system administrator for assistance.'), 'error');
+    drupal_goto();
+  }
+}
+
+/**
+ * Form to allow user to reset their password.
+ *
+ * @param
+ *          form
+ *          The form
+ *
+ * @param
+ *          form_state
+ *          The form state
+ *
+ * @param
+ *          string path
+ *          The token path
+ *
+ * @return array The form
+ */
+function ibm_apim_forgotpwd_form($form, &$form_state, $path = NULL) {
+  global $_GET;
+  $resetPasswordToken = '';
+  if (isset($_GET['resetPasswordToken'])) {
+    $resetPasswordToken = $_GET['resetPasswordToken'];
+  }
+  else {
+    drupal_set_message(t('Missing resetPasswordToken. Contact the system administrator for assistance.'), 'error');
+    drupal_goto();
+  }
+  $form = array();
+  $form['password'] = array(
+    '#type' => 'password',
+    '#title' => 'Password',
+    '#size' => 25,
+    '#maxlength' => 50,
+    '#required' => TRUE,
+    '#default_value' => '');
+  $form['confirmpassword'] = array(
+    '#type' => 'password',
+    '#title' => 'Confirm Password',
+    '#size' => 25,
+    '#maxlength' => 50,
+    '#required' => TRUE,
+    '#default_value' => '');
+  $form['token'] = array('#type' => 'hidden', '#value' => $resetPasswordToken);
+
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Submit'));
+  $form['#submit'] = array('ibm_apim_forgotpwd_form_submit_handler');
+  return $form;
+}
+
+/**
+ * Submit handler for the forgot password form.
+ *
+ * @param
+ *          form
+ *          The form
+ *
+ * @param
+ *          form_state
+ *          The form state
+ */
+function ibm_apim_forgotpwd_form_submit_handler($form, &$form_state) {
+  global $user;
+  $password = $form_state['values']['password'];
+  $confirmpassword = $form_state['values']['confirmpassword'];
+  $resetPasswordToken = $form_state['values']['token'];
+
+  if (empty($resetPasswordToken)) {
+    drupal_set_message(t('Missing token. Contact the system administrator.'), 'error');
+    drupal_goto('');
+    return;
+  }
+  if (empty($password) || empty($confirmpassword) || ($password != $confirmpassword)) {
+    drupal_set_message(t('Password and confirmation password do not match. Try again.'), 'error');
+    drupal_goto('user/login');
+    return;
+  }
+
+  // decode the base64 encoded JSON in the incoming URL
+  $activationObj = json_decode(base64_decode($resetPasswordToken));
+  // set global variables with the temp auth credentials from the incoming URL payload
+  global $tempUser;
+  global $tempPwd;
+  $tempUser = $activationObj->{'authentication'}->{'username'};
+  $tempPwd = $activationObj->{'authentication'}->{'password'};
+  $org = $activationObj->{'providerContext'}->{'orgID'};
+  $env = $activationObj->{'providerContext'}->{'environmentID'};
+  $userid = $activationObj->{'username'};
+
+  // When processing the one-time login link, we have to make sure that a user
+  // isn't already logged in.
+  if ($user->uid) {
+    // The existing user is already logged in.
+    if ($user->name == $userid) {
+      drupal_set_message(t('You are logged in as %user. <a href="!user_edit">Change your password.</a>', array(
+        '%user' => $user->name,
+        '!user_edit' => url("user/$user->uid/edit"))));
+    }
+    // A different user is already logged in on the computer.
+    else {
+      $reset_link_account = user_load_by_name($userid);
+      if (!empty($reset_link_account)) {
+        drupal_set_message(t('Another user (%other_user) is already logged into the site on this computer, but you tried to use a one-time link for user %resetting_user. Please <a href="!logout">logout</a> and try using the link again.', array(
+          '%other_user' => $user->name,
+          '%resetting_user' => $reset_link_account->name,
+          '!logout' => url('user/logout'))));
+      }
+      else {
+        // Invalid one-time link specifies an unknown user.
+        drupal_set_message(t('The one-time login link you clicked is invalid.'));
+      }
+    }
+    drupal_goto();
+  }
+
+  // verify the temp userid and password are valid
+  $url = 'https://' . variable_get('ibm_apim_host') . '/v1/portal/users/' . drupal_encode_path($userid) . '/reset-password';
+  $headers = array(
+    'Content-Type: application/json',
+    'Accept: application/json',
+    "X-IBM-APIManagement-Context: " . $org . '.' . $env,
+    'Authorization: Basic ' . base64_encode($tempUser . ':' . $tempPwd));
+
+  $data = '{"password": "' . $password . '"}';
+
+  $result = _ibm_apim_json_http_request($url, 'POST', $headers, $data);
+
+  if (isset($result) && $result->code >= 200 && $result->code < 300) {
+    // log the user in
+    global $user;
+    $user = user_load_by_name($userid);
+
+    // update user password
+    $user->password = $password;
+
+    // save user
+    user_save((object) array('uid' => $user->uid), (array) $user);
+
+    $login_array = array('name' => $userid);
+    user_login_finalize($login_array);
+
+    // redirect to the front page
+    drupal_set_message(t('Password successfully updated.'));
+    drupal_goto('<front>');
+  }
+  else {
+    // there was problem with the entered passwords, so stay on the same page
+    if (isset($result->data['errors'])) {
+      // show the errors that the server has returned
+      foreach ($result->data['errors'] as $error_struc) {
+        foreach ($error_struc as $key => $error) {
+          drupal_set_message($error, 'error');
+        }
+      }
+    }
+    else {
+      // Assume it is a token error and redirect to the user/password page.
+      drupal_set_message(t('Invalid authentication token2. Contact the system administrator.'), 'error');
+      drupal_goto('user/password');
+    }
+  }
+}
+
+/**
+ * Callback for serving up the Swagger 2 JSON
+ */
+function _ibm_apim_swaggerjson_callback($apiid, $apiversion) {
+  // handle incoming requests for Swagger JSON by converting the output from the APIm server
+  // into the correct SWAGGER 2 JSON
+  if (isset($apiid) && isset($apiversion)) {
+    $api = api_details_contents($apiid, $apiversion);
+    if (isset($api)) {
+      $swaggerjson = _ibm_apim_generate_json_per_api($api);
+      if (isset($swaggerjson)) {
+        return drupal_json_output($swaggerjson);
+      }
+      else {
+        return FALSE;
+      }
+    }
+    else {
+      return FALSE;
+    }
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Gets all of the members of the specified developer org
+ *
+ * @param
+ *          string developer_org
+ *          The a API ID
+ *
+ * @return array An array containing details for the members of the org and their roles
+ */
+function _ibm_apim_get_members($developer_org) {
+  $url = '/v1/portal/orgs/' . $developer_org . '/members';
+  $returnValue = NULL;
+  $result = _ibm_apim_call($url);
+  if (isset($result) && isset($result->data)) {
+    $data = $result->data;
+  }
+  if (isset($data)) {
+    $returnValue = array();
+    foreach ($data as $member_record) {
+      $temparray = array();
+      $temparray['id'] = $member_record['id'];
+      $temparray['name'] = $member_record['name'];
+      $temparray['status'] = $member_record['status'];
+      $temparray['url'] = $member_record['url'];
+
+      $returnValue[] = $temparray;
+    }
+  }
+  return $returnValue;
+}
+
+/**
+ * Form to delete a user from an org
+ *
+ * @param
+ *          form
+ *          The form
+ *
+ * @param
+ *          form_state
+ *          The form state
+ */
+function _ibm_apim_delete_user_from_org($form, &$form_state) {
+  $url = '/v1/portal/orgs/' . $form_state['values']['org'] . '/members/' . $form_state['values']['id'];
+  $result = _ibm_apim_delete($url);
+  if (isset($result)) {
+    drupal_set_message(t('User removed successfully.'));
+  }
+  $form_state['redirect'] = 'myorg';
+}
+
+/**
+ * Form to resend a user's invite email from the IBM APIm system.
+ *
+ * @param
+ *          form
+ *          The form
+ *
+ * @param
+ *          form_state
+ *          The form state
+ */
+function _ibm_apim_resend_user_invite_from_org($form, &$form_state) {
+  watchdog(__FUNCTION__, 'resend invite to %data', array(
+    '%data' => $form_state['values']['id']), WATCHDOG_NOTICE);
+  $apim_session = &_ibm_apim_get_apim_session();
+  $url = '/v1/users/' . $form_state['values']['id'] . '/resendInvite?' . 'idpOrganization=' . $apim_session['org'] . '&idpEnvironment=' . $apim_session['env'] . '&consumerOrg=' . $form_state['values']['org'];
+  $result = _ibm_apim_post($url, '');
+  if (isset($result)) {
+    drupal_set_message(t('Invite resent successfully.'));
+  }
+
+  $form_state['redirect'] = 'myorg';
+}
+
+/**
+ * Determine if the current user is the owner of the current developer org
+ *
+ * @return boolean TRUE if the user is the owner of the current developer org, FALSe otherwise.
+ */
+function _ibm_apim_user_is_org_owner() {
+  global $user;
+
+  $org = ibm_apim_get_current_developer_org();
+  if (isset($org) && isset($user->data)) {
+    $url = '/v1/portal/orgs/' . $org['id'] . '/owner';
+    $result = _ibm_apim_call($url);
+    if (isset($result) && isset($result->data)) {
+      if ($result->data['id'] === $user->data['remote_id']) {
+        return TRUE;
+      }
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Page callback to display the members of the current developer org
+ */
+function _ibm_apim_myorg_page() {
+  $markup = '';
+
+  $image = theme('image', array(
+    'path' => file_create_url(drupal_get_path('module', 'ibm_apim') . '/images/user_add.png'),
+    'width' => '20',
+    'height' => '20',
+    'title' => 'Add a user',
+    'alt' => 'Invite user'));
+
+  $link = array(
+    '#type' => 'link',
+    '#title' => '<strong>Add a user</strong> &nbsp;' . $image,
+    '#href' => 'myorg/nojs',
+    '#options' => array('html' => TRUE),
+    '#ajax' => array('method' => 'replace', 'effect' => 'fade'));
+
+  $markup .= '<div class="myorgAddUserLink">' . drupal_render($link) . '</div>' . '<div class="clearBoth" id="ajax-response-goes-here"></div>';
+
+  $developer_org = ibm_apim_get_current_developer_org();
+  if (isset($developer_org)) {
+    $members = _ibm_apim_get_members($developer_org['id']);
+    if ($members) {
+      foreach ($members as $member) {
+        $user_form = drupal_get_form('_ibm_apim_myorg_user_form_' . $member['id'], $member, $developer_org['id']);
+        $markup .= drupal_render($user_form);
+      }
+    }
+    drupal_set_title($developer_org['name']);
+  }
+  return array('#markup' => $markup);
+}
+
+/**
+ * AJAX callback to add the invite user form to the organization page.
+ *
+ * @param
+ *          string ajax
+ *          Needed by Drupal's AJAX system
+ */
+function _ibm_apim_myorg_ajax_link_callback($ajax) {
+  if ($ajax == 'ajax') {
+    $_ibm_apim_invite_user_form = drupal_get_form('_ibm_apim_invite_user_form');
+    $markup = drupal_render($_ibm_apim_invite_user_form);
+
+    $commands = array();
+    // Ajax command to replace the #ajax-response-goes-here element with the form.
+    $commands[] = ajax_command_replace('#ajax-response-goes-here', '<div class="clearBoth" id="ajax-response-goes-here">' . $markup . '</div>');
+    // Add a visual "changed" marker.
+    $commands[] = ajax_command_changed('#ajax-response-goes-here');
+    // Menu 'page callback' and #ajax['callback'] functions return render
+    // arrays. Render array wrapper for the AJAX commands array.
+    ajax_deliver(array('#type' => 'ajax', '#commands' => $commands));
+  }
+  else {
+    return array('#markup' => '');
+  }
+}
+
+/**
+ * Form to invite a user to the current developer org
+ *
+ * @param
+ *          form
+ *          The form
+ *
+ * @param
+ *          form_state
+ *          The form state
+ */
+function _ibm_apim_invite_user_form($form, $form_state) {
+  $form['invite_user_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#attributes' => array('class' => array('container-inline')));
+  $form['invite_user_fieldset']['developer_org'] = array(
+    '#type' => 'hidden',
+    '#value' => ibm_apim_get_current_developer_org()['id']);
+  $form['invite_user_fieldset']['new_email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('New user\'s e-mail address'),
+    '#required' => TRUE);
+  $form['invite_user_fieldset']['invite_button'] = array(
+    '#value' => t('Invite new user'),
+    '#type' => 'submit',
+    '#name' => 'invite_user',
+    '#submit' => array('_ibm_apim_invite_user_to_org'));
+  return $form;
+}
+
+/**
+ * Submit handler to invite a user to the current org
+ *
+ * @param
+ *          form
+ *          The form
+ *
+ * @param
+ *          form_state
+ *          The form state
+ */
+function _ibm_apim_invite_user_to_org($form, &$form_state) {
+  $developerOrgs = ibm_apim_get_current_developer_org()['id'];
+  $url = '/v1/portal/orgs/' . $developerOrgs . '/members';
+  $result = _ibm_apim_call($url);
+  if (isset($result) && $result->code >= 200 && $result->code < 300) {
+    $data = '{"emailURLSuffix": "?q=ibm_apim/activate/x", ' . '"name":"' . $form_state['values']['new_email'] . '"}';
+    $add_member_result = _ibm_apim_post($url, $data);
+    if (isset($add_member_result) && $add_member_result->code >= 200 && $add_member_result->code < 300) {
+      drupal_set_message(t('Invite sent successfully.'));
+    }
+  }
+  $form_state['redirect'] = 'myorg';
+}
+
+/**
+ * Form to display details about a user
+ *
+ * @param
+ *          form
+ *          The form
+ *
+ * @param
+ *          form_state
+ *          The form state
+ *
+ * @param
+ *          string user
+ *          The user id to display
+ *
+ * @param
+ *          string developer_org ID
+ *          The developer org for the user
+ */
+function _ibm_apim_myorg_user_form($form, &$form_state, $otheruser, $developer_org) {
+  global $user;
+  $fieldset_title = $otheruser['name'];
+  $form['user_fieldset_' . $otheruser['id']] = array(
+    '#title' => $fieldset_title,
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE);
+
+  $form['user_fieldset_' . $otheruser['id']]['id'] = array(
+    '#type' => 'hidden',
+    '#value' => $otheruser['id']);
+  $form['user_fieldset_' . $otheruser['id']]['org'] = array(
+    '#type' => 'hidden',
+    '#value' => $developer_org);
+
+  $form['user_fieldset_' . $otheruser['id']]['status'] = array(
+    '#markup' => 'Status: ' . $otheruser['status'] . '<br/><br/>');
+
+  // can't remove yourself since not allowed to remove the owner of an org
+  // and you'd only be seeing this form if you are the org owner
+  if ($otheruser['name'] != $user->name) {
+    $form['user_fieldset_' . $otheruser['id']]['delete_user'] = array(
+      '#value' => t('Remove user'),
+      '#type' => 'submit',
+      '#name' => 'remove_user',
+      '#submit' => array('_ibm_apim_delete_user_from_org'));
+  }
+  if ($otheruser['status'] == 'pending') {
+    $form['user_fieldset_' . $otheruser['id']]['resend_invite'] = array(
+      '#value' => t('Resend invite'),
+      '#type' => 'submit',
+      '#name' => 'resend_invite',
+      '#submit' => array('_ibm_apim_resend_user_invite_from_org'));
+  }
+  return $form;
+}
+
+/**
+ * Implementation of hook_forms().
+ * Catching the _ibm_apim_myorg_user_form_<userid> to
+ * return _ibm_apim_myorg_user_form, this is required to have a unique form id on the page
+ * for each member of an organization.
+ */
+function ibm_apim_forms($form_id, $args) {
+  $forms = array();
+  if (strpos($form_id, '_ibm_apim_myorg_user_form_') === 0) {
+    $forms[$form_id] = array('callback' => '_ibm_apim_myorg_user_form');
+  }
+  return $forms;
+}
+
+/**
+ * Generates the HTML for the dropdown organization selection menu
+ */
+function ibm_apim_select_developer_menu() {
+  $result = _ibm_apim_load_developer_orgs();
+  $markup = '';
+  if (isset($result)) {
+    if (count($result) == 1) {
+      _ibm_apim_set_current_developer_org($result[0]['id']);
+      $markup .= '<div class="elipsis-names singleOrg" title="' . t("Current organization name: ") . check_plain($result[0]['name']) . '">' . check_plain($result[0]['name']) . '</div>';
+    }
+    elseif (count($result) > 1) {
+      $selected = ibm_apim_get_current_developer_org();
+      if (!isset($selected)) {
+        $selected = _ibm_apim_set_current_developer_org($result[0]['id']);
+      }
+      $selected_name = check_plain($selected['name']);
+      $selected = check_plain($selected['id']);
+      $markup .= '<ul class="menu orgmenu"><li><a href="#"><div class="elipsis-names">' . $selected_name . '</div> <span class="dropit-icon ui-icon-triangle-1-s"></span></a>';
+      $markup .= '<ul id="dropdown-menu" class="dropdown-menu">';
+      foreach ($result as $developer_org) {
+        $markup .= '<li class="elipsis-names" title="' . check_plain($developer_org['name']) . '">' . l(check_plain($developer_org['name']), 'ibm_apim/org/' . check_plain($developer_org['id']), array(
+          'html' => TRUE,
+          'attributes' => array('class' => array('elipsis-names')))) . '</li>';
+      }
+      $markup .= '</ul></li></ul>';
+    }
+  }
+  return $markup;
+}
+
+/**
+ * Generates the HTML for the notification count block
+ */
+function ibm_apim_notification_count_block() {
+  $result = _ibm_apim_get_notification_count();
+  $markup = '';
+  $class = '';
+  if (isset($result)) {
+    drupal_add_library('system', 'ui.dialog');
+    drupal_add_js('jQuery(document).ready(function(){
+                var notBox = document.getElementById("notificationBox");
+                notBox.addEventListener("click", function() {
+                  jQuery("#notificationBox").text("0");
+                  jQuery("#notificationBox").addClass("greyBox");
+                }, false);
+        });', 'inline');
+    if ($result['unreadCount'] == 0) {
+      $class = 'greyBox';
+    }
+    $markup .= '<div class="notification"><button type="button" id="planSignupButton" data-href="?q=ibm_apim/notifications" data-title="Notifications" data-name="content" data-rel="width:500;height:550;resizable:true;position:[center,60]" class="simple-dialog my-link-class"><div id="notificationBox" class="notificationBox ' . $class . '">' . check_plain($result['unreadCount']) . '</div></button></div>';
+  }
+  return $markup;
+}
+
+/**
+ * A function to retrieve the notification count.
+ */
+function _ibm_apim_get_notification_count() {
+  $returnValue = NULL;
+  $apim_session = &_ibm_apim_get_apim_session();
+
+  $developerOrgs = ibm_apim_get_current_developer_org()['id'];
+  if (isset($developerOrgs)) {
+    $developer_org_url = '/orgs/' . $developerOrgs;
+    $url = '/v1/portal' . $developer_org_url . '/notifications/count';
+    $result = _ibm_apim_call($url);
+    if (isset($result) && isset($result->data)) {
+      $returnValue = $result->data;
+    }
+  }
+  return $returnValue;
+}
+
+/**
+ * A function to retrieve the notification messages.
+ */
+function _ibm_apim_get_notifications() {
+  $returnValue = NULL;
+  $apim_session = &_ibm_apim_get_apim_session();
+
+  $developerOrgs = ibm_apim_get_current_developer_org()['id'];
+  if (isset($developerOrgs)) {
+    $developer_org_url = '/orgs/' . $developerOrgs;
+    $url = '/v1/portal' . $developer_org_url . '/notifications';
+    $result = _ibm_apim_call($url);
+    if (isset($result) && isset($result->data)) {
+      $returnValue = $result->data;
+    }
+  }
+  return $returnValue;
+}
+
+/**
+ * Callback to display notification messages
+ */
+function _ibm_apim_notifications_callback() {
+  $output = '';
+  $result = _ibm_apim_get_notifications();
+  if ($result) {
+    $output = '<div class="activityView"><div class="activityViewInner">';
+    foreach ($result as $message) {
+      $class = '';
+      $msgoutput = '<div class="viewActivity">';
+      $msgoutput .= '<div class="viewActivityInner"><div class="paddingHorizontal">';
+      switch ($message['type']) {
+        case "alert" :
+          $class = "ALERT";
+          break;
+        case "event" :
+          $class = "EVENT";
+          break;
+        case "error" :
+          $class = "ERROR";
+          break;
+        case "success" :
+          $class = "SUCCESS";
+          break;
+        default :
+          $class = "EVENT";
+          break;
+      }
+      $msgoutput .= '<div class="statusIcon notificationStatusIconAligment ' . $class . '"></div>';
+      $msgoutput .= '<div class="notificationMessageAligment">' . check_plain($message['message']) . '</div></div></div>';
+      $msgoutput .= '<div class="clearBoth"></div><div class="subText"><div class="paddingHorizontal">';
+      $updateddate = new DateTime($message['datetime']);
+      $msgoutput .= '<div>' . $updateddate->format('Y-m-d H:i:s') . '</div></div></div><div class="activityBorder"></div></div>';
+      $output .= $msgoutput;
+    }
+    $output .= '</div></div>';
+  }
+  return $output;
+}
+
+/**
+ * A function to retrieve the user settings.
+ */
+function ibm_apim_get_user_settings() {
+  global $user;
+  $returnValue = NULL;
+  $apim_session = &_ibm_apim_get_apim_session();
+
+  $developerOrgs = ibm_apim_get_current_developer_org()['id'];
+  if (isset($developerOrgs)) {
+    $developer_org_url = '/orgs/' . $developerOrgs;
+    $url = '/v1/portal' . $developer_org_url . '/members/' . $apim_session['memberid'] . '/settings';
+    $result = _ibm_apim_call($url);
+    if (isset($result) && isset($result->data)) {
+      $returnValue = $result->data;
+    }
+  }
+  return $returnValue;
+}
+
+/**
+ * A function to retrieve the notification settings for a given app.
+ */
+function ibm_apim_get_app_notification_settings($appID = NULL) {
+  $returnValue = NULL;
+  $currentsettings = ibm_apim_get_user_settings();
+  if (isset($appID) && isset($currentsettings) && isset($currentsettings['appNotificationSettings'])) {
+    foreach ($currentsettings['appNotificationSettings'] as $setting) {
+      // get appID from the appURL
+      $settingid = _ibm_apim_get_id_from_appurl($setting['appURL']);
+      if ($settingid == $appID) {
+        $returnValue = $setting;
+      }
+    }
+  }
+  return $returnValue;
+}
+
+/**
+ * A function to update the user settings.
+ */
+function ibm_apim_update_user_settings($appURL = NULL, $newsettings = NULL) {
+  global $user;
+  $returnValue = NULL;
+  $found = false;
+  if (isset($appURL) && isset($newsettings)) {
+    $apim_session = &_ibm_apim_get_apim_session();
+    $developerOrgs = ibm_apim_get_current_developer_org()['id'];
+    if (isset($developerOrgs)) {
+      // get current settings
+      $currentsettings = ibm_apim_get_user_settings();
+      $mergedsettings = array();
+      if (isset($currentsettings) && isset($currentsettings['appNotificationSettings'])) {
+        foreach ($currentsettings['appNotificationSettings'] as $setting) {
+          // get appID from the appURLs
+          if (isset($setting['appURL'])) {
+            $settingid = _ibm_apim_get_id_from_appurl($setting['appURL']);
+            $desiredid = _ibm_apim_get_id_from_appurl($appURL);
+            if ($settingid == $desiredid) {
+              // use new values
+              $mergedsettings[] = $newsettings;
+              $found = true;
+            }
+          }
+          else {
+            $mergedsettings[] = $setting;
+          }
+        }
+      }
+      if ($found == false) {
+        $mergedsettings[] = $newsettings;
+      }
+      $newsettingwrapper = array();
+      $newsettingwrapper['appNotificationSettings'] = $mergedsettings;
+
+      $developer_org_url = '/orgs/' . $developerOrgs;
+      $url = '/v1/portal' . $developer_org_url . '/members/' . $apim_session['memberid'] . '/settings';
+
+      $data = json_encode($newsettingwrapper);
+      $result = ibm_apim_put($url, $data);
+      if (isset($result) && ($result->code == 200)) {
+        drupal_set_message(t('Notification settings updated.'));
+      }
+    }
+  }
+  return $returnValue;
+}
+
+/**
+ * Callback to change the current organization and then redirects to the front page
+ */
+function ibm_apim_developer_org_callback($orgId) {
+  // check the specified org ID is actually one we're a member of
+  $result = _ibm_apim_load_developer_orgs();
+  if ($result) {
+    foreach ($result as $org) {
+      if ($org['id'] == $orgId) {
+        $selected = _ibm_apim_set_current_developer_org($orgId);
+      }
+    }
+  }
+  drupal_goto();
+}
+
+/**
+ * Helper function to convert IBM APIm representation of an authorization to
+ * a user friendly display value.
+ *
+ * @param
+ *          string ident
+ *          The IBM APIm name for authorization
+ *
+ * @return string A user friendly string or the input string if it has no conversion.
+ */
+function ibm_apim_get_ident_label($ident) {
+  $name_map = array(
+    'clientIDAndSecret' => t('Client ID and Secret'),
+    'clientID' => t('Client ID'),
+    'none' => t('None'));
+  return array_key_exists($ident, $name_map) ? $name_map[$ident] : $ident;
+}
+
+/**
+ * Helper function to convert IBM APIm representation of an authorization to
+ * a user friendly display explanation text.
+ *
+ * @param
+ *          string ident
+ *          The IBM APIm name for authorization
+ *
+ * @return string A user friendly string or the input string if it has no conversion.
+ */
+function ibm_apim_get_ident_explanation($ident) {
+  $name_map = array(
+    'clientIDAndSecret' => t('You must always provide your application\'s client ID and Secret in order to access this API'),
+    'clientID' => t('You must always provide your application\'s client ID in order to access this API'),
+    'none' => t('No authorization is needed to access this API'));
+  return array_key_exists($ident, $name_map) ? $name_map[$ident] : $ident;
+}
+
+/**
+ * Helper function to convert IBM APIm representation of an authentication to
+ * a user friendly display value.
+ *
+ * @param
+ *          string auth
+ *          The IBM APIm name for authentication
+ *
+ * @return string A user friendly string or the input string if it has no conversion.
+ */
+function ibm_apim_get_auth_label($auth) {
+  $auth_map = array(
+    'basic' => t('Basic'),
+    'oauth' => t('OAuth'),
+    'none' => t('None'));
+  return array_key_exists($auth, $auth_map) ? $auth_map[$auth] : $auth;
+}
+
+/**
+ * Generate the the Swagger JSON data for a specified API
+ *
+ * @param string $api
+ *          The API ID
+ *
+ * @param
+ *          The API object returned from the server
+ *
+ * @return string The output is the JSON string.
+ */
+function _ibm_apim_generate_json_per_api($api) {
+  $apim_session = &_ibm_apim_get_apim_session();
+  $gateway_url = parse_url($apim_session['gatewayURL']);
+  if (isset($gateway_url['host'])) {
+    $host = $gateway_url['host'];
+  }
+  else {
+    $host = variable_get('ibm_apim_host');
+  }
+  if (isset($gateway_url['path'])) {
+    $basePath = $gateway_url['path'] . '/';
+  }
+  else {
+    $basePath = '/' . $apim_session['org'] . '/' . $apim_session['env'] . '/';
+  }
+  if (isset($gateway_url['scheme'])) {
+    $protocol = $gateway_url['scheme'];
+  }
+  else {
+    $protocol = 'https';
+  }
+  $output = array(
+    'swagger' => '2.0',
+
+    // basePath must start with /
+    'basePath' => $basePath,
+    'host' => $host,
+    'schemes' => array($protocol),
+    'paths' => array(),
+    'tags' => array());
+  $output['definitions'] = array();
+  $output['info'] = array(
+    'description' => check_plain($api['description']),
+    'version' => check_plain($api['version']) . '.0.0',
+    'title' => check_plain($api['name']));
+
+  $temparray = array();
+  $bodyindex = 0;
+  $context = ltrim($api['context'], '/');
+  if ($api['resources']) {
+    foreach ($api['resources'] as $resource) {
+      $path = explode('?', $resource['path'])[0];
+      if ($path[0] == '/') {
+        $resource_path = $context . $path;
+      }
+      else {
+        $resource_path = $context . '/' . $path;
+      }
+
+      $resource_verb = $resource['verb'];
+      $resource_array = array();
+      $resource_array[$resource_path] = array();
+      $resource_array[$resource_path][$resource_verb] = array();
+      $resource_array[$resource_path][$resource_verb] = array(
+        'summary' => check_plain($resource['name']),
+        'description' => check_plain($resource['description']),
+        'parameters' => array(),
+        'responses' => array());
+
+      $trimmedpath = ltrim($path, '\/');
+      $patharray = explode("/", ltrim($path, '\/'));
+      $resource_array[$resource_path][$resource_verb]['tags'] = array(
+        $patharray[0]);
+      // Add to list of all tags if not already present
+      if (null === _ibm_apim_searchForId($patharray[0], $output['tags'])) {
+        $newtag = array('name' => $patharray[0], 'description' => '');
+        array_push($output['tags'], $newtag);
+      }
+
+      if (isset($resource['errors']) && !empty($resource['errors'])) {
+        // TODO do something with the errors objects to include in responses array
+      }
+      $resource_array[$resource_path][$resource_verb]['responses']['200'] = array(
+        'description' => 'successful operation');
+
+      $trimmed = trim($resource['contentType']);
+      if (isset($resource['contentType']) && !empty($trimmed)) {
+        $resource_array[$resource_path][$resource_verb]['produces'] = array(
+          $resource['contentType']);
+        $resource_array[$resource_path][$resource_verb]['consumes'] = array(
+          $resource['contentType']);
+      }
+      else {
+        // default to JSON if nothing specified in source API
+        $resource_array[$resource_path][$resource_verb]['produces'] = array(
+          "application/json");
+        $resource_array[$resource_path][$resource_verb]['consumes'] = array(
+          "application/json");
+      }
+      if ($resource['queryParameters']) {
+        foreach ($resource['queryParameters'] as $parameter) {
+          $parameter_array = array();
+          $parameter_array['in'] = 'query';
+          $parameter_array['name'] = check_plain($parameter['name']);
+          $parameter_array['description'] = check_plain($parameter['description']);
+          $parameter_array['required'] = check_plain($parameter['optional']);
+          $parameter_array['type'] = 'string';
+          $resource_array[$resource_path][$resource_verb]['parameters'][] = $parameter_array;
+        }
+      }
+      if ($resource['pathParameters']) {
+        foreach ($resource['pathParameters'] as $parameter) {
+          $parameter_array = array();
+          $parameter_array['in'] = 'path';
+          $parameter_array['name'] = check_plain($parameter['name']);
+          $parameter_array['description'] = check_plain($parameter['description']);
+          $parameter_array['required'] = true;
+          $parameter_array['type'] = 'string';
+          $resource_array[$resource_path][$resource_verb]['parameters'][] = $parameter_array;
+        }
+      }
+      // handle request body
+      if (isset($resource['requestBody']) && !empty($resource['requestBody'])) {
+        $body_array = array();
+        $body_array['in'] = 'body';
+        $body_array['name'] = 'body' . $bodyindex;
+        $body_array['required'] = true;
+        $body_array['schema'] = array(
+          '$ref' => '#/definitions/body' . $bodyindex);
+        $resource_array[$resource_path][$resource_verb]['parameters'][] = $body_array;
+
+        $newtype = array();
+        $newtype['type'] = 'Object';
+        $newtype['properties'] = array();
+
+        if ($resource_array[$resource_path][$resource_verb]['consumes'] == array(
+          "application/xml")) {
+          $xml = simplexml_load_string($resource['requestBody'], "SimpleXMLElement", LIBXML_NOERROR | LIBXML_ERR_NONE);
+          $decodedbody = _ibm_apim_normalizeSimpleXML($xml);
+        }
+        else {
+          $trimmedbody = str_replace("\t", '', $resource['requestBody']);
+          $trimmedbody = str_replace("\n", '', $trimmedbody);
+          $trimmedbody = str_replace("\r", '', $trimmedbody);
+          $trimmedbody = str_replace("\0", '', $trimmedbody);
+          $decodedbody = json_decode($trimmedbody, true);
+        }
+
+        if (is_array($decodedbody)) {
+          while ($propvalue = current($decodedbody)) {
+            $key = key($decodedbody);
+            $newtype['properties'][$key] = array(
+              'type' => 'string',
+              'example' => $propvalue);
+            next($decodedbody);
+          }
+        }
+        $output['definitions']['body' . $bodyindex] = $newtype;
+      }
+      // handle response body
+      if (isset($resource['responseBody']) && !empty($resource['responseBody'])) {
+        $resource_array[$resource_path][$resource_verb]['responses']['200']['schema'] = array(
+          '$ref' => '#/definitions/response' . $bodyindex);
+
+        $newtype = array();
+        $newtype['type'] = 'Object';
+        $newtype['properties'] = array();
+
+        if ($resource_array[$resource_path][$resource_verb]['produces'] == array(
+          "application/xml")) {
+          $xml = simplexml_load_string($resource['responseBody'], "SimpleXMLElement", LIBXML_NOERROR | LIBXML_ERR_NONE);
+          $decodedbody = _ibm_apim_normalizeSimpleXML($xml);
+        }
+        else {
+          $trimmedbody = str_replace("\t", '', $resource['responseBody']);
+          $trimmedbody = str_replace("\n", '', $trimmedbody);
+          $trimmedbody = str_replace("\r", '', $trimmedbody);
+          $trimmedbody = str_replace("\0", '', $trimmedbody);
+          $decodedbody = json_decode($trimmedbody, true);
+        }
+        if (is_array($decodedbody)) {
+          while ($propvalue = current($decodedbody)) {
+            $key = key($decodedbody);
+            $newtype['properties'][$key] = array(
+              'type' => 'string',
+              'example' => $propvalue);
+            next($decodedbody);
+          }
+        }
+        $output['definitions']['response' . $bodyindex] = $newtype;
+      }
+      // if ($api['authentication'] == 'oauth' && $resource['authenticationPolicy'] == false) {
+      // $resource_array[$resource_path][$resource_verb]['authorizations'] = array();
+      // }
+
+      $output['paths'][$resource_path] = $resource_array[$resource_path];
+      // increment index counter
+      $bodyindex += 1;
+    }
+  }
+
+  return $output;
+}
+
+/**
+ * Util function to search for a given name in an array
+ */
+function _ibm_apim_searchForId($newname, $array) {
+  if ($array) {
+    foreach ($array as $key => $val) {
+      if ($val['name'] === $newname) {
+        return $key;
+      }
+    }
+  }
+  return null;
+}
+
+function _ibm_apim_startsWith($haystack, $needle) {
+  return $needle === "" || strpos($haystack, $needle) === 0;
+}
+
+function _ibm_apim_endsWith($haystack, $needle) {
+  return $needle === "" || substr($haystack, -strlen($needle)) === $needle;
+}
+
+/*
+ * Convert SimpleXMLElement to an array by http://outlandish.com/blog/xml-to-json/
+ */
+function _ibm_apim_normalizeSimpleXML($xml, $options = array()) {
+  $defaults = array('namespaceSeparator' => ':', // you may want this to be something other than a colon
+'attributePrefix' => '@', // to distinguish between attributes and nodes with the same name
+'alwaysArray' => array(), // array of xml tag names which should always become arrays
+'autoArray' => true, // only create arrays for tags which appear more than once
+'textContent' => '$', // key used for the text content of elements
+'autoText' => true, // skip textContent key if node has no attributes or child nodes
+'keySearch' => false, // optional search and replace on tag and attribute names
+'keyReplace' => false); // replace values for above search values (as passed to str_replace())
+
+  $options = array_merge($defaults, $options);
+  $namespaces = $xml->getDocNamespaces();
+  $namespaces[''] = null; // add base (empty) namespace
+
+  // get attributes from all namespaces
+  $attributesArray = array();
+  foreach ($namespaces as $prefix => $namespace) {
+    foreach ($xml->attributes($namespace) as $attributeName => $attribute) {
+      // replace characters in attribute name
+      if ($options['keySearch'])
+        $attributeName = str_replace($options['keySearch'], $options['keyReplace'], $attributeName);
+      $attributeKey = $options['attributePrefix'] . ($prefix ? $prefix . $options['namespaceSeparator'] : '') . $attributeName;
+      $attributesArray[$attributeKey] = (string) $attribute;
+    }
+  }
+
+  // get child nodes from all namespaces
+  $tagsArray = array();
+  foreach ($namespaces as $prefix => $namespace) {
+    foreach ($xml->children($namespace) as $childXml) {
+      // recurse into child nodes
+      $childArray = _ibm_apim_normalizeSimpleXML($childXml, $options);
+      list($childTagName, $childProperties) = each($childArray);
+
+      // replace characters in tag name
+      if ($options['keySearch'])
+        $childTagName = str_replace($options['keySearch'], $options['keyReplace'], $childTagName);
+        // add namespace prefix, if any
+      if ($prefix)
+        $childTagName = $prefix . $options['namespaceSeparator'] . $childTagName;
+
+      if (!isset($tagsArray[$childTagName])) {
+        // only entry with this key
+        // test if tags of this type should always be arrays, no matter the element count
+        $tagsArray[$childTagName] = in_array($childTagName, $options['alwaysArray']) || !$options['autoArray'] ? array(
+          $childProperties) : $childProperties;
+      }
+      elseif (is_array($tagsArray[$childTagName]) && array_keys($tagsArray[$childTagName]) === range(0, count($tagsArray[$childTagName]) - 1)) {
+        // key already exists and is integer indexed array
+        $tagsArray[$childTagName][] = $childProperties;
+      }
+      else {
+        // key exists so convert to integer indexed array with previous value in position 0
+        $tagsArray[$childTagName] = array(
+          $tagsArray[$childTagName],
+          $childProperties);
+      }
+    }
+  }
+
+  // get text content of node
+  $textContentArray = array();
+  $plainText = trim((string) $xml);
+  if ($plainText !== '')
+    $textContentArray[$options['textContent']] = $plainText;
+
+    // stick it all together
+  $propertiesArray = !$options['autoText'] || $attributesArray || $tagsArray || ($plainText === '') ? array_merge($attributesArray, $tagsArray, $textContentArray) : $plainText;
+
+  // return node as array
+  return array($xml->getName() => $propertiesArray);
+}
+
+/**
+ * Function to introspect the app URL and return the ID
+ *
+ * @return array An array with id and version.
+ */
+function _ibm_apim_get_id_from_appurl($appurl) {
+  $ret = null;
+  $parts = parse_url($appurl);
+  if ($parts) {
+    $planpath = $parts['path'];
+    $dirs = explode('/', $planpath);
+    $id = array_pop($dirs);
+    $ret = $id;
+  }
+  return $ret;
+}

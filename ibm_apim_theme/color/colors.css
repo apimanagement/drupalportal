@@ -1,0 +1,295 @@
+/* Page */
+html, body,
+.apimInnerContainer {
+  background-color: #fefefe;
+  color: #000000;
+}
+
+body.teaser-mode .columns-inner {
+  background-color: #f0f4f5;
+}
+
+ul.secondary,
+.section-collapsible,
+.region-highlighted,
+#columns {
+  background-color: #ffffff;
+}
+
+/* tasks */
+#skip-link a,
+ul.tabs li a,
+ul.tabs li a:visited {
+  background-color: #eeeeee;
+  color: #000001;
+}
+ul.tabs li a:hover,
+ul.tabs li a:focus,
+ul.tabs li a:active,
+ul.tabs li a.active,
+ul.tabs li a.active:visited {
+  background-color: #ededed;
+  color: #000100;
+}
+
+/* Links */
+a,
+a:visited {
+  color: #42a9be;
+}
+a:hover,
+a:focus,
+a:active {
+  color: #1c6ea0;
+}
+
+a.active {
+  color: #1c6ea0 !important;
+}
+
+.pager a:hover,
+.pager a:active,
+.pager a:focus {
+  background-color: #42a9be;
+  color: #fff;
+}
+
+/* Identity */
+h1#site-name a,
+h1#site-name a:visited {
+  color: #fffeff;
+}
+h2#site-slogan {
+  color: #feffff;
+}
+
+/* Header */
+.region-header,
+.nav .block-menu,
+.region-header h2.block-title,
+.nav .block-menu h2.block-title {
+  color: #101000;
+}
+.region-header a,
+.region-header a:visited {
+  color: #bac0c6;
+}
+.region-header a:hover,
+.region-header a:focus,
+.region-header a:active {
+  color: #42a9ba;
+}
+
+/* Footer */
+.breadcrumb,
+#page > footer,
+#page > footer .block-title {
+  background-color: #f1f5f6;
+  color: #010101;
+}
+.breadcrumb a,
+#page > footer a,
+#page > footer a:visited {
+ color: #1c6ea0;
+}
+.breadcrumb a:hover,
+.breadcrumb a:focus,
+.breadcrumb a:active,
+#page > footer a:hover,
+#page > footer a:focus,
+#page > footer a:active {
+  color: #42a9be;
+}
+
+/* Menu bar */
+.menu-toggle a {
+  color: #bac0c6;
+}
+#menu-bar-wrapper {
+  background: transparent;
+}
+.nav .block-menu ul li a {
+  color: #bac0c6;
+  opacity: 0.95;
+}
+.nav .block-menu ul a:focus,
+.nav .block-menu ul a:hover,
+.nav .block-menu ul a:active {
+  color: #007ded;
+  opacity: 0.6;
+  text-decoration: underline;
+}
+.nav .block-menu ul li a.active {
+  color: #007ded;
+}
+
+/* Superfish Skin - we keep the Superfish skin seperate so we can special case
+   if we really need to */
+.sf-menu.sf-style-default a {
+   border: 0;
+   color: #111111;
+   background-color: #5d9dd0;
+}
+.sf-menu.sf-style-default li.last a {
+}
+.sf-menu.sf-style-default a,
+.sf-menu.sf-style-default a:visited {
+  color: #111111;
+}
+.sf-menu.sf-style-default span.sf-description {
+  color: #111111;
+}
+.sf-menu.sf-style-default li li,
+.sf-menu.sf-style-default.sf-navbar li ul {
+  background-color: #2e2e2d;
+}
+.sf-menu.sf-style-default li li li {
+  background-color: #ededed;
+}
+.sf-menu.sf-style-default li {
+  background: transparent;
+}
+.sf-menu.sf-style-default.sf-navbar {
+  background: #ededed;
+}
+.sf-menu.sf-style-default li a,
+.sf-menu.sf-style-default li a:visited {
+  color: #111111;
+}
+.sf-menu.sf-style-default li:hover,
+.sf-menu.sf-style-default li.sfHover,
+.sf-menu.sf-style-default a:focus,
+.sf-menu.sf-style-default a:hover,
+.sf-menu.sf-style-default a:active {
+  background-color: #ffffff;
+  color: #111111;
+}
+/* Reverse colors for sub menus */
+.sf-menu.sf-style-default li li:hover,
+.sf-menu.sf-style-default li li.sfHover,
+.sf-menu.sf-style-default li li a:focus,
+.sf-menu.sf-style-default li li a:hover,
+.sf-menu.sf-style-default li li a:active {
+  background-color: #111111;
+  color: #ffffff;
+}
+.sf-menu.sf-style-default .active-trail.sf-depth-1,
+.sf-menu.sf-style-default .sf-depth-1 > a.active {
+  color: #111111;
+  background-color: #ffffff;
+}
+#menu-bar-wrapper .sf-menu.sf-style-default .active-trail.sf-depth-1,
+#menu-bar-wrapper .sf-menu.sf-style-default .sf-depth-1 > a.active {
+  background-color: #ffffff;
+}
+/* .sf-navbar */
+.sf-navbar.sf-style-default li ul {
+  background-color: transparent !important;
+  width: 100%;
+}
+.sf-navbar > li > ul > li {
+  border-bottom: 1px solid #473e34;
+}
+.sf-menu.sf-style-default.sf-navbar li ul li ul {
+  background-color: transparent;
+}
+
+/* If you adjust your media queries for mobile you must replicate those changes here */
+@media only screen and (max-width:480px) {
+  .sf-menu.sf-style-default li li:hover,
+  .sf-menu.sf-style-default li li.sfHover,
+  .sf-menu.sf-style-default li li a,
+  .sf-menu.sf-style-default li li a:focus,
+  .sf-menu.sf-style-default li li a:hover,
+  .sf-menu.sf-style-default li li a:active,
+  .sf-menu.sf-style-default li li a:visited {
+    background-color: #111111;
+    color: #5d9dd0;
+  }
+}
+
+/* header */
+#page > header {
+  background-color: #383633;
+}
+
+body.not-front #page > header {
+  border-bottom: 1px solid #bac0c6;
+}
+
+body.page-home #columns.no-menu-bar {
+	background-color: #f0f4f5;
+}
+/* top menu bar */
+.region-top-menu {
+  background-color: #ffffff;
+}
+.region-top-menu a {
+  color: #111111;
+}
+.region-top-menu .sf-menu.sf-style-default > li > a {
+  border: 0;
+  color: #111111;
+  background-color: transparent;
+}
+#menu-bar {
+  background-color: #ffffff;
+}
+
+/* Titles */
+h1,
+.front h2.block-title {
+  color: #8CC63F;
+}
+.comment header h3 a,
+h1 a,
+h1.node-title a,
+h2 {
+  color: #100011;
+}
+
+/* input fields */
+input, textarea {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+/* Label */
+.portal .label,
+.apimUpdated,
+.apiDocTitle,
+.portal .sectionHeader,
+.swagger-section .swagger-ui-wrap ul#resources li.resource div.heading h2 a,
+.swagger-section .swagger-ui-wrap ul#resources li.resource div.heading ul.options li a
+ {
+  color: #b1b2b3;
+}
+
+/* Summary Text */
+.apimSummaryDescription,
+.portal .explanationText,
+.summaryText,
+.form-item .description {
+ color: #333333;
+}
+
+/* Highlight Text */
+.portal .highlightText {
+  color: #0180e9;
+}
+
+/* Border Color */
+.border,
+.section,
+.resourceView.resourcePlanView,
+.resourceHeadline,
+.apimSummary,
+.swagger-section {
+  border-color: #dddddd !important;
+}
+
+/* Swagger Color */
+.portal .swagger-section #header {
+    background-color: #eeeeee;
+    border-color: #dddddd;
+}

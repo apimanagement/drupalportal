@@ -1,0 +1,803 @@
+.block-region-content.block-main {
+  padding: 10px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.ui-helper-reset {
+  font-size: 14px;
+}
+
+.node-type-api h1#page-title,
+.node-type-application h1#page-title,
+.node-type-plan h1#page-title,
+.page-api h1#page-title,
+.page-application h1#page-title,
+.page-plan h1#page-title,
+.page-home h1#page-title {
+  display: none;
+}
+
+.portal {
+  width: 100%;
+}
+
+.portal .section {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+
+  padding-top: 10px; 
+  padding-bottom: 10px;
+}
+.portal .section label.sectionHeader{ 
+  display: block; 
+  margin-bottom: 10px;
+}
+
+.portal .sectionHeader {
+  color: #b1b2b3;
+}
+
+.portal .highlightText {
+  color: #0180e9;
+  font-size: medium;
+  margin-right: 5px;
+}
+
+.portal .explanationText {
+  color: #555555;
+}
+
+.oauthContainer {
+  margin-top:10px;
+}
+.oauthContainer .explanationText {
+  min-width:160px;
+  display:inline-block;
+}
+.oauthContainer .oauthText {
+  font-weight:bold;
+}
+
+p.apimTitle {
+  margin-bottom: 10px;
+}
+
+.apimSummaryContainer {
+}
+
+.apimTeaser {
+  float: left;
+  width: 50%;
+}
+
+@media only screen and (max-width:640px) {
+  .apimTeaser {
+    float: none;
+    width: 100%;
+  }	
+}
+/* override the 50% for search results */
+li .apimTeaser {
+  width: 100%;
+}
+
+.apimOuterContainer {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.apimSummary {
+  height: 100%;
+  margin-right: 24px;
+  padding: 0;
+  display: inline-block;
+  vertical-align: top;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 4px;
+  box-shadow: 1px 1px 2px #888888;
+  width: 100%;
+}
+
+.apimInnerContainer {
+  padding: 15px;
+  height: 162px;
+}
+
+h3.apimSummaryTitle {
+  color: #3BA7F0;
+  margin-bottom: 0;
+  font-size: 18px;
+}
+
+.apimUpdated {
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: normal;
+  display: block;
+}
+
+.apimField {
+  color: #bbbdbf;
+  font-weight: bold;
+}
+
+.apimIcon {
+  background-repeat: no-repeat;
+  float: left;
+  margin-right: 10px;
+  width: 100px;
+  height: 100px;
+}
+
+.appIcon {
+  float: right;
+}
+
+.appPlanName {
+  color: #43484a;
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.appPlanName .planUnsubscribeIcon {
+  padding-left: 10px;
+  vertical-align: top;
+}
+
+.apimSummaryDescription {
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: normal;
+  display: block;
+  height: 126px;
+}
+
+.apimSummaryDescription p {
+  font-size: 14px;
+  line-height: inherit;
+  margin-top: 0;
+}
+
+.apiDocTitle {
+  color: #b1b2b3;
+}
+
+.docFile {
+  display: block;
+}
+
+.ellipsis {
+  overflow: hidden;
+}
+
+.ellipsis > *:first-child {
+  float: right;
+  width: 100%;
+  margin-left: -5px;
+}
+
+.ellipsis:before {
+  content: "";
+  float: left;
+  width: 5px;
+  height: 100%;
+}
+
+.ellipsis:after {
+  content: "\02026";
+  box-sizing: content-box;
+  float: right;
+  position: relative;
+  top: -14px;
+  left: 100%;
+  width: 3em;
+  margin-left: -3em;
+  padding-right: 5px;
+  text-align: right;
+  background-size: 100% 100%;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0), white 50%, white);
+}
+
+.apimTitleFloat {
+  float: left;	
+}
+
+.planSelector {
+  float: right;
+}
+
+.displayInlineTop {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.planName {
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 25px;	
+}
+
+.apimMainContent {
+  clear: both;
+}
+
+.portal .section.apimMainContent {
+  padding-top: 0;
+}
+
+.clearBoth {
+  clear: both;
+}
+
+/* Override some Swagger UI styles */
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.get div.content {
+  color: black;	
+}
+
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource:hover div.heading h2 a,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource.active div.heading h2 a,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading ul.options li,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource:hover div.heading ul.options li a,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource.active div.heading ul.options li a,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading ul.options li a,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading ul.options li a:hover,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading h2 a,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading h2 a:hover,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading ul.options li {
+  color: inherit;
+}
+
+.portal .swagger-section #header form#api_selector .input input {
+  padding: 3px 0 0 3px;
+  line-height: 0.9em;
+}
+
+.portal .swagger-section {
+	font-size: 1em;
+}
+
+.portal .swagger-section .swagger-ui-wrap {
+	max-width: 100%;	
+}
+
+.portal .swagger-section #header {
+  height: 2.5em;
+  border-left: 1px solid;
+  border-right: 1px solid;
+  border-bottom: 1px solid;
+}
+.portal .swagger-section #header h2{
+  padding: 0 0 10px 0;
+  margin: 0;
+}
+.portal .swagger-section #header .clientIDSelector{
+  display: inline-block;
+  float: right;
+}
+.portal .swagger-section #header form#api_selector .input {
+  display: inline-block;
+}
+.portal .swagger-section .container ul {
+ margin: 0 0 1.5em 0;
+}
+
+.portal .swagger-section  ul.endpoints {
+  margin: 0 0 1.5em 1em;
+}
+
+.portal .swagger-ui-wrap .info {
+  display: none;
+}
+
+.apiDocLeft {
+  float: left;
+  padding-right: 2em;
+  width: 20%;
+  padding-bottom: 5px;
+}
+
+.apiDocRight {  
+  padding-bottom: 5px;
+  margin-left: 30%;
+}
+
+.docFile .docLink {
+  display: inline-block;
+  word-wrap: normal;
+  vertical-align: middle;
+  white-space: nowrap;
+  width: 100%
+}
+
+.apiDocumentFileName {
+  display: inline-block;
+  margin-left: 10px;
+  margin-right: 20px;
+  white-space: normal;
+  width: 100%;
+  word-wrap: break-word;
+}
+
+.apiDocumentIcon {
+  height: 32px;
+  width: 32px;
+  background-size: 32px 32px;
+  background-repeat: no-repeat;
+  display: inline-block;
+  vertical-align: top;
+}
+.apiDocumentIcon.bmpDocType {
+  background-image: url(../images/filetypes/bmp.png);
+}
+.apiDocumentIcon.cssDocType {
+  background-image: url(../images/filetypes/css.png);
+}
+.apiDocumentIcon.defaultDocType {
+  background-image: url(../images/filetypes/default.png);
+}
+.apiDocumentIcon.docDocType {
+  background-image: url(../images/filetypes/doc.png);
+}
+.apiDocumentIcon.gifDocType {
+  background-image: url(../images/filetypes/gif.png);
+}
+.apiDocumentIcon.htmlDocType {
+  background-image: url(../images/filetypes/html.png);
+}
+.apiDocumentIcon.jpgDocType {
+  background-image: url(../images/filetypes/jpg.png);
+}
+.apiDocumentIcon.pdfDocType {
+  background-image: url(../images/filetypes/pdf.png);
+}
+.apiDocumentIcon.pngDocType {
+  background-image: url(../images/filetypes/png.png);
+}
+.apiDocumentIcon.pptDocType {
+  background-image: url(../images/filetypes/ppt.png);
+}
+.apiDocumentIcon.rtfDocType {
+  background-image: url(../images/filetypes/rtf.png);
+}
+.apiDocumentIcon.txtDocType {
+  background-image: url(../images/filetypes/txt.png);
+} 
+.apiDocumentIcon.xlsDocType {
+  background-image: url(../images/filetypes/xls.png);
+}
+.apiDocumentIcon.xmlDocType {
+  background-image: url(../images/filetypes/xml.png);
+}
+.apiDocumentIcon.xslDocType {
+  background-image: url(../images/filetypes/xsl.png);
+}
+.apiDocumentIcon.zipDocType {
+  background-image: url(../images/filetypes/zip.png);
+}
+
+.includedAPIsTitle {
+  font-size: large;
+  padding: 20px 0;
+}
+
+.portal .tableHeaderBackground.clearTable {
+background-color: inherit;
+border: none;
+padding-left: 7px;
+min-height: 29px;
+line-height: 29px;
+color: #70787A;
+font-size: 11px;
+word-break: break-word;
+}
+
+.portal .portalApi .resourceMethod {
+width: 60px;
+margin-right: 10px;
+line-height: 21px;
+}
+.tableHeaderBackground .column {
+display: inline-block;
+vertical-align: top;
+}
+.portal .portalApi .resourcePathShort {
+width: 300px;
+margin-right: 10px;
+line-height: 21px;
+}
+.node-plan .portalApi .resourcePathShort {
+  width: 215px;
+}
+.portal .portalApi .resourceName {
+width: 150px;
+margin-right: 10px;
+line-height: 21px;
+}
+.node-plan .portalApi .resourceName {
+  width: 120px;
+}
+.portal .portalApi .resourceDesc {
+width: 265px;
+margin-right: 10px;
+line-height: 21px;
+}
+.node-plan .portalApi .resourceDesc {
+  width: 195px;
+}
+.portal .portalApi .resourceIdentification {
+width: 80px;
+margin-right: 10px;
+line-height: 21px;
+}
+.portal .portalApi .resourceAuthentication {
+width: 90px;
+margin-right: 10px;
+line-height: 21px;
+}
+.portal .portalApi .resourceRateLimit {
+width: 180px;
+line-height: 21px;
+}
+.node-plan .portalApi .resourceRateLimit {
+  width: 180px;
+}
+.portal .portalApi .resourceView, .portal .portalApi .resourceView.resourcePlanView:last-child {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+
+}
+.portal .resourceHeadline {
+  padding: 10px 0px 10px 20px;
+  background-color: #ffffff;
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-right-color: inherit;
+  width: 732px;
+}
+.portal .resourcePlanView .resourceHeadline {
+  border-right: 0;
+  padding-left: 5px;
+  width: 100%;
+}
+
+.portal .portalApi .resourceMethodBadge {
+padding-left: 5px;
+width: 55px;
+-webkit-border-radius: 3px;
+-moz-border-radius: 3px;
+border-radius: 3px;
+line-height: 21px;
+color: #ffffff;
+font-weight: bold;
+}
+.portal .portalApi .resourceMethod.GET {
+  background-color: #008bc5;
+}
+.portal .portalApi .resourceMethod.PUT {
+  background-color: #53c500;
+}
+.portal .portalApi .resourceMethod.POST {
+  background-color: #eb7f00;
+}
+.portal .portalApi .resourceMethod.DELETE {
+  background-color: #ea0000;
+}
+.portal .apiSpot .protocol {
+	line-height: 15px;
+	height: 15px;
+	padding: 5px;
+	font-size: small;
+	color: #ffffff;
+	-webkit-border-radius: 2px;
+	-moz-border-radius: 2px;
+	border-radius: 2px;
+}
+.portal .apiSpot .protocol.REST {
+	background-color: #00bfdd;
+}
+.portal .apiSpot .protocol.SOAP {
+	background-color: #ff6f2a;
+}
+.portal .tableLabel {
+  display: none;
+}
+
+.singleOrg {
+  color: #bac0c6;
+}
+
+div.elipsis-names {
+	display: inline-block;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	overflow: hidden;
+	max-width: 64em;
+}
+
+a.elipsis-names {
+	display: inline-block;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	overflow: hidden;
+	max-width: 64em;
+}
+
+/* hide the tasks tabs for our content types */
+.node-type-api #main-content-header #tasks,
+.node-type-application #main-content-header #tasks,
+.node-type-plan #main-content-header #tasks,
+.page-api #main-content-header #tasks,
+.page-application #main-content-header #tasks,
+.page-plan #main-content-header #tasks {
+  display: none;
+}
+
+.node-type-api .apiForumLink,
+.page-api .apiForumLink {
+	float: right;
+}
+
+.passwordToggleContainer {
+  display: inline-block;
+}
+input.toggle-password {
+  background-color: inherit;
+  border: 0;
+  color: inherit;
+  min-width: 350px;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.5em;
+}
+.passwordToggleContainer label {
+  display: inline;
+}
+.messages input.toggle-password {
+  min-width: 490px;
+}
+
+/* Notification Block */
+.notification {
+    color: #fffdfc;
+    cursor: pointer;
+    float: right;
+    font-weight: bold;
+    margin: 0;
+    padding-top: 2px;
+    text-align: center;
+}
+.notification button,
+.notification button:hover,
+.notification button:focus,
+.notification button:active {
+  background: none repeat scroll 0 0 rgba(0, 0, 0, 0);
+  border: 0 none;
+  margin: 0;
+  padding: 0 0 10px;
+}
+.notificationBox {
+  background: none repeat scroll 0 0 #f04747;
+  border: 2px solid #f04747;
+  border-radius: 3px;
+  height: 18px;
+  min-width: 20px;
+  position: relative;
+}
+.notificationBox:after, .notificationBox:before {
+    border: medium solid transparent;
+    content: " ";
+    height: 0;
+    left: 50%;
+    pointer-events: none;
+    position: absolute;
+    top: 100%;
+    width: 0;
+}
+.notificationBox:after {
+    border-color: #f04747 rgba(213, 50, 17, 0) rgba(213, 50, 17, 0);
+    border-width: 4px;
+    margin-left: -4px;
+}
+.notificationBox:before {
+    border-color: #f04747 rgba(194, 225, 245, 0) rgba(194, 225, 245, 0);
+    border-width: 7px;
+    margin-left: -7px;
+}
+.notificationBox.greyBox {
+    background: none repeat scroll 0 0 #dddee0;
+    border: 2px solid #dddee0;
+}
+.notificationBox.greyBox:after {
+    border-top-color: #dddee0;
+}
+.notificationBox.greyBox:before {
+    border-top-color: #dddee0;
+}
+
+/* Notification Messages */
+.activityViewFloatLeft {
+    float: left;
+    margin-left: 10px;
+}
+.activityViewFloatRight {
+    float: right;
+    margin-right: 10px;
+}
+.activityView {
+    margin-left: auto;
+    margin-right: auto;
+    padding-top:10px;
+}
+.activityViewInner {
+  padding-bottom:20px;
+  border-top: 1px solid #b6b7bd;
+}
+.notificationBackground {
+    border: 1px solid #d8cecc;
+    border-radius: 3px;
+    height: auto;
+    margin-top: 13px;
+    min-width: 474px;
+    overflow: auto;
+}
+.notificationBackground:after, .notificationBackground:before {
+    border: medium solid transparent;
+    bottom: 100%;
+    content: " ";
+    height: 0;
+    left: 97%;
+    margin-bottom: -13px;
+    pointer-events: none;
+    position: absolute;
+    width: 0;
+}
+.notificationBackground:after {
+    border-color: rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) #f8efef;
+    border-width: 4px;
+    margin-left: -7px;
+}
+.notificationBackground:before {
+    border-color: rgba(194, 225, 245, 0) rgba(194, 225, 245, 0) #8c8c8c;
+    border-width: 4px;
+    margin-left: -7px;
+}
+.viewActivities .activityFeedButtonSelected {
+    background-image: -moz-linear-gradient(center top , #b0d6e2, #c2e6f2) !important;
+    box-shadow: 0 0 5px #dedede inset;
+}
+.viewActivity {
+}
+.viewActivityInner {
+  padding-top:10px;
+  float:left;
+}
+.viewActivity .subText {
+    color: #868686;
+    font-size: 10px;
+    padding-top: 10px;
+    padding-bottom: 5px;
+}
+.viewActivity .paddingHorizontal {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+.activityBorder {
+    border-bottom: 1px solid #b6b7bd;
+}
+.activityBorderMargin {
+    border: 1px solid #b6b7bd;
+    margin-top: 20px;
+}
+.viewActivity .statusIcon {
+    background-position: 0 0;
+    height: 24px;
+    width: 24px;
+}
+.notificationStatusIconAligment {
+    vertical-align: middle;
+    max-width: 700px;
+}
+.statusIconAlighment {
+    vertical-align: top;
+}
+.notificationMessageAligment, .portal .notificationBackground .notificationMessageAligment {
+    margin-left: 30px;
+    margin-top: -25px;
+}
+.portal .notificationMessageAligment {
+    margin-top: 0;
+}
+.messageAligment {
+    margin-left: 10px;
+}
+.viewActivity .statusIcon.queued, .viewActivity .statusIcon.started, .viewActivity .statusIcon.running {
+    background-image: url("../images/activity/loadingAnimation24px.gif");
+}
+.viewActivity .statusIcon.ALERT, .viewActivity .statusIcon.warning {
+    background-image: url("../images/activity/warning_24.png");
+}
+.viewActivity .statusIcon.ERROR, .viewActivity .statusIcon.FAIL, .viewActivity .statusIcon.severe, .viewActivity .statusIcon.error, .viewActivity .statusIcon.errored, .viewActivity .statusIcon.complete_with_errors {
+    background-image: url("../images/activity/error_24.png");
+}
+.viewActivity .statusIcon.EVENT, .viewActivity .statusIcon.INFO {
+    background-image: url("../images/activity/info_24.png");
+}
+.viewActivity .statusIcon.SUCCESS, .viewActivity .statusIcon.complete {
+    background-image: url("../images/activity/success_24.png");
+}
+/* override JQuery UI gradient headers */
+.ui-widget-header {
+  background:  none;
+  border: 0;
+}
+
+.form-item.form-type-radios.form-item-interval label {
+  color: #999;
+  font-size: 0.923em;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  line-height: normal;
+  text-transform: uppercase;
+}
+
+img.notifcationSettingsIcon {
+  padding: 1px;
+}
+
+img.uploadIcon,
+img.removeIcon {
+  vertical-align: middle;
+}
+
+div.appClientReset,
+div.appSecretReset,
+div.appSecret {
+  margin-bottom: 10px;
+}
+
+.myorgAddUserLink {
+  float:right;
+}
+
+span.dropit-icon.ui-icon-triangle-1-s {
+  display: inline-block;
+}
+
+.apimTeaser h3.apimSummaryTitle {
+  margin-top: inherit;
+}
+
+.apimTitleFloat .apimTitle span {
+  font-size: 28px;
+}
+
+div.api_description,
+div.app_client_id,
+div.app_oauth_redirecturi,
+div.client_secret {
+  margin-bottom: 10px;
+}
+
+.portalApi.animateMaxHeight {
+  max-height: 500px; 
+  overflow-y: auto; 
+  overflow-x: hidden; 
+  border-top-width: 1px; 
+  border-top-style: solid; 
+  border-top-color: rgb(204, 204, 204);
+}
+
+.portalApi .tableHeaderBackground {
+  margin-top: 6px;
+}
+
+.apimTitleFloat .displayInlineTop {
+  padding-right: 20px; 
+}
+.apimTitleFloat .displayInlineTop.planName {
+  margin-bottom: 20px; 
+  border-right: 1px solid #CCC;
+}
