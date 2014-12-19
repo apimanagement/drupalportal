@@ -1,12 +1,11 @@
 <h1>Drupal CMS APIM Developer Portal</h1>
-================================
 
 <p>This repository contains the components necessary to create a developer portal for IBM API Management 
 using the drupal content management system.</p>
 
-<p>ibm_apim = module<br/>
-ibm_apim_theme = a configurable theme<br/>
-apim_profile = drupal installation profile to create an APIM dev portal zip containing everything you need.</p>
+<p><code>ibm_apim</code> = a drupal module containing the IBM API Management integration<br/>
+<code>ibm_apim_theme</code> = a configurable drupal theme<br/>
+<code>apim_profile</code> = a drupal installation profile to create an APIM dev portal zip containing everything you need.</p>
 
 <h2>Defects / Feature Requests / Issues</h2>
 <p>Please raise any defects, feature requests or general issues here on github using the Issues link to the right.</p>
