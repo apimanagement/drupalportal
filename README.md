@@ -1,9 +1,106 @@
-Drupal CMS APIM Developer Portal
+<h1>Drupal CMS APIM Developer Portal</h1>
 ================================
 
-This repository contains the components necessary to create a developer portal for IBM API Management 
-using the drupal content management system.
+<p>This repository contains the components necessary to create a developer portal for IBM API Management 
+using the drupal content management system.</p>
 
-ibm_apim = module
-ibm_apim_theme = a configurable theme
-apim_profile = drupal installation profile to create an APIM dev portal zip containing everything you need.
+<p>ibm_apim = module<br/>
+ibm_apim_theme = a configurable theme<br/>
+apim_profile = drupal installation profile to create an APIM dev portal zip containing everything you need.</p>
+
+<h2>Features of the Drupal Developer Portal</h2>
+
+<h3>Full Content Management System</h3>
+<ul><li>Multiple content types</li>
+<li>Configurable customizable content types - add custom field, change the way they're displayed etc...</li>
+<li>Easily create new content in the UI</li>
+<li>User friendly (bookmarkable) URLs</li></ul>
+
+<h3>Hook addons into different content types</h3>
+<ul><li>enabled or disabled as a default per content type, and then toggled per individual content item</li>
+<li>comments</li>
+<li>ratings (with 6 different icon types)</li>
+<li>Share on social media</li>
+<li>Export to PDF / printable</li>
+<li>Tagging</li></ul>
+
+<h3>Configurable Role based access control</h3>
+<ul><li>Create new roles e.g. content author or forum moderator</li>
+<li>Define permissions per role</li></ul>
+
+<h3>Forums</h3>
+<ul><li>Option to automatically create a new forum for each API</li>
+<li>Moderation</li>
+<li>Captcha support (pluggable: images, maths, recaptcha, etc....)</li>
+<li>WYSIWYG rich text editor</li></ul>
+
+<h3>Blog</h3>
+<ul><li>Multiple users can have their own blogs</li>
+<li>WYSIWYG editor</li>
+<li>RSS Feed</li>
+<li>Integrates with comments, ratings, etc....</li></ul>
+
+<h3>FAQ</h3>
+<ul><li>Easily add new FAQ questions</li>
+<li>optional addon to allow users to pose questions and have them answered by an admin / moderator and then published</li></ul>
+
+<h3>Contact Form</h3>
+<ul><li>Allow registered users / anonymous users to email enquiries to the site admin</li></ul>
+
+<h3>Customizable Responsive Theme</h3>
+<ul><li>Responsive theme with configurable layout options per form factor so can choose how the layout works on tablets vs mobiles vs desktops for example</li>
+<li>Includes 5 different colour schemes</li>
+<li>Create your own custom colour scheme, all colours in the UI can be changed</li>
+<li>Change site logo</li>
+<li>Change site favicon</li>
+<li>Change site name</li>
+<li>Change site slogan</li>
+<li>Toggle whether any of the above are displayed or not</li></ul>
+
+<h3>Configurable Password Policy</h3>
+<ul><li>default is the same as APIm</li>
+<li>must use 3 out of 4 character types, min password length of 8</li></ul>
+
+<h3>Page not found (404) error handler</h3>
+<ul><li>rather than report errors it automatically searches for what you were looking for</li></ul>
+
+<h3>Support Ticket Management</h3>
+<ul><li>Configurable helpline type support ticketing system</li>
+<li>Can be expanded to have catagorization of tickets, dashboard, allow raising by email, etc..</li></ul>
+
+<h3>Customizable page layouts</h3>
+<ul><li>different pages can have different layouts</li>
+<li>different numbers of columns, etc..</li>
+<li>include different blocks such as a twitter feed or facebook feed, recent forum posts, comments, etc..</li></ul>
+
+<h3>IBM API Management Integration</h3>
+<ul><li>Self-signup from the drupal portal</li>
+<li>Users already known to APIm can simply login, no need to create another account (one is created automatically)</li>
+<li>List APIs available to currently logged in user</li>
+<li>APIs then stored in drupal database so the data is available for search (drupaldb content automatically updated every time it is accessed)</li>
+<li>Can only access items in the drupal DB if can access the equivalent in APIm</li>
+<li>Integrated SwaggerUI interface for browsing API resources and live testing those resources</li>
+<li>Register, Edit & Delete applications</li>
+<li>Upload & Remove images for those applications</li>
+<li>Browse available plans per API</li>
+<li>Browse documents attached to an API</li>
+<li>Subscribe to a plan</li>
+<li>Unsubscribe from a plan</li>
+<li>See what plans an app is subscribed to</li>
+<li>Configure notifications per application</li>
+<li>See APIm notification messages</li></ul>
+
+<h3>Simple Installer</h3>
+<ul><li>Custom IBM API Management Developer Portal drupal distribution</li>
+<li>Includes all modules and libraries</li>
+<li>Requires Apache, Mysql and PHP only</li>
+<li>Simple install wizard</li>
+<li>Scriptable, automatable install process</li></ul>
+
+<h3>Security</h3>
+<ul><li>Password policy</li>
+<li>IP Address blocking</li>
+<li>Brute force attack / flood protection</li>
+<li>Configurable Captchas</li>
+<li>Restricted html users can use in comments / content</li>
+<li>Configurable auto logout</li></ul>
