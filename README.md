@@ -8,6 +8,9 @@ using the drupal content management system.</p>
 ibm_apim_theme = a configurable theme<br/>
 apim_profile = drupal installation profile to create an APIM dev portal zip containing everything you need.</p>
 
+<h2>Defects / Feature Requests / Issues</h2>
+<p>Please raise any defects, feature requests or general issues here on github using the Issues link to the right.</p>
+
 <h2>Features of the Drupal Developer Portal</h2>
 
 <h3>Full Content Management System</h3>
@@ -104,3 +107,7 @@ apim_profile = drupal installation profile to create an APIM dev portal zip cont
 <li>Configurable Captchas</li>
 <li>Restricted html users can use in comments / content</li>
 <li>Configurable auto logout</li></ul>
+
+<h2>License</h2>
+<p>This code is made available under the GNU Public License v2.</p>
+<p>This is provided 'as-is' with no guarantee of official support but we will endeavour to respond to all Issues raised as best we can.</p>
