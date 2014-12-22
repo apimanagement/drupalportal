@@ -10,6 +10,10 @@ using the drupal content management system.</p>
 <h2>Video / Demo</h2>
 <p><a href="https://www.youtube.com/watch?v=rWM8wH_odGg">You can see a video of this portal in action on Youtube.</a></p>
 
+<h2>Download</h2>
+<p>The latest release of the code, in the form of a fully functional drupal distribution (containing the drupal core, all required modules, 
+javascript libraries and theme) can be downloaded from the <a href="https://github.com/apimanagement/drupalportal/releases/latest">Latest Release</a> page.</p>
+
 <h2>Defects / Feature Requests / Issues</h2>
 <p>Please raise any defects, feature requests or general issues here on github using the Issues link to the right.</p>
 
@@ -113,3 +117,6 @@ using the drupal content management system.</p>
 <h2>License</h2>
 <p>This code is made available under the GNU Public License v2.</p>
 <p>This is provided 'as-is' with no guarantee of official support but we will endeavour to respond to all Issues raised as best we can.</p>
+
+<h2>Requirements</h2>
+<p>You will require IBM API Management v3.0.4.0 to use this code.</p>
