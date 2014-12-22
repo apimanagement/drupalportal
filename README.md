@@ -7,6 +7,9 @@ using the drupal content management system.</p>
 <code>ibm_apim_theme</code> = a configurable drupal theme<br/>
 <code>apim_profile</code> = a drupal installation profile to create an APIM dev portal zip containing everything you need.</p>
 
+<h2>Video / Demo</h2>
+<p><a href="https://www.youtube.com/watch?v=rWM8wH_odGg">You can see a video of this portal in action on Youtube.</a></p>
+
 <h2>Defects / Feature Requests / Issues</h2>
 <p>Please raise any defects, feature requests or general issues here on github using the Issues link to the right.</p>
 
