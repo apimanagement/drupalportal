@@ -120,3 +120,8 @@ javascript libraries and theme) can be downloaded from the <a href="https://gith
 
 <h2>Requirements</h2>
 <p>You will require IBM API Management v3.0.4.0 to use this code.</p>
+
+<h2>Restrictions<h2>
+<p>If you are using IBM API Management Service (the SaaS offering) and your environment is secured by IBM ID, you cannot use the CMS Portal.</p>
+<p>If you would like to make use of the CMS Portal with an environment that is secured by IBM ID, please contact IBM by sending an email to 
+<a href="mailto:ibmapi@us.ibm.com">ibmapi@us.ibm.com</a>. If you are using the SaaS offering with the built in registry then you can configure the CMS Portal to work with the IBM API Management Service.</p>
