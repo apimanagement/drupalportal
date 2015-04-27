@@ -2,7 +2,7 @@
 ibm_apim.module documentation
 =============================
 
-This module provides IBM API Management v3 Developer portal functionality
+This module provides IBM API Management v4 Developer portal functionality
 to Drupal.
 
 After installing this module you will need to provide the information to connect

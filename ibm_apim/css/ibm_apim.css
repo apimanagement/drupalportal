@@ -29,23 +29,22 @@
   padding-top: 10px; 
   padding-bottom: 10px;
 }
+.portal .apimInfoSection .section:last-child {
+  border-bottom: 0;
+}
 .portal .section label.sectionHeader{ 
   display: block; 
   margin-bottom: 10px;
 }
-
-.portal .sectionHeader {
-  color: #b1b2b3;
+.portal .section.apimPlansApis {
+  border-top-width: 1px;
+  border-top-style: solid;
+  padding-top: 20px;
 }
 
 .portal .highlightText {
-  color: #0180e9;
   font-size: medium;
   margin-right: 5px;
-}
-
-.portal .explanationText {
-  color: #555555;
 }
 
 .oauthContainer {
@@ -61,20 +60,22 @@
 
 p.apimTitle {
   margin-bottom: 10px;
+  display: inline;
+  margin-right: 25px;
+  width: 100%;
 }
 
 .apimSummaryContainer {
 }
 
 .apimTeaser {
-  float: left;
-  width: 50%;
+
 }
 
 @media only screen and (max-width:640px) {
   .apimTeaser {
-    float: none;
-    width: 100%;
+  float: none;
+  width: 100%;
   }	
 }
 /* override the 50% for search results */
@@ -93,20 +94,19 @@ li .apimTeaser {
   padding: 0;
   display: inline-block;
   vertical-align: top;
-  border-width: 1px;
-  border-style: solid;
-  border-radius: 4px;
-  box-shadow: 1px 1px 2px #888888;
   width: 100%;
 }
 
 .apimInnerContainer {
-  padding: 15px;
-  height: 162px;
+  padding: 8px;
+}
+.apimTeaserRating {
+  float: right;
+  display: inline-block;
 }
 
+
 h3.apimSummaryTitle {
-  color: #3BA7F0;
   margin-bottom: 0;
   font-size: 18px;
 }
@@ -118,11 +118,6 @@ h3.apimSummaryTitle {
   display: block;
 }
 
-.apimField {
-  color: #bbbdbf;
-  font-weight: bold;
-}
-
 .apimIcon {
   background-repeat: no-repeat;
   float: left;
@@ -130,21 +125,87 @@ h3.apimSummaryTitle {
   width: 100px;
   height: 100px;
 }
+.apimTeaser .apimIcon {
+  width: 70px;
+  height: 70px;
+}
+.apimTeaser .apimIcon figure.clearfix.field-item {
+  margin: 0;
+  padding-top: 0;
+}
+.apimIcon .ia-c .field-type-image figure, 
+.apimIcon .ia-n .field-type-image figure, 
+.apimIcon .iat-c .field-type-image figure, 
+.apimIcon .iat-n .field-type-image figure {
+  padding: 0;
+}
+
+.apimAPIImage {
+  display: inline-block;
+  margin-right: 20px;
+  width: 120px;
+  vertical-align: top;
+}
+.apimTopSection .apimAPIImage {
+  display: table-cell;
+}
+.apimTopSection .centralspacer {
+  display: table-cell;
+  width: 30px;
+}
+.apimTopSection .apimAPIImage field {
+  padding-bottom: 0;
+}
+
+.apimAPIImage .apimImageActions {
+  text-align: center;
+  display: block;
+}
+.apimAPIImage .field-type-image img {
+  max-width: 120px;
+}
 
 .appIcon {
   float: right;
+}
+.apimTopSection {
+  width: 100%;
+  display: table;
+}
+
+.apimInfoSection {
+  display: table-cell;
+}
+.apimInfoSection .apimTitle span.apimAppActions {
+  display: inline-block;
+  float: right;
+  font-size: 14px;
 }
 
 .appPlanName {
   color: #43484a;
   font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 10px;
+  padding: 3px 15px;
 }
 
-.appPlanName .planUnsubscribeIcon {
-  padding-left: 10px;
-  vertical-align: top;
+.apiPlanSummary .appPlanName h3 {
+  font-weight: 700;
+}
+
+.appPlanName .planUnsubscribe,
+.apiPlanSummary .appPlanName .planSubscribe,
+.apimPlansApis .ui-accordion-header .testAPILink  {
+  padding-right: 10px;
+  float: right;
+  padding-top: 5px;
+  font-size: 14px;
+}
+.apiPlanSummary .appPlanName .planSubscribe,
+.apimPlansApis .ui-accordion-header .testAPILink {
+  padding-top: 0;
+}
+.apimPlansApis .ui-accordion-header .testAPILink {
+  padding-right: 40px;
 }
 
 .apimSummaryDescription {
@@ -152,61 +213,39 @@ h3.apimSummaryTitle {
   font-size: 14px;
   font-weight: normal;
   display: block;
-  height: 126px;
+  height: 66px;
 }
 
 .apimSummaryDescription p {
   font-size: 14px;
-  line-height: inherit;
+  line-height: 1.2em;
   margin-top: 0;
-}
-
-.apiDocTitle {
-  color: #b1b2b3;
 }
 
 .docFile {
   display: block;
 }
 
-.ellipsis {
-  overflow: hidden;
-}
+.apimapimTitleContainerat {
 
-.ellipsis > *:first-child {
-  float: right;
-  width: 100%;
-  margin-left: -5px;
 }
-
-.ellipsis:before {
-  content: "";
-  float: left;
-  width: 5px;
-  height: 100%;
-}
-
-.ellipsis:after {
-  content: "\02026";
-  box-sizing: content-box;
-  float: right;
-  position: relative;
-  top: -14px;
-  left: 100%;
-  width: 3em;
-  margin-left: -3em;
-  padding-right: 5px;
-  text-align: right;
-  background-size: 100% 100%;
-  background: linear-gradient(to right, rgba(255, 255, 255, 0), white 50%, white);
-}
-
-.apimTitleFloat {
-  float: left;	
+.api .apimTitleContainer {
+  display: inline-block;
 }
 
 .planSelector {
-  float: right;
+  display: inline-block;
+  border-left-width: 1px;
+  border-left-style: solid;
+  padding-left: 30px;
+  margin-left: 0;
+}
+.plan .planSelector {
+  border: 0;
+}
+
+.plan .authInfo {
+  border-right: 1px solid;
 }
 
 .displayInlineTop {
@@ -215,8 +254,6 @@ h3.apimSummaryTitle {
 }
 
 .planName {
-  font-size: 18px;
-  font-weight: bold;
   line-height: 25px;	
 }
 
@@ -225,7 +262,7 @@ h3.apimSummaryTitle {
 }
 
 .portal .section.apimMainContent {
-  padding-top: 0;
+  padding-top: 10px;
 }
 
 .clearBoth {
@@ -233,21 +270,162 @@ h3.apimSummaryTitle {
 }
 
 /* Override some Swagger UI styles */
-.portal .swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.get div.content {
-  color: black;	
+.portal .swagger-section textarea {
+  font-family: monospace;
 }
 
-.portal .swagger-section .swagger-ui-wrap ul#resources li.resource:hover div.heading h2 a,
-.portal .swagger-section .swagger-ui-wrap ul#resources li.resource.active div.heading h2 a,
+.portal .swagger-section #header .basicauthwrapper {
+  float: left;
+}
+.portal .swagger-section #header .auth {
+  float: none;
+  padding-top: 20px;
+  padding-right: 20px;
+  display: inline-block;
+}
+.portal .swagger-section #header .access {
+  float: none;
+  padding-top: 20px;
+  display: inline-block;
+}
+
+.portal .swagger-section #swagger-ui-container.swagger-ui-wrap {
+  padding: 0 10px;
+}
+
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation div.heading h3 span.http_method a {
+  line-height: 21px;
+  font-weight: bold;
+  font-size: 14px;
+  width: 65px;
+  border-radius: 3px;
+  padding: 5px;
+  text-align: left;
+}
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation div.heading ul.options li a {
+  font-size: 12px;
+}
+
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading {
+  height: 30px;
+}
+/* hide the swagger ui toggles */
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading h2 a.toggleEndpointList,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading ul.options li a.toggleEndpointList,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading ul.options li a.collapseResource,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading ul.options li a.expandResource  {
+  display: none;
+}
+/* override the swagger method colors */
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.get div.heading ul.options li a,
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.get div.content h4 {
+  color: #4178be !important;
+}
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.get div.heading h3 span.http_method a {
+  background-color: #4178be !important;
+}
+
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.post div.heading ul.options li a,
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.post div.content h4 {
+  color: #4b8400 !important;
+}
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.post div.heading h3 span.http_method a {
+  background-color: #4b8400 !important;
+}
+
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.post div.heading,
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.post div.content {
+  border: 1px solid #b7ce99 !important;
+}
+
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.put div.heading ul.options li a,
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.put div.content h4 {
+  color: #d74108 !important;
+}
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.put div.heading h3 span.http_method a {
+  background-color: #d74108 !important;
+}
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.put div.heading,
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.put div.content {
+  border: 1px solid #f0e0ca !important;
+}
+
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.delete div.heading ul.options li a,
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.delete div.content h4 {
+  color: #ad1625 !important;
+}
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.delete div.heading h3 span.http_method a {
+  background-color: #ad1625 !important;
+}
+
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.patch div.heading ul.options li a,
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.patch div.content h4 {
+  color: #a36400 !important;
+}
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.patch div.heading h3 span.http_method a {
+  background-color: #a36400 !important;
+}
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.patch div.heading,
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.patch div.content {
+  border: 1px solid #e3d0b2 !important;
+}
+
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.options div.heading ul.options li a,
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.options div.content h4 {
+  color: #734098 !important;
+}
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.options div.heading h3 span.http_method a {
+  background-color: #734098 !important;
+}
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.options div.heading,
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.options div.content {
+  border: 1px solid #d5c6e0 !important;
+}
+
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.head div.heading ul.options li a,
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.head div.content h4 {
+  color: #008571 !important;
+}
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.head div.heading h3 span.http_method a {
+  background-color: #008571 !important;
+}
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.head div.heading,
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.head div.content {
+  border: 1px solid #cce7e3 !important;
+}
+
+.portal .swagger-section .swagger-ui-wrap,
+.portal .swagger-section .swagger-ui-wrap b,
+.portal .swagger-section .swagger-ui-wrap strong,
+.portal .swagger-section .swagger-ui-wrap h1,
+.portal .swagger-section .swagger-ui-wrap form.formtastic fieldset.inputs ol li.text textarea,
+.portal .swagger-section .swagger-ui-wrap ul#resources,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading h2,
+.portal .swagger-section .swagger-ui-wrap p#colophon,
+.portal .swagger-section .swagger-ui-wrap .markdown ol,
+.portal .swagger-section .swagger-ui-wrap .markdown ul {
+  font-family: inherit !important;
+}
+
+.portal .swagger-section #header form#api_selector {
+  padding-top: 10px;
+}
+
 .portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading ul.options li,
 .portal .swagger-section .swagger-ui-wrap ul#resources li.resource:hover div.heading ul.options li a,
 .portal .swagger-section .swagger-ui-wrap ul#resources li.resource.active div.heading ul.options li a,
 .portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading ul.options li a,
 .portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading ul.options li a:hover,
-.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading h2 a,
-.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading h2 a:hover,
 .portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading ul.options li {
   color: inherit;
+}
+
+.swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation div.heading ul.options li a {
+  font-weight: bold;
+}
+
+.portal .swagger-section .swagger-ui-wrap .model-signature .signature-nav .selected {
+  font-weight: bold;
 }
 
 .portal .swagger-section #header form#api_selector .input input {
@@ -256,18 +434,20 @@ h3.apimSummaryTitle {
 }
 
 .portal .swagger-section {
-	font-size: 1em;
+  font-size: 1em;
+  clear: both;
 }
 
 .portal .swagger-section .swagger-ui-wrap {
-	max-width: 100%;	
+  max-width: 100%;	
 }
 
 .portal .swagger-section #header {
   height: 2.5em;
-  border-left: 1px solid;
-  border-right: 1px solid;
+  border-left: 0;
+  border-right: 0;
   border-bottom: 1px solid;
+  padding: 30px 0;  
 }
 .portal .swagger-section #header h2{
   padding: 0 0 10px 0;
@@ -277,6 +457,12 @@ h3.apimSummaryTitle {
   display: inline-block;
   float: right;
 }
+.portal .swagger-section #header .registerAppLink{
+  display: inline-block;
+  float: left;
+  padding: 10px;
+}
+
 .portal .swagger-section #header form#api_selector .input {
   display: inline-block;
 }
@@ -289,6 +475,16 @@ h3.apimSummaryTitle {
 }
 
 .portal .swagger-ui-wrap .info {
+  display: none;
+  padding: 30px 10px 10px 10px;
+}
+
+.portal .swagger-section ul.api-popup-scopes li label {
+  display: inline;
+}
+
+/* disable the try it now buttons for soap */
+.swagger-section.soap .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation div.content div.sandbox_header {
   display: none;
 }
 
@@ -379,67 +575,69 @@ h3.apimSummaryTitle {
 }
 
 .includedAPIsTitle {
-  font-size: large;
   padding: 20px 0;
 }
 
 .portal .tableHeaderBackground.clearTable {
-background-color: inherit;
-border: none;
-padding-left: 7px;
-min-height: 29px;
-line-height: 29px;
-color: #70787A;
-font-size: 11px;
-word-break: break-word;
+  background-color: inherit;
+  border: none;
+  padding-left: 7px;
+  min-height: 29px;
+  line-height: 29px;
+  color: #70787A;
+  font-size: 11px;
+  word-break: break-word;
 }
 
 .portal .portalApi .resourceMethod {
-width: 60px;
-margin-right: 10px;
-line-height: 21px;
+  width: 60px;
+  margin-right: 10px;
+  line-height: 21px;
 }
 .tableHeaderBackground .column {
-display: inline-block;
-vertical-align: top;
+  display: inline-block;
+  vertical-align: top;
 }
 .portal .portalApi .resourcePathShort {
-width: 300px;
-margin-right: 10px;
-line-height: 21px;
+  width: 300px;
+  margin-right: 10px;
+  line-height: 21px;
 }
 .node-plan .portalApi .resourcePathShort {
   width: 215px;
 }
+.apiPlanSummary .portal .portalApi .resourcePathShort {
+  width: auto; 
+}
 .portal .portalApi .resourceName {
-width: 150px;
-margin-right: 10px;
-line-height: 21px;
+  width: 150px;
+  margin-right: 10px;
+  line-height: 21px;
 }
 .node-plan .portalApi .resourceName {
   width: 120px;
 }
 .portal .portalApi .resourceDesc {
-width: 265px;
-margin-right: 10px;
-line-height: 21px;
+  width: 265px;
+  margin-right: 10px;
+  line-height: 21px;
 }
 .node-plan .portalApi .resourceDesc {
   width: 195px;
 }
 .portal .portalApi .resourceIdentification {
-width: 80px;
-margin-right: 10px;
-line-height: 21px;
+  width: 80px;
+  margin-right: 10px;
+  line-height: 21px;
 }
 .portal .portalApi .resourceAuthentication {
-width: 90px;
-margin-right: 10px;
-line-height: 21px;
+  width: 90px;
+  margin-right: 10px;
+  line-height: 21px;
 }
 .portal .portalApi .resourceRateLimit {
-width: 180px;
-line-height: 21px;
+  width: 150px;
+  line-height: 21px;
 }
 .node-plan .portalApi .resourceRateLimit {
   width: 180px;
@@ -463,81 +661,85 @@ line-height: 21px;
   width: 100%;
 }
 
+.portal .portalApi .tableHeaderBackground .resourceMethod {
+  margin-right: 20px;
+}
+
 .portal .portalApi .resourceMethodBadge {
-padding-left: 5px;
-width: 55px;
--webkit-border-radius: 3px;
--moz-border-radius: 3px;
-border-radius: 3px;
-line-height: 21px;
-color: #ffffff;
-font-weight: bold;
+  padding: 5px;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  line-height: 21px;
+  color: #ffffff;
+  font-weight: bold;
 }
 .portal .portalApi .resourceMethod.GET {
-  background-color: #008bc5;
+  background-color: #4178be;
 }
 .portal .portalApi .resourceMethod.PUT {
-  background-color: #53c500;
+  background-color: #4b8400;
 }
 .portal .portalApi .resourceMethod.POST {
-  background-color: #eb7f00;
+  background-color: #d74108;
 }
 .portal .portalApi .resourceMethod.DELETE {
-  background-color: #ea0000;
+  background-color: #ad1625;
+}
+.portal .portalApi .resourceMethod.PATCH {
+  background-color: #a36400;
+}
+.portal .portalApi .resourceMethod.OPTIONS {
+  background-color: #734098;
+}
+.portal .portalApi .resourceMethod.HEAD {
+  background-color: #008571;
 }
 .portal .apiSpot .protocol {
-	line-height: 15px;
-	height: 15px;
-	padding: 5px;
-	font-size: small;
-	color: #ffffff;
-	-webkit-border-radius: 2px;
-	-moz-border-radius: 2px;
-	border-radius: 2px;
+  line-height: 15px;
+  height: 15px;
+  padding: 5px;
+  font-size: small;
+  color: #ffffff;
+  -webkit-border-radius: 2px;
+  -moz-border-radius: 2px;
+  border-radius: 2px;
 }
 .portal .apiSpot .protocol.REST {
-	background-color: #00bfdd;
+  background-color: #00bfdd;
 }
 .portal .apiSpot .protocol.SOAP {
-	background-color: #ff6f2a;
+  background-color: #ff6f2a;
 }
 .portal .tableLabel {
   display: none;
 }
 
-.singleOrg {
-  color: #bac0c6;
-}
-
 div.elipsis-names {
-	display: inline-block;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	overflow: hidden;
-	max-width: 64em;
+  display: inline-block;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 64em;
 }
 
 a.elipsis-names {
-	display: inline-block;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	overflow: hidden;
-	max-width: 64em;
+  display: inline-block;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 64em;
 }
 
-/* hide the tasks tabs for our content types */
-.node-type-api #main-content-header #tasks,
+/* hide the tasks tabs for applications */
 .node-type-application #main-content-header #tasks,
-.node-type-plan #main-content-header #tasks,
-.page-api #main-content-header #tasks,
-.page-application #main-content-header #tasks,
-.page-plan #main-content-header #tasks {
+.page-application #main-content-header #tasks {
   display: none;
 }
 
 .node-type-api .apiForumLink,
 .page-api .apiForumLink {
-	float: right;
+  float: right;
 }
 
 .passwordToggleContainer {
@@ -561,13 +763,13 @@ input.toggle-password {
 
 /* Notification Block */
 .notification {
-    color: #fffdfc;
-    cursor: pointer;
-    float: right;
-    font-weight: bold;
-    margin: 0;
-    padding-top: 2px;
-    text-align: center;
+  color: #fffdfc;
+  cursor: pointer;
+  float: right;
+  font-weight: bold;
+  margin: 0;
+  padding-top: 2px;
+  text-align: center;
 }
 .notification button,
 .notification button:hover,
@@ -579,94 +781,94 @@ input.toggle-password {
   padding: 0 0 10px;
 }
 .notificationBox {
-  background: none repeat scroll 0 0 #f04747;
-  border: 2px solid #f04747;
+  background: none repeat scroll 0 0 #0077d9;
+  border: 2px solid #0077d9;
   border-radius: 3px;
   height: 18px;
   min-width: 20px;
   position: relative;
 }
 .notificationBox:after, .notificationBox:before {
-    border: medium solid transparent;
-    content: " ";
-    height: 0;
-    left: 50%;
-    pointer-events: none;
-    position: absolute;
-    top: 100%;
-    width: 0;
+  border: medium solid transparent;
+  content: " ";
+  height: 0;
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  top: 100%;
+  width: 0;
 }
 .notificationBox:after {
-    border-color: #f04747 rgba(213, 50, 17, 0) rgba(213, 50, 17, 0);
-    border-width: 4px;
-    margin-left: -4px;
+  border-color: #0077d9 rgba(213, 50, 17, 0) rgba(213, 50, 17, 0);
+  border-width: 4px;
+  margin-left: -4px;
 }
 .notificationBox:before {
-    border-color: #f04747 rgba(194, 225, 245, 0) rgba(194, 225, 245, 0);
-    border-width: 7px;
-    margin-left: -7px;
+  border-color: #0077d9 rgba(194, 225, 245, 0) rgba(194, 225, 245, 0);
+  border-width: 7px;
+  margin-left: -7px;
 }
 .notificationBox.greyBox {
-    background: none repeat scroll 0 0 #dddee0;
-    border: 2px solid #dddee0;
+  background: none repeat scroll 0 0 #dddee0;
+  border: 2px solid #dddee0;
 }
 .notificationBox.greyBox:after {
-    border-top-color: #dddee0;
+  border-top-color: #dddee0;
 }
 .notificationBox.greyBox:before {
-    border-top-color: #dddee0;
+  border-top-color: #dddee0;
 }
 
 /* Notification Messages */
 .activityViewFloatLeft {
-    float: left;
-    margin-left: 10px;
+  float: left;
+  margin-left: 10px;
 }
 .activityViewFloatRight {
-    float: right;
-    margin-right: 10px;
+  float: right;
+  margin-right: 10px;
 }
 .activityView {
-    margin-left: auto;
-    margin-right: auto;
-    padding-top:10px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top:10px;
 }
 .activityViewInner {
   padding-bottom:20px;
   border-top: 1px solid #b6b7bd;
 }
 .notificationBackground {
-    border: 1px solid #d8cecc;
-    border-radius: 3px;
-    height: auto;
-    margin-top: 13px;
-    min-width: 474px;
-    overflow: auto;
+  border: 1px solid #d8cecc;
+  border-radius: 3px;
+  height: auto;
+  margin-top: 13px;
+  min-width: 474px;
+  overflow: auto;
 }
 .notificationBackground:after, .notificationBackground:before {
-    border: medium solid transparent;
-    bottom: 100%;
-    content: " ";
-    height: 0;
-    left: 97%;
-    margin-bottom: -13px;
-    pointer-events: none;
-    position: absolute;
-    width: 0;
+  border: medium solid transparent;
+  bottom: 100%;
+  content: " ";
+  height: 0;
+  left: 97%;
+  margin-bottom: -13px;
+  pointer-events: none;
+  position: absolute;
+  width: 0;
 }
 .notificationBackground:after {
-    border-color: rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) #f8efef;
-    border-width: 4px;
-    margin-left: -7px;
+  border-color: rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) #f8efef;
+  border-width: 4px;
+  margin-left: -7px;
 }
 .notificationBackground:before {
-    border-color: rgba(194, 225, 245, 0) rgba(194, 225, 245, 0) #8c8c8c;
-    border-width: 4px;
-    margin-left: -7px;
+  border-color: rgba(194, 225, 245, 0) rgba(194, 225, 245, 0) #8c8c8c;
+  border-width: 4px;
+  margin-left: -7px;
 }
 .viewActivities .activityFeedButtonSelected {
-    background-image: -moz-linear-gradient(center top , #b0d6e2, #c2e6f2) !important;
-    box-shadow: 0 0 5px #dedede inset;
+  background-image: -moz-linear-gradient(center top , #b0d6e2, #c2e6f2) !important;
+  box-shadow: 0 0 5px #dedede inset;
 }
 .viewActivity {
 }
@@ -675,58 +877,58 @@ input.toggle-password {
   float:left;
 }
 .viewActivity .subText {
-    color: #868686;
-    font-size: 10px;
-    padding-top: 10px;
-    padding-bottom: 5px;
+  color: #868686;
+  font-size: 10px;
+  padding-top: 10px;
+  padding-bottom: 5px;
 }
 .viewActivity .paddingHorizontal {
-    padding-left: 10px;
-    padding-right: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 .activityBorder {
-    border-bottom: 1px solid #b6b7bd;
+  border-bottom: 1px solid #b6b7bd;
 }
 .activityBorderMargin {
-    border: 1px solid #b6b7bd;
-    margin-top: 20px;
+  border: 1px solid #b6b7bd;
+  margin-top: 20px;
 }
 .viewActivity .statusIcon {
-    background-position: 0 0;
-    height: 24px;
-    width: 24px;
+  background-position: 0 0;
+  height: 24px;
+  width: 24px;
 }
 .notificationStatusIconAligment {
-    vertical-align: middle;
-    max-width: 700px;
+  vertical-align: middle;
+  max-width: 700px;
 }
 .statusIconAlighment {
-    vertical-align: top;
+  vertical-align: top;
 }
 .notificationMessageAligment, .portal .notificationBackground .notificationMessageAligment {
-    margin-left: 30px;
-    margin-top: -25px;
+  margin-left: 30px;
+  margin-top: -25px;
 }
 .portal .notificationMessageAligment {
-    margin-top: 0;
+  margin-top: 0;
 }
 .messageAligment {
-    margin-left: 10px;
+  margin-left: 10px;
 }
 .viewActivity .statusIcon.queued, .viewActivity .statusIcon.started, .viewActivity .statusIcon.running {
-    background-image: url("../images/activity/loadingAnimation24px.gif");
+  background-image: url("../images/activity/loadingAnimation24px.gif");
 }
 .viewActivity .statusIcon.ALERT, .viewActivity .statusIcon.warning {
-    background-image: url("../images/activity/warning_24.png");
+  background-image: url("../images/activity/warning_24.png");
 }
 .viewActivity .statusIcon.ERROR, .viewActivity .statusIcon.FAIL, .viewActivity .statusIcon.severe, .viewActivity .statusIcon.error, .viewActivity .statusIcon.errored, .viewActivity .statusIcon.complete_with_errors {
-    background-image: url("../images/activity/error_24.png");
+  background-image: url("../images/activity/error_24.png");
 }
 .viewActivity .statusIcon.EVENT, .viewActivity .statusIcon.INFO {
-    background-image: url("../images/activity/info_24.png");
+  background-image: url("../images/activity/info_24.png");
 }
 .viewActivity .statusIcon.SUCCESS, .viewActivity .statusIcon.complete {
-    background-image: url("../images/activity/success_24.png");
+  background-image: url("../images/activity/success_24.png");
 }
 /* override JQuery UI gradient headers */
 .ui-widget-header {
@@ -741,6 +943,17 @@ input.toggle-password {
   letter-spacing: 0.25em;
   line-height: normal;
   text-transform: uppercase;
+}
+.form-item.form-type-radios.form-item-interval label.option {
+  text-transform: none;
+  color: inherit;
+  font-weight: normal;
+  font-size: 1em;
+  letter-spacing: normal;
+}
+
+.form-actions.form-wrapper input.form-submit{
+  line-height: 1.2em;
 }
 
 img.notifcationSettingsIcon {
@@ -761,6 +974,15 @@ div.appSecret {
 .myorgAddUserLink {
   float:right;
 }
+.myorgEditLink {
+  float: left;
+  font-weight: bold;
+}
+
+.myorgLinks .form-item-role .description {
+  display: block;
+  padding-bottom: 20px;
+}
 
 span.dropit-icon.ui-icon-triangle-1-s {
   display: inline-block;
@@ -770,8 +992,18 @@ span.dropit-icon.ui-icon-triangle-1-s {
   margin-top: inherit;
 }
 
-.apimTitleFloat .apimTitle span {
-  font-size: 28px;
+.swaggerHeader {
+  font-size: 1.2em;
+}
+.apimTitleContainer .apimTitle span,
+.apimMainContent span.apimTitle,
+.planName.planName,
+.includedAPIsTitle,
+.swaggerHeader span.swaggerTitle  {
+  font-size: 26px;
+}
+.swaggerHeader span.swaggerTitle {
+  display: block;
 }
 
 div.api_description,
@@ -779,6 +1011,16 @@ div.app_client_id,
 div.app_oauth_redirecturi,
 div.client_secret {
   margin-bottom: 10px;
+}
+div.client_secret,
+div.passwordToggleContainer {
+  margin-bottom: 10px;
+  display: inline-block;
+  margin-left: 30px;
+}
+label.apiClientSecret,
+label.apiClientID {
+  display: inline-block;
 }
 
 .portalApi.animateMaxHeight {
@@ -794,10 +1036,140 @@ div.client_secret {
   margin-top: 6px;
 }
 
-.apimTitleFloat .displayInlineTop {
+.apimTitleContainer .displayInlineTop {
   padding-right: 20px; 
 }
-.apimTitleFloat .displayInlineTop.planName {
+.apimTitleContainer .displayInlineTop.planName {
   margin-bottom: 20px; 
   border-right: 1px solid #CCC;
+}
+/* checkboxes on admin panel */
+.fieldDiv, .requiredDiv {
+  display:inline-block;
+  vertical-align: top;
+}
+.requiredDiv .spacerDiv{
+  margin-bottom: 10px;
+  display: inline-block;
+}
+.requiredFieldDiv .form-item {
+  display:inline-block;
+}
+.requiredFieldDiv .form-item .requiredCheckbox {
+  margin-left: 20px;
+}
+/* some nasty CSS to change the password strength meter colors */
+div.password-indicator div[style="width: 10%;"] {
+  background-color: #bb5555;
+}
+
+.ui-accordion .ui-state-default,
+.ui-accordion .ui-widget-content .ui-state-default,
+.ui-accordion .ui-widget-header .ui-state-default {
+  background: none; 
+  border: 0;
+}
+
+.ui-accordion .portalApi.animateMaxHeight {
+  border: 0;
+}
+
+.ui-accordion h3.ui-accordion-header.ui-state-default,
+.ui-accordion h3.ui-accordion-header.ui-state-active {
+  background: none;
+  border: 0;
+}
+
+.ui-accordion h3.ui-accordion-header:after {
+  content:'';
+  position: absolute;
+  bottom: 0;
+  left: 23%;
+  width: 93%;
+  height: 1px;
+  margin-left: -20%;
+  background: #aaaaaa;
+}
+.apiPlanSummary .ui-accordion h3.ui-accordion-header:after {
+  content:'';
+  height: 0;
+  margin-left: 0;
+  background: none;
+}
+.portal .apiPlanSummary.section.apimMainContent {
+  padding: 30px 0;
+}
+.apiPlanSummary .resourceInfoLine {
+  display: inline-block;
+}
+.apiPlanSummary .resourceNameAndRate {
+  display: inline-block;
+  float: right;
+}
+.apiPlanSummary .resourceDesc {
+  display: block;
+  clear: both;
+}
+span.flag-wrapper.flag-bookmarks {
+  font-size: 1em;
+  text-transform: none;
+}
+/* hide delete link for subscriptions since it doesnt work */
+#notifications-account-manage-subscriptions-form ul.links li.delete {
+  display: none;
+}
+
+.portal .apiPlanSummary .portalApi .planHeader .rate {
+  display: inline;
+  float: right;
+}
+.portal .apiPlanSummary .portalApi .planHeader .verb {
+  display: inline;
+  margin-left: 20px;
+}
+.portal .apiPlanSummary .portalApi .planHeader .path {
+  display: inline;
+  margin-left: 40px;
+}
+
+.portal .portalApi .testAPILink {
+  margin-left: 6px;
+}
+.portal .swagger-ui-wrap .registerAppLink {
+  margin: 0 5px;
+}
+
+.portal .appSuspended {
+  color: #6a0000;
+  font-weight: 700;
+  margin: 10px 0;
+  background: #ffd7dd;
+}
+.portal .migratePlanContainer {
+  background: #dbeafc;
+  padding: 20px;
+  margin-bottom: 8px;
+}
+.portal .migratePlanContainer .migrateButton {
+  float: right;
+  display: inline;
+}
+.portal .migratePlanContainer .migratePlanText {
+  display: inline;
+}
+
+.fade {
+  position: relative;
+  overflow: hidden;
+  height: 3.6em; /* exactly three lines */
+}
+.fade:after {
+  content: "";
+  text-align: right;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 30%;
+  height: 1.2em;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0), #FFF 70%);
 }

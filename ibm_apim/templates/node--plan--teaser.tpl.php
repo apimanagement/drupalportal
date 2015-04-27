@@ -31,8 +31,8 @@
 			  print $updateddate->format('Y-m-d');
     } catch (Exception $e) {
     } ?></div>
-					<div class="apimSummaryDescription ellipsis">
-						<p><?php print $plan_description[0]['safe_value']; ?></p>
+					<div class="apimSummaryDescription">
+					  <p class="fade" title="<?php print $plan_description[0]['safe_value']; ?>"><?php print $plan_description[0]['safe_value']; ?></p>
 					</div>
 				</div>
 			</div>

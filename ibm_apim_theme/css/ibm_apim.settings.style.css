@@ -296,6 +296,19 @@ form.node-form div.field-type-image img {
   -khtml-border-radius-bottomleft: 6px;
   border-radius: 0 6px 6px 6px; 
 }
+.rc-6 #page > footer,
+.rc-6 .region-top-menu {
+  -moz-border-radius: 0 0 6px 6px;
+  -webkit-border-top-left-radius: 0;
+  -webkit-border-top-right-radius: 0;
+  -webkit-border-bottom-right-radius: 6px;
+  -webkit-border-bottom-left-radius: 6px;
+  -khtml-border-radius-topleft: 0;
+  -khtml-border-radius-topright: 0;
+  -khtml-border-radius-bottomright: 6px;
+  -khtml-border-radius-bottomleft: 6px;
+  border-radius: 0 0 6px 6px; 
+}
 .rc-8 #columns {
   -moz-border-radius: 0 8px 8px 8px;
   -webkit-border-top-left-radius: 0;
@@ -390,34 +403,104 @@ form.node-form div.field-type-image img {
 
 /* rc forms */
 .rct-4 input.form-button,
-.rct-4 input.form-submit {
+.rct-4 input.form-submit,
+.rct-4 input.form-text,
+.rct-4 select[multiple="multiple"],
+.rct-4 button,
+.rct-4 input[type="submit"],
+.rct-4 input.form-submit,
+.rct-4 .form-actions a,
+.rct-4 .form-actions a:visited,
+.rct-4 .button,
+.rct-4 a.button,
+.rct-4 a.button:visited,
+.rct-4 .banner_block .banner_button a,
+.rct-4 .portal .migratePlanContainer .migrateButton a,
+.rct-4 .numberedList a,
+.rct-4 .supportList a {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   border-radius: 4px;
 }
 .rct-6 input.form-button,
-.rct-6 input.form-submit {
+.rct-6 input.form-submit,
+.rct-6 input.form-text,
+.rct-6 select[multiple="multiple"],
+.rct-6 button,
+.rct-6 input[type="submit"],
+.rct-6 input.form-submit,
+.rct-6 .form-actions a,
+.rct-6 .form-actions a:visited,
+.rct-6 .button,
+.rct-6 a.button,
+.rct-6 a.button:visited,
+.rct-6 .banner_block .banner_button a,
+.rct-6 .portal .migratePlanContainer .migrateButton a,
+.rct-6 .numberedList a,
+.rct-6 .supportList a {
   -moz-border-radius: 6px;
   -webkit-border-radius: 6px;
   border-radius: 6px;
 }
 .rct-8 input.form-button,
-.rct-8 input.form-submit {
+.rct-8 input.form-submit,
+.rct-8 input.form-text,
+.rct-8 select[multiple="multiple"],
+.rct-8 button,
+.rct-8 input[type="submit"],
+.rct-8 input.form-submit,
+.rct-8 .form-actions a,
+.rct-8 .form-actions a:visited,
+.rct-8 .button, 
+.rct-8 a.button,
+.rct-8 a.button:visited,
+.rct-8 .banner_block .banner_button a,
+.rct-8 .portal .migratePlanContainer .migrateButton a,
+.rct-8 .numberedList a,
+.rct-8 .supportList a {
   -moz-border-radius: 8px;
   -webkit-border-radius: 8px;
   border-radius: 8px;
 }
 .rct-10 input.form-button,
-.rct-10 input.form-submit {
+.rct-10 input.form-submit,
+.rct-10 input.form-text,
+.rct-10 select[multiple="multiple"],
+.rct-10 button,
+.rct-10 input[type="submit"],
+.rct-10 input.form-submit,
+.rct-10 .form-actions a,
+.rct-10 .form-actions a:visited,
+.rct-10 .button,
+.rct-10 a.button,
+.rct-10 a.button:visited,
+.rct-10 .banner_block .banner_button a,
+.rct-10 .portal .migratePlanContainer .migrateButton a,
+.rct-10 .numberedList a,
+.rct-10 .supportList a {
   -moz-border-radius: 10px;
   -webkit-border-radius: 10px;
   border-radius: 10px;
 }
 .rct-12 input.form-button,
-.rct-12 input.form-submit {
+.rct-12 input.form-submit,
+.rct-12 input.form-text,
+.rct-12 select[multiple="multiple"],
+.rct-12 button,
+.rct-12 input[type="submit"],
+.rct-12 input.form-submit,
+.rct-12 .form-actions a,
+.rct-12 .form-actions a:visited,
+.rct-12 .button, 
+.rct-12 a.button,
+.rct-12 a.button:visited,
+.rct-12 .banner_block .banner_button a,
+.rct-12 .portal .migratePlanContainer .migrateButton a,
+.rct-12 .numberedList a,
+.rct-12 .supportList a {
   -moz-border-radius: 12px;
   -webkit-border-radius: 12px;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 /* rc tabs */

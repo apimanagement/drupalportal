@@ -9,7 +9,7 @@ html {
 }
 
 body {
-  font-family: "Helvetica Neue", Helvetica, Arial, Geneva, sans-serif;
+  font-family: Verdana, Geneva, 'DejaVu Sans', Arial, Helvetica, sans-serif;
   line-height: 1.5; /* Unit-less line-height means line height can scale. */
   min-height: 100%;
   margin: 0;
@@ -17,7 +17,7 @@ body {
   -webkit-font-smoothing: antialiased;
   font-smoothing: antialiased;
   text-rendering: optimizeLegibility\9; /* Only IE, can mess with Android */
-  font-size: 16px;
+  font-size: 14px;
 }
 
 /* Sizes match proper font scaling. */
@@ -28,11 +28,11 @@ h1, h2, h3, h4, h5, h6 {
   margin: 24px 0 12px 0;
 }
 
-h1 { font-size: 2.153em; } /* 28px */
-h2 { font-size: 1.692em; } /* 22px */
-h3 { font-size: 1.385em; } /* 18px */
-h4 { font-size: 1.231em; } /* 16px */
-h5 { font-size: 1.077em; } /* 14px */
+h1 { font-size: 2em; } /* 28px */
+h2 { font-size: 1.571em; } /* 22px */
+h3 { font-size: 1.286em; } /* 18px */
+h4 { font-size: 1.143em; } /* 16px */
+h5 { font-size: 1.071em; } /* 15px */
 h6 { font-size: 1em; }
 
 img,
@@ -253,4 +253,8 @@ video {
 /* Prevents modern browsers from displaying 'audio' without controls */
 audio:not([controls]) {
   display: none;
+}
+
+a:hover {
+  text-decoration: underline;
 }

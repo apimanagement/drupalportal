@@ -146,8 +146,8 @@
   settings[bigscreen_sidebar_unit]   = '%'
   settings[bigscreen_max_width_unit] = 'px'
   settings[bigscreen_page_width]     = 100
-  settings[bigscreen_sidebar_first]  = 25
-  settings[bigscreen_sidebar_second] = 25
+  settings[bigscreen_sidebar_first]  = 20
+  settings[bigscreen_sidebar_second] = 20
   settings[bigscreen_set_max_width]  = 1
   settings[bigscreen_max_width]      = 1140
   settings[bigscreen_media_query]    = 'only screen and (min-width:1025px)'
@@ -304,14 +304,14 @@
 
 
   ; Fonts
-  settings[base_font]          = 'bf-sss'
-  settings[site_name_font]     = 'snf-sl'
-  settings[site_slogan_font]   = 'ssf-sl'
-  settings[main_menu_font]     = 'mmf-sl'
-  settings[page_title_font]    = 'ptf-sl'
-  settings[node_title_font]    = 'ntf-sl'
-  settings[comment_title_font] = 'ctf-sl'
-  settings[block_title_font]   = 'btf-sl'
+  settings[base_font]          = 'bf-ssl'
+  settings[site_name_font]     = 'bf-ssl'
+  settings[site_slogan_font]   = 'bf-ssl'
+  settings[main_menu_font]     = 'bf-ssl'
+  settings[page_title_font]    = 'bf-ssl'
+  settings[node_title_font]    = 'bf-ssl'
+  settings[comment_title_font] = 'bf-ssl'
+  settings[block_title_font]   = 'bf-ssl'
 
 
   ; Font size
@@ -434,8 +434,8 @@
 
 
   ; ibm_apim Custom
-  settings[content_corner_radius] = 'rc-6'
-  settings[tabs_corner_radius]    = 'rct-6'
+  settings[content_corner_radius] = 'rc-0'
+  settings[tabs_corner_radius]    = 'rct-0'
   settings[box_shadows]           = 'bs-n'
   settings[body_background]       = 'bb-n'
   settings[menu_bullets]          = 'mb-dd'

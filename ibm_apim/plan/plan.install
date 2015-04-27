@@ -30,109 +30,155 @@ function plan_uninstall() {
 function _plan_installed_fields() {
   $t = get_t();
   return array(
+    'plan_apimhostname' => array(
+      'field_name' => 'plan_apimhostname',
+      'label' => t('APIM Hostname'),
+      'type' => 'text'),
+    'plan_providerid' => array(
+      'field_name' => 'plan_providerid',
+      'label' => t('Provider ID'),
+      'type' => 'text'),
+    'plan_environmentid' => array(
+      'field_name' => 'plan_environmentid',
+      'label' => t('Environment ID'),
+      'type' => 'text'),
     'plan_apiid' => array(
       'field_name' => 'plan_apiid',
-      'label' => $t('IBM_APIM ID'),
+      'label' => t('ID'),
       'type' => 'text'),
     'plan_version' => array(
       'field_name' => 'plan_version',
-      'label' => $t('IBM_APIM Version'),
+      'label' => t('Version'),
       'type' => 'text'),
     'plan_description' => array(
       'field_name' => 'plan_description',
-      'label' => $t('IBM_APIM Description'),
+      'label' => t('Description'),
       'type' => 'text_long'),
     'plan_displayname' => array(
       'field_name' => 'plan_displayname',
-      'label' => $t('IBM_APIM Display Name'),
+      'label' => t('Display Name'),
       'type' => 'text'),
     'plan_requiresapproval' => array(
       'field_name' => 'plan_requiresapproval',
-      'label' => $t('IBM_APIM Requires Approval'),
+      'label' => t('Requires Approval'),
       'type' => 'text'),
-    'plan_url' => array(
-      'field_name' => 'plan_url',
-      'label' => $t('IBM_APIM URL'),
+    'plan_subscribable' => array(
+      'field_name' => 'plan_subscribable',
+      'label' => t('Subscribable'),
       'type' => 'text'),
+    'plan_apis' => array(
+      'field_name' => 'plan_apis',
+      'label' => t('APIs'),
+      'type' => 'text_long'),
+    'plan_url' => array('field_name' => 'plan_url', 'label' => t('URL'), 'type' => 'text'),
     'plan_updated' => array(
       'field_name' => 'plan_updated',
-      'label' => $t('IBM_APIM Updated'),
+      'label' => t('Updated'),
       'type' => 'text'));
 }
 
 function _plan_installed_instances() {
   $t = get_t();
   return array(
+    'plan_apimhostname' => array(
+      'field_name' => 'plan_apimhostname',
+      'type' => 'text',
+      'label' => t('APIM Hostname'),
+      'widget' => array('type' => 'text_textfield'),
+      'display' => array(
+        'default' => array('label' => t('APIM Hostname'), 'type' => 'text'),
+        'teaser' => array('label' => t('APIM Hostname'), 'type' => 'text'))),
+    'plan_providerid' => array(
+      'field_name' => 'plan_providerid',
+      'type' => 'text',
+      'label' => t('Provider ID'),
+      'widget' => array('type' => 'text_textfield'),
+      'display' => array(
+        'default' => array('label' => t('Provider ID'), 'type' => 'text'),
+        'teaser' => array('label' => t('Provider ID'), 'type' => 'text'))),
+    'plan_environmentid' => array(
+      'field_name' => 'plan_environmentid',
+      'type' => 'text',
+      'label' => t('Environment ID'),
+      'widget' => array('type' => 'text_textfield'),
+      'display' => array(
+        'default' => array('label' => t('Environment ID'), 'type' => 'text'),
+        'teaser' => array('label' => t('Environment ID'), 'type' => 'text'))),
     'plan_apiid' => array(
       'field_name' => 'plan_apiid',
       'type' => 'text',
-      'label' => $t('IBM_APIM ID'),
+      'label' => t('ID'),
       'widget' => array('type' => 'text_textfield'),
       'display' => array(
-        'default' => array('label' => $t('IBM_APIM ID'), 'type' => 'text'),
-        'teaser' => array('label' => $t('IBM_APIM ID'), 'type' => 'text'))),
+        'default' => array('label' => t('ID'), 'type' => 'text'),
+        'teaser' => array('label' => t('ID'), 'type' => 'text'))),
     'plan_version' => array(
       'field_name' => 'plan_version',
       'type' => 'text',
-      'label' => $t('IBM_APIM Version'),
+      'label' => t('Version'),
       'widget' => array('type' => 'text_textfield'),
       'display' => array(
-        'default' => array('label' => $t('IBM_APIM Version'), 'type' => 'text'),
-        'teaser' => array('label' => $t('IBM_APIM Version'), 'type' => 'text'))),
+        'default' => array('label' => t('Version'), 'type' => 'text'),
+        'teaser' => array('label' => t('Version'), 'type' => 'text'))),
     'plan_description' => array(
       'field_name' => 'plan_description',
       'type' => 'text_long',
-      'label' => $t('IBM_APIM Description'),
+      'label' => t('Description'),
       'widget' => array('type' => 'text_textarea'),
       'display' => array(
-        'default' => array(
-          'label' => $t('IBM_APIM Description'),
-          'type' => 'text_long'),
-        'teaser' => array(
-          'label' => $t('IBM_APIM Description'),
-          'type' => 'text_long'))),
+        'default' => array('label' => t('Description'), 'type' => 'text_long'),
+        'teaser' => array('label' => t('Description'), 'type' => 'text_long'))),
     'plan_displayname' => array(
       'field_name' => 'plan_displayname',
       'type' => 'text',
-      'label' => $t('IBM_APIM Display Name'),
+      'label' => t('Display Name'),
       'widget' => array('type' => 'text_textfield'),
       'display' => array(
-        'default' => array(
-          'label' => $t('IBM_APIM Display Name'),
-          'type' => 'text'),
-        'teaser' => array(
-          'label' => $t('IBM_APIM Display Name'),
-          'type' => 'text_long'))),
+        'default' => array('label' => t('Display Name'), 'type' => 'text'),
+        'teaser' => array('label' => t('Display Name'), 'type' => 'text_long'))),
     'plan_requiresapproval' => array(
       'field_name' => 'plan_requiresapproval',
       'type' => 'text',
-      'label' => $t('IBM_APIM Requires Approval'),
+      'label' => t('Requires Approval'),
       'widget' => array('type' => 'text_textfield'),
       'display' => array(
-        'default' => array(
-          'label' => $t('IBM_APIM Requires Approval'),
-          'type' => 'text'))),
+        'default' => array('label' => t('Requires Approval'), 'type' => 'text'))),
+    'plan_subscribable' => array(
+      'field_name' => 'plan_subscribable',
+      'type' => 'text',
+      'label' => t('Subscribable'),
+      'widget' => array('type' => 'text_textfield'),
+      'display' => array(
+        'default' => array('label' => t('Subscribable'), 'type' => 'text'))),
+    'plan_apis' => array(
+      'field_name' => 'plan_apis',
+      'type' => 'text_long',
+      'label' => t('APIs'),
+      'widget' => array('type' => 'text_textarea'),
+      'display' => array('default' => array('label' => t('APIs'), 'type' => 'text_long'))),
     'plan_url' => array(
       'field_name' => 'plan_url',
       'type' => 'text',
-      'label' => $t('IBM_APIM URL'),
+      'label' => t('URL'),
       'widget' => array('type' => 'text_textfield'),
-      'display' => array(
-        'default' => array('label' => $t('IBM_APIM URL'), 'type' => 'text'))),
+      'display' => array('default' => array('label' => t('URL'), 'type' => 'text'))),
     'plan_updated' => array(
       'field_name' => 'plan_updated',
       'type' => 'text',
-      'label' => $t('IBM_APIM Updated'),
+      'label' => t('Updated'),
       'widget' => array('type' => 'text_textfield'),
       'display' => array(
-        'default' => array('label' => $t('IBM_APIM Updated'), 'type' => 'text'),
-        'teaser' => array('label' => $t('IBM_APIM Updated'), 'type' => 'text'))));
+        'default' => array('label' => t('Updated'), 'type' => 'text'),
+        'teaser' => array('label' => t('Updated'), 'type' => 'text'))));
 }
 
 function _plan_add_custom_fields() {
   // Plan
   foreach (_plan_installed_fields() as $field) {
-    field_create_field($field);
+    $existingfield = field_info_field($field['field_name']);
+    if (!isset($existingfield)) {
+      field_create_field($field);
+    }
   }
   foreach (_plan_installed_instances() as $fieldinstance) {
     $fieldinstance['entity_type'] = 'node';
@@ -146,10 +192,7 @@ function _plan_delete_custom_fields() {
   foreach (array_keys(_plan_installed_fields()) as $field) {
     field_delete_field($field);
   }
-  $instances = field_info_instances('node', 'plan');
-  foreach ($instances as $instance_name => $fieldinstance) {
-    field_delete_instance($fieldinstance);
-  }
+  field_delete_instance($fieldinstance);
 }
 
 // delete all nodes of specified type
@@ -160,5 +203,10 @@ function _plan_delete_node_content($type) {
   foreach ($result as $row) {
     $nodeids[] = $row->nid;
   }
-  node_delete_multiple($nodeids);
+  try {
+    node_delete_multiple($nodeids);
+  }
+  catch (Exception $e) {
+    // quietly swallow exceptions from dropping the nodes.
+  }
 }

@@ -3,7 +3,7 @@
 /**
  * IBM API Management Integration
  *
- * Adds the Application node content type to Drupal for representing Applications from IBM APIM
+ * Adds the Plan node content type to Drupal for representing Plans from IBM APIM
  */
 
 /**
@@ -60,20 +60,28 @@ function plan_node_view($node, $view_mode) {
  * Implements hook_menu().
  */
 function plan_menu() {
+  // the use of _plan_path_param_to_arg in some of these menu entries is to avoid a menu_translate error message
+  // we cant use a proper load method since we need both args to return the proper object
   $items = array();
   $items['plan'] = array(
-    'title' => t('Plans'),
+    'title' => 'Plans',
     'page callback' => 'plan_collection_callback',
     'menu_name' => 'main-menu',
     'weight' => 15,
-    'description' => t('Pricing plans'),
+    'description' => 'Pricing plans',
     'access callback' => 'user_is_logged_in');
   $items['plan/subscribe/%/%'] = array(
-    'title' => t('Subscribe'),
+    'title' => 'Subscribe',
     'type' => MENU_CALLBACK,
     'page callback' => 'plan_subscribeapp_callback',
     'page arguments' => array(2, 3),
     'access callback' => 'user_is_logged_in');
+  $items['plan/%_plan_path_param_to_arg/%_plan_path_param_to_arg'] = array(
+    'title' => 'View',
+    'page callback' => 'plan_collection_callback',
+    'page arguments' => array(1, 2),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK);
   return $items;
 }
 
@@ -81,22 +89,27 @@ function plan_menu() {
  * Implements hook_node_access().
  * This is checking if the specified plan is returned from apim, if not it blocks access.
  */
-function plan_access($node, $op, $account) {
+function plan_node_access($node, $op, $account) {
   $type = is_string($node) ? $node : $node->type;
   $planfound = FALSE;
-  $plans = plan_list_contents();
-  if ($plans) {
-    foreach ($plans as $plan) {
-      if (isset($node->plan_apiid) && $plan['id'] == $node->plan_apiid[$node->language][0]['value']) {
-        $planfound = TRUE;
+  if ($type == 'plan' && $op == 'view') {
+    $plans = plan_list_contents();
+    if ($plans) {
+      foreach ($plans as $plan) {
+        if (isset($node->plan_apiid) && $plan['id'] == $node->plan_apiid[$node->language][0]['value']) {
+          $planfound = TRUE;
+        }
       }
     }
-  }
-  if ($planfound == TRUE) {
-    return NODE_ACCESS_ALLOW;
+    if ($planfound == TRUE) {
+      return NODE_ACCESS_ALLOW;
+    }
+    else {
+      return NODE_ACCESS_DENY;
+    }
   }
   else {
-    return NODE_ACCESS_DENY;
+    return NODE_ACCESS_IGNORE;
   }
 }
 
@@ -111,14 +124,57 @@ function plan_preprocess_node(&$variables) {
     $variables['theme_hook_suggestions'][] = 'node__plan__search_result';
   }
   if ($variables['node']->type == 'plan') {
-    $variables['titlelink'] = t('<span class="apimTitle"> <a href="!link">!title</a> </span>', array(
+    $showversion = variable_get('ibm_apim_show_versions', 1);
+    $versiontext = '';
+    if ($showversion == 1) {
+      $versiontext = '(v' . $variables['plan_version'][0]['value'] . ')';
+    }
+    $variables['titlelink'] = t('<span class="apimTitle"> <a href="!link">!title</a> !version</span>', array(
       '!title' => $variables['title'],
+      '!version' => $versiontext,
       '!link' => url("plan/" . $variables['plan_apiid'][0]['value'] . "/" . $variables['plan_version'][0]['value'])));
     if ($variables['view_mode'] == 'full') {
       $details = plan_details_contents($variables['plan_apiid'][0]['value'], $variables['plan_version'][0]['value']);
+      $variables['details'] = $details;
       $variables['apis'] = $details['apis'];
     }
   }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function plan_theme($existing, $type, $theme, $path) {
+  return array(
+    'plan_node_form' => array(
+      'render element' => 'form',
+      'template' => 'plan-node-form',
+
+      // this will set to module/theme path by default:
+      'path' => drupal_get_path('module', 'ibm_apim') . '/templates'));
+}
+
+/**
+ * Preprocessor for theme('plan_node_form').
+ */
+function template_preprocess_plan_node_form(&$variables) {
+  hide($variables['form']['plan_apimhostname']);
+  hide($variables['form']['plan_providerid']);
+  hide($variables['form']['plan_environmentid']);
+  hide($variables['form']['plan_description']);
+  hide($variables['form']['plan_version']);
+  hide($variables['form']['title']);
+  hide($variables['form']['plan_apiid']);
+  hide($variables['form']['plan_displayname']);
+  hide($variables['form']['plan_requiresapproval']);
+  hide($variables['form']['plan_url']);
+  hide($variables['form']['plan_updated']);
+  hide($variables['form']['plan_apis']);
+  hide($variables['form']['plan_subscribable']);
+
+  // Extract the form buttons, and put them in independent variable.
+  $variables['buttons'] = $variables['form']['actions'];
+  hide($variables['form']['actions']);
 }
 
 /**
@@ -182,6 +238,11 @@ function plan_subscribeapp_callback($planid = NULL, $planversion = NULL) {
  * Form for subscribing an app to a plan.
  */
 function plan_subscribeapp_modal_form($form, &$form_state, $planId, $planVersion) {
+  if (!module_exists('application')) {
+    drupal_set_message("Application module must be enabled to subscribe to a plan.", 'error');
+    drupal_goto('plan');
+    return;
+  }
   $apps = application_list_contents();
   $options = array();
   if ($apps) {
@@ -189,17 +250,22 @@ function plan_subscribeapp_modal_form($form, &$form_state, $planId, $planVersion
       $options[$app['id']] = $app['name'];
     }
   }
+  if (!count($apps) > 0) {
+    $markup = '<p>' . t('No applications found.') . '</p>';
 
-  // $active = array(0 => t('Closed'), 1 => t('Active'));
+    $ibm_apim_show_register_app = variable_get('ibm_apim_show_register_app', 1);
+    if ($ibm_apim_show_register_app == 1) {
+      $markup .= '<p>' . l(t('Register a new application'), 'application/new') . '</p>';
+    }
+    $form['message'] = array('#markup' => $markup);
+  }
 
+  $org = ibm_apim_get_current_developer_org();
   $form['planId'] = array('#type' => 'hidden', '#value' => $planId);
   $form['planVersion'] = array('#type' => 'hidden', '#value' => $planVersion);
-  $form['orgId'] = array(
-    '#type' => 'hidden',
-    '#value' => ibm_apim_get_current_developer_org()['id']);
-  $form['host'] = array(
-    '#type' => 'hidden',
-    '#value' => variable_get('ibm_apim_host'));
+  $form['orgId'] = array('#type' => 'hidden', '#value' => $org['id']);
+  $host_pieces = _ibm_apim_parse_apim_host();
+  $form['host'] = array('#type' => 'hidden', '#value' => $host_pieces['url']);
 
   $form['app'] = array(
     '#type' => 'radios',
@@ -209,7 +275,9 @@ function plan_subscribeapp_modal_form($form, &$form_state, $planId, $planVersion
   $form["#submit"][] = "plan_subscribeapp_modal_form_submit";
 
   $form['submit'] = array('#type' => 'submit', '#value' => t('Save'));
-
+  if (!count($apps) > 0) {
+    $form['submit']['#disabled'] = TRUE;
+  }
   return $form;
 }
 
@@ -239,14 +307,19 @@ function plan_subscribeapp_modal_form_submit($form, &$form_state) {
   }
 
   $url = '/v1/portal/' . $developer_org_url . '/apps/' . $appId . '/subscriptions';
-  $planurl = 'https://' . $host . '/v1/portal/' . $developer_org_url . '/plans/' . $planId . '/v' . $planVersion;
-  $data = '{"planURL":" ' . $planurl . '"}';
+  $planurl = $host . '/v1/portal/' . $developer_org_url . '/plans/' . $planId . '/v' . $planVersion;
+  $data = array("planURL" => $planurl);
 
-  $result = _ibm_apim_post($url, $data);
+  $result = ibm_apim_post($url, json_encode($data));
   // dismiss the popup
   $form_state['plan_subscribeapp'][] = ctools_modal_command_dismiss();
-  // redirect to the application page
-  drupal_goto("application/" . $appId, array());
+  if (isset($result) && (!isset($result->data) || (isset($result->data) && !isset($result->data['errors'])))) {
+    // only print success message if it actually was successful
+    // error messages will be automatically displayed if there are any
+    drupal_set_message(t("Successfully subscribed to this plan."));
+  }
+  // redirect to the plan page
+  drupal_goto("plan/" . $planId . "/" . $planVersion, array());
 }
 
 /**
@@ -257,17 +330,18 @@ function plan_subscribeapp_modal_form_submit($form, &$form_state) {
 function plan_collection_callback($planid = NULL, $planversion = NULL) {
   global $user;
   $build = array();
-  $host = variable_get('ibm_apim_host');
-  if (empty($host)) {
+  $host_pieces = _ibm_apim_parse_apim_host();
+  if (empty($host_pieces)) {
     drupal_set_message(t('IBM APIM Module is not correctly configured. Specify a valid hostname and try again.'), 'error');
     return;
   }
+  $limit = variable_get('default_nodes_main', 10);
 
   if ($planid == NULL || $planversion == NULL) {
     $nodes = array();
 
-    $query = db_select('node', 'n')->extend('PagerDefault');
-    $nids = $query->fields('n', array('nid'))->condition('type', 'plan')->condition('status', 1)->limit(variable_get('default_nodes_main', 100))->addTag('node_access')->execute()->fetchCol();
+    $query = db_select('node', 'n');
+    $nids = $query->fields('n', array('nid'))->condition('type', 'plan')->condition('status', 1)->addTag('node_access')->execute()->fetchCol();
     if (!empty($nids)) {
       $nodes = node_load_multiple($nids);
     }
@@ -290,7 +364,7 @@ function plan_collection_callback($planid = NULL, $planversion = NULL) {
       }
     }
     // rerun query now we've created entries for any new Plans we found
-    $nids = $query->fields('n', array('nid'))->condition('type', 'plan')->condition('status', 1)->limit(variable_get('default_nodes_main', 100))->addTag('node_access')->execute()->fetchCol();
+    $nids = $query->fields('n', array('nid'))->condition('type', 'plan')->condition('status', 1)->addTag('node_access')->execute()->fetchCol();
     $finalnids = array();
 
     if (!empty($nids)) {
@@ -308,11 +382,18 @@ function plan_collection_callback($planid = NULL, $planversion = NULL) {
         }
       }
 
-      $finalnodes = node_load_multiple($finalnids);
+      // handle paging
+      $page = pager_find_page();
+      $total = count($finalnids);
+      $offset = $limit * $page;
+      $chunk = array_slice($finalnids, $offset, $limit);
+      pager_default_initialize($total, $limit);
+
+      $finalnodes = node_load_multiple($chunk);
       if ($finalnodes) {
         $build = array(
-          'nodes' => node_view_multiple($finalnodes),
-          'pager' => array('#markup' => theme('pager')));
+          'content' => node_view_multiple($finalnodes),
+          'pager' => array('#markup' => theme('pager'), '#weight' => $limit));
       }
       else {
         drupal_set_message(t('No plans have been found.'), 'warning');
@@ -332,39 +413,15 @@ function plan_collection_callback($planid = NULL, $planversion = NULL) {
       $results = $query->execute();
 
       if (isset($results['node'])) {
-        $node = node_load(array_keys($results['node'])[0]);
+        $keys = array_keys($results['node']);
+        $node = node_load($keys[0]);
         _plan_updateExistingPlanNode($node, $plan);
-        $node = node_load($node->nid);
-        // load it again now we've updated it
-        // $build = node_page_view($node);
-        $build = node_page_view($node, 'full', NULL);
-        $more = module_invoke_all('node_view', $node, 'full', NULL);
-        // Only append comments when we are building a node on its own node detail
-        // page. Hardcoded here as comment module will do a node_is_page check which we wouldnt pass
-        // since path is /plan not /node
-        $comments_enabled = variable_get('comment_plan', 1);
-        if ($node->comment && empty($node->in_preview) && ($comments_enabled == 1)) {
-          $node->content['comments'] = comment_node_page_additions($node);
-        }
-        $build_all = array_merge($build, $more);
-        return $build_all;
+        drupal_goto('node/' . $node->nid);
       }
       else {
         // no existing node for this Plan so create one
         $nid = _plan_createNewPlanNode($plan);
-        $node = node_load($nid);
-
-        $build = node_page_view($node, 'full', NULL);
-        $more = module_invoke_all('node_view', $node, 'full', NULL);
-        // Only append comments when we are building a node on its own node detail
-        // page. Hardcoded here as comment module will do a node_is_page check which we wouldnt pass
-        // since path is /plan not /node
-        $comments_enabled = variable_get('comment_plan', 1);
-        if ($node->comment && empty($node->in_preview) && ($comments_enabled == 1)) {
-          $node->content['comments'] = comment_node_page_additions($node);
-        }
-        $build_all = array_merge($build, $more);
-        return $build_all;
+        drupal_goto('node/' . $nid);
       }
     }
     else {
@@ -379,23 +436,36 @@ function plan_collection_callback($planid = NULL, $planversion = NULL) {
  * Used to create the new placeholder nodes for any new Plans returned by APIm
  */
 function _plan_createNewPlanNode($plan) {
+  $hostvariable = variable_get('ibm_apim_host');
+  $apim_session = &_ibm_apim_get_apim_session();
   global $user;
   $node = new stdClass();
   $node->title = $plan['name'];
   $node->type = "plan";
   node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
   $node->language = LANGUAGE_NONE;
-  $node->uid = $user->uid;
+  $node->uid = 1;
   $node->status = 1;
   $node->promote = 0;
   $node->comment = 2;
 
-  $node->plan_apiid[$node->language][] = array(
-    'value' => $plan['id'],
+  $node->plan_apimhostname[$node->language][] = array(
+    'value' => $hostvariable,
     'format' => 'plain_text');
+  $node->plan_providerid[$node->language][] = array(
+    'value' => $apim_session['org'],
+    'format' => 'plain_text');
+  $node->plan_environmentid[$node->language][] = array(
+    'value' => $apim_session['env'],
+    'format' => 'plain_text');
+  $node->plan_apiid[$node->language][] = array('value' => $plan['id'], 'format' => 'plain_text');
   $node->plan_version[$node->language][] = array(
     'value' => $plan['version'],
     'format' => 'plain_text');
+  // ensure description is at least set to empty string
+  if (!isset($plan['description']) || empty($plan['description'])) {
+    $plan['description'] = '';
+  }
   $node->plan_description[$node->language][] = array(
     'value' => $plan['description'],
     'format' => 'plain_text');
@@ -405,9 +475,10 @@ function _plan_createNewPlanNode($plan) {
   $node->plan_requiresapproval[$node->language][] = array(
     'value' => $plan['requiresApproval'],
     'format' => 'plain_text');
-  $node->plan_url[$node->language][] = array(
-    'value' => $plan['url'],
+  $node->plan_subscribable[$node->language][] = array(
+    'value' => $plan['subscribable'],
     'format' => 'plain_text');
+  $node->plan_url[$node->language][] = array('value' => $plan['url'], 'format' => 'plain_text');
   $node->plan_updated[$node->language][] = array(
     'value' => $plan['updatedAt'],
     'format' => 'plain_text');
@@ -421,12 +492,22 @@ function _plan_createNewPlanNode($plan) {
  * Used to update the placeholder node for any new Plan details returned by APIm
  */
 function _plan_updateExistingPlanNode($node, $plan) {
+  $hostvariable = variable_get('ibm_apim_host');
+  $apim_session = &_ibm_apim_get_apim_session();
   $node->title = $plan['name'];
+  $node->plan_apimhostname[$node->language][0]['value'] = $hostvariable;
+  $node->plan_providerid[$node->language][0]['value'] = $apim_session['org'];
+  $node->plan_environmentid[$node->language][0]['value'] = $apim_session['env'];
   $node->plan_apiid[$node->language][0]['value'] = $plan['id'];
   $node->plan_version[$node->language][0]['value'] = $plan['version'];
+  // ensure description is at least set to empty string
+  if (!isset($plan['description']) || empty($plan['description'])) {
+    $plan['description'] = '';
+  }
   $node->plan_description[$node->language][0]['value'] = $plan['description'];
   $node->plan_displayname[$node->language][0]['value'] = $plan['displayName'];
   $node->plan_requiresapproval[$node->language][0]['value'] = $plan['requiresApproval'];
+  $node->plan_subscribable[$node->language][0]['value'] = isset($plan['subscribable']) ? $plan['subscribable'] : TRUE;
   $node->plan_url[$node->language][0]['value'] = $plan['url'];
   $node->plan_updated[$node->language][0]['value'] = $plan['updatedAt'];
   node_save($node);
@@ -441,15 +522,16 @@ function _plan_updateExistingPlanNode($node, $plan) {
  */
 function plan_list_contents() {
   $plan_data = NULL;
-  $developerOrg = ibm_apim_get_current_developer_org()['id'];
+  $org = ibm_apim_get_current_developer_org();
+  $developerOrg = $org['id'];
   if (isset($developerOrg)) {
     $url = '/v1/portal/orgs/' . $developerOrg . '/plans';
   }
   else {
     $url = '/v1/portal/plans';
   }
-  $result = _ibm_apim_call($url);
-  if (isset($result) && isset($result->data)) {
+  $result = ibm_apim_call($url);
+  if (isset($result) && isset($result->data) && !isset($result->data['errors'])) {
     $plan_data = $result->data;
   }
   return $plan_data;
@@ -470,19 +552,50 @@ function plan_list_contents() {
  */
 function plan_details_contents($planid = NULL, $planversion = NULL) {
   $plan_data = NULL;
-  $developerOrgs = ibm_apim_get_current_developer_org()['id'];
+  $org = ibm_apim_get_current_developer_org();
+  $developerOrgs = $org['id'];
 
-  if (isset($developerOrgs)) {
-    $developer_org_url = '/orgs/' . $developerOrgs;
+  // check if this plan is already cached in the session, if so return that
+  $found = false;
+  $index = 0;
+  if (isset($apim_session['plans'])) {
+    foreach ($apim_session['plans'] as $plan) {
+      $index++;
+      if (isset($plan) && isset($plan->id) && isset($plan->version)) {
+        if ($plan->id == $planid && $plan->version == $planversion) {
+          if (isset($plan->data)) {
+            $found = true;
+            return $plan->data;
+          }
+          else {
+            // if exists but no data then remove it from the cache
+            unset($apim_session['plans'][$index]);
+          }
+        }
+      }
+    }
   }
-  else {
-    $developer_org_url = '';
+  if ($found == false) {
+    if (isset($developerOrgs)) {
+      $developer_org_url = '/orgs/' . $developerOrgs;
+    }
+    else {
+      $developer_org_url = '';
+    }
+    $planURL = '/v1/portal' . $developer_org_url . '/plans/' . $planid . '/v' . $planversion;
+    $result = ibm_apim_call($planURL);
+    if (isset($result) && isset($result->data) && !isset($result->data['errors'])) {
+      $plan_data = $result->data;
+      // cache it in the session
+      $apim_session['plans'][] = array(
+        'id' => $planid,
+        'version' => $planversion,
+        'data' => $plan_data);
+    }
+    return $plan_data;
   }
+}
 
-  $planURL = '/v1/portal' . $developer_org_url . '/plans/' . $planid . '/v' . $planversion;
-  $result = _ibm_apim_call($planURL);
-  if (isset($result) && isset($result->data)) {
-    $plan_data = $result->data;
-  }
-  return $plan_data;
+function _plan_path_param_to_arg($arg) {
+  return $arg;
 }

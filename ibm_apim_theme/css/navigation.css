@@ -238,6 +238,7 @@ ul.tabs {
   margin: 0;
   border-bottom: 0;
   border-bottom: solid 1px #e6e4e2;
+  border-top: solid 1px #e6e4e2;
 }
 ul.tabs li {
   display: inline-block;

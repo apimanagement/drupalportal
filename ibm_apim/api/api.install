@@ -30,148 +30,226 @@ function api_uninstall() {
 function _api_installed_fields() {
   $t = get_t();
   return array(
-    'api_apiid' => array(
-      'field_name' => 'api_apiid',
-      'label' => $t('IBM_APIM ID'),
+    'api_apimhostname' => array(
+      'field_name' => 'api_apimhostname',
+      'label' => t('APIM Hostname'),
       'type' => 'text'),
+    'api_providerid' => array(
+      'field_name' => 'api_providerid',
+      'label' => t('Provider ID'),
+      'type' => 'text'),
+    'api_environmentid' => array(
+      'field_name' => 'api_environmentid',
+      'label' => t('Environment ID'),
+      'type' => 'text'),
+    'api_apiid' => array('field_name' => 'api_apiid', 'label' => t('ID'), 'type' => 'text'),
     'api_version' => array(
       'field_name' => 'api_version',
-      'label' => $t('IBM_APIM Version'),
+      'label' => t('Version'),
       'type' => 'text'),
+    'api_image' => array(
+      'field_name' => 'api_image',
+      'label' => t('Image'),
+      'type' => 'image',
+      'module' => 'image'),
     'api_description' => array(
       'field_name' => 'api_description',
-      'label' => $t('IBM_APIM Description'),
+      'label' => t('Description'),
       'type' => 'text_long'),
     'api_context' => array(
       'field_name' => 'api_context',
-      'label' => $t('IBM_APIM Context'),
+      'label' => t('Context'),
       'type' => 'text'),
     'api_protocol' => array(
       'field_name' => 'api_protocol',
-      'label' => $t('IBM_APIM Protocol'),
+      'label' => t('Protocol'),
       'type' => 'text'),
     'api_authorization' => array(
       'field_name' => 'api_authorization',
-      'label' => $t('IBM_APIM Authorization'),
+      'label' => t('Authorization'),
       'type' => 'text'),
     'api_authentication' => array(
       'field_name' => 'api_authentication',
-      'label' => $t('IBM_APIM Authentication'),
+      'label' => t('Authentication'),
       'type' => 'text'),
     'api_authorizationtokenurl' => array(
       'field_name' => 'api_authorizationtokenurl',
-      'label' => $t('IBM_APIM Authorization Token URL'),
+      'label' => t('Authorization Token URL'),
       'type' => 'text'),
     'api_authorizationurl' => array(
       'field_name' => 'api_authorizationurl',
-      'label' => $t('IBM_APIM Authorization URL'),
+      'label' => t('Authorization URL'),
       'type' => 'text'),
-    'api_url' => array(
-      'field_name' => 'api_url',
-      'label' => $t('IBM_APIM URL'),
+    'api_url' => array('field_name' => 'api_url', 'label' => t('URL'), 'type' => 'text'),
+    'api_oauthconfig' => array(
+      'field_name' => 'api_oauthconfig',
+      'label' => t('OAuth Config'),
+      'type' => 'text_long'),
+    'api_soapversion' => array(
+      'field_name' => 'api_soapversion',
+      'label' => t('SOAP Version'),
       'type' => 'text'),
+    'api_resources' => array(
+      'field_name' => 'api_resources',
+      'label' => t('Resources'),
+      'type' => 'text_long'),
     'api_updated' => array(
       'field_name' => 'api_updated',
-      'label' => $t('IBM_APIM Updated'),
+      'label' => t('Updated'),
       'type' => 'text'));
 }
 
 function _api_installed_instances() {
   $t = get_t();
   return array(
+    'api_apimhostname' => array(
+      'field_name' => 'api_apimhostname',
+      'type' => 'text',
+      'label' => t('APIM Hostname'),
+      'widget' => array('type' => 'text_textfield'),
+      'display' => array(
+        'default' => array('label' => t('APIM Hostname'), 'type' => 'text'),
+        'teaser' => array('label' => t('APIM Hostname'), 'type' => 'text'))),
+    'api_providerid' => array(
+      'field_name' => 'api_providerid',
+      'type' => 'text',
+      'label' => t('Provider ID'),
+      'widget' => array('type' => 'text_textfield'),
+      'display' => array(
+        'default' => array('label' => t('Provider ID'), 'type' => 'text'),
+        'teaser' => array('label' => t('Provider ID'), 'type' => 'text'))),
+    'api_environmentid' => array(
+      'field_name' => 'api_environmentid',
+      'type' => 'text',
+      'label' => t('Environment ID'),
+      'widget' => array('type' => 'text_textfield'),
+      'display' => array(
+        'default' => array('label' => t('Environment ID'), 'type' => 'text'),
+        'teaser' => array('label' => t('Environment ID'), 'type' => 'text'))),
     'api_apiid' => array(
       'field_name' => 'api_apiid',
       'type' => 'text',
-      'label' => $t('IBM_APIM ID'),
+      'label' => t('ID'),
       'widget' => array('type' => 'text_textfield'),
       'display' => array(
-        'default' => array('label' => $t('IBM_APIM ID'), 'type' => 'text'),
-        'teaser' => array('label' => $t('IBM_APIM ID'), 'type' => 'text'))),
+        'default' => array('label' => t('ID'), 'type' => 'text'),
+        'teaser' => array('label' => t('ID'), 'type' => 'text'))),
     'api_version' => array(
       'field_name' => 'api_version',
       'type' => 'text',
-      'label' => $t('IBM_APIM Version'),
+      'label' => t('Version'),
       'widget' => array('type' => 'text_textfield'),
       'display' => array(
-        'default' => array('label' => $t('IBM_APIM Version'), 'type' => 'text'),
-        'teaser' => array('label' => $t('IBM_APIM Version'), 'type' => 'text'))),
+        'default' => array('label' => t('Version'), 'type' => 'text'),
+        'teaser' => array('label' => t('Version'), 'type' => 'text'))),
+    'api_image' => array(
+      'field_name' => 'api_image',
+      'type' => 'image',
+      'label' => t('Image'),
+      'required' => 0,
+      'description' => t('Logo or image for this API'),
+      'widget' => array(
+        'type' => 'image_image',
+        'module' => 'image',
+        'active' => 1,
+        'settings' => array(
+          'progress_indicator' => 'throbber',
+          'preview_image_style' => 'thumbnail')),
+      'settings' => array(
+        'file_directory' => 'api',
+        'file_extensions' => 'png gif jpg jpeg',
+        'max_filesize' => '2 MB',
+        'max_resolution' => '640x480',
+        'min_resolution' => '',
+        'alt_field' => 1,
+        'title_field' => 1,
+        'default_image' => 0),
+      'display' => array(
+        'default' => array('label' => 'hidden', 'type' => 'image', 'module' => 'image'),
+        'teaser' => array('label' => 'hidden', 'type' => 'image', 'module' => 'image'))),
     'api_description' => array(
       'field_name' => 'api_description',
       'type' => 'text_long',
-      'label' => $t('IBM_APIM Description'),
+      'label' => t('Description'),
       'widget' => array('type' => 'text_textarea'),
       'display' => array(
-        'default' => array(
-          'label' => $t('IBM_APIM Description'),
-          'type' => 'text_long'),
-        'teaser' => array(
-          'label' => $t('IBM_APIM Description'),
-          'type' => 'text_long'))),
+        'default' => array('label' => t('Description'), 'type' => 'text_long'),
+        'teaser' => array('label' => t('Description'), 'type' => 'text_long'))),
     'api_context' => array(
       'field_name' => 'api_context',
       'type' => 'text',
-      'label' => $t('IBM_APIM Context'),
+      'label' => t('Context'),
       'widget' => array('type' => 'text_textfield'),
-      'display' => array(
-        'default' => array('label' => $t('IBM_APIM Context'), 'type' => 'text'))),
+      'display' => array('default' => array('label' => t('Context'), 'type' => 'text'))),
     'api_protocol' => array(
       'field_name' => 'api_protocol',
       'type' => 'text',
-      'label' => $t('IBM_APIM Protocol'),
+      'label' => t('Protocol'),
       'widget' => array('type' => 'text_textfield'),
-      'display' => array(
-        'default' => array('label' => $t('IBM_APIM Protocol'), 'type' => 'text'))),
+      'display' => array('default' => array('label' => t('Protocol'), 'type' => 'text'))),
     'api_authorization' => array(
       'field_name' => 'api_authorization',
       'type' => 'text',
-      'label' => $t('IBM_APIM Authorization'),
+      'label' => t('Authorization'),
       'widget' => array('type' => 'text_textfield'),
       'display' => array(
-        'default' => array(
-          'label' => $t('IBM_APIM Authorization'),
-          'type' => 'text'))),
+        'default' => array('label' => t('Authorization'), 'type' => 'text'))),
     'api_authentication' => array(
       'field_name' => 'api_authentication',
       'type' => 'text',
-      'label' => $t('IBM_APIM Authentication'),
+      'label' => t('Authentication'),
       'widget' => array('type' => 'text_textfield'),
       'display' => array(
-        'default' => array(
-          'label' => $t('IBM_APIM Authentication'),
-          'type' => 'text'))),
+        'default' => array('label' => t('Authentication'), 'type' => 'text'))),
     'api_authorizationtokenurl' => array(
       'field_name' => 'api_authorizationtokenurl',
       'type' => 'text',
-      'label' => $t('IBM_APIM Authorization Token URL'),
+      'label' => t('Authorization Token URL'),
       'widget' => array('type' => 'text_textfield'),
       'display' => array(
-        'default' => array(
-          'label' => $t('IBM_APIM Authorization Token URL'),
-          'type' => 'text'))),
+        'default' => array('label' => t('Authorization Token URL'), 'type' => 'text'))),
     'api_authorizationurl' => array(
       'field_name' => 'api_authorizationurl',
       'type' => 'text',
-      'label' => $t('IBM_APIM Authorization URL'),
+      'label' => t('Authorization URL'),
       'widget' => array('type' => 'text_textfield'),
       'display' => array(
-        'default' => array(
-          'label' => $t('IBM_APIM Authorization URL'),
-          'type' => 'text'))),
+        'default' => array('label' => t('Authorization URL'), 'type' => 'text'))),
     'api_url' => array(
       'field_name' => 'api_url',
       'type' => 'text',
-      'label' => $t('IBM_APIM URL'),
+      'label' => t('URL'),
+      'widget' => array('type' => 'text_textfield'),
+      'display' => array('default' => array('label' => t('URL'), 'type' => 'text'))),
+    'api_oauthconfig' => array(
+      'field_name' => 'api_oauthconfig',
+      'type' => 'text_long',
+      'label' => t('OAuth Config'),
+      'widget' => array('type' => 'text_textarea'),
+      'display' => array(
+        'default' => array('label' => t('OAuth Config'), 'type' => 'text_long'))),
+    'api_soapversion' => array(
+      'field_name' => 'api_soapversion',
+      'type' => 'text',
+      'label' => t('SOAP Version'),
       'widget' => array('type' => 'text_textfield'),
       'display' => array(
-        'default' => array('label' => $t('IBM_APIM URL'), 'type' => 'text'))),
+        'default' => array('label' => t('SOAP Version'), 'type' => 'text'))),
+    'api_resources' => array(
+      'field_name' => 'api_resources',
+      'type' => 'text_long',
+      'label' => t('Resources'),
+      'widget' => array('type' => 'text_textarea'),
+      'display' => array(
+        'default' => array('label' => t('Resources'), 'type' => 'text_long'))),
     'api_updated' => array(
       'field_name' => 'api_updated',
       'type' => 'text',
-      'label' => $t('IBM_APIM Updated'),
+      'label' => t('Updated'),
       'widget' => array('type' => 'text_textfield'),
       'display' => array(
-        'default' => array('label' => $t('IBM_APIM Updated'), 'type' => 'text'),
-        'teaser' => array('label' => $t('IBM_APIM Updated'), 'type' => 'text'))));
+        'default' => array('label' => t('Updated'), 'type' => 'text'),
+        'teaser' => array('label' => t('Updated'), 'type' => 'text'))));
 }
 
 function _api_add_custom_fields() {
@@ -205,5 +283,10 @@ function _api_delete_node_content($type) {
   foreach ($result as $row) {
     $nodeids[] = $row->nid;
   }
-  node_delete_multiple($nodeids);
+  try {
+    node_delete_multiple($nodeids);
+  }
+  catch (Exception $e) {
+    // quietly swallow exceptions from dropping the nodes.
+  }
 }

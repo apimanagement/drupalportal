@@ -15,6 +15,7 @@ dependencies[] = dashboard
 dependencies[] = help
 dependencies[] = image
 dependencies[] = list
+dependencies[] = locale
 dependencies[] = menu
 dependencies[] = number
 dependencies[] = options
@@ -29,6 +30,7 @@ dependencies[] = field_ui
 dependencies[] = file
 dependencies[] = rdf
 dependencies[] = tracker
+dependencies[] = trigger
 
 ;Additions to the standard modules
 dependencies[] = blog
@@ -62,16 +64,38 @@ dependencies[] = views
 dependencies[] = votingapi
 dependencies[] = wysiwyg
 dependencies[] = pathologic
-dependencies[] = flot
 dependencies[] = support
 dependencies[] = module_filter
 dependencies[] = captcha
-dependencies[] = login_redirect
 dependencies[] = search404
-dependencies[] = sliderfield
+dependencies[] = token
+dependencies[] = flag
+dependencies[] = imce
+dependencies[] = imce_wysiwyg
+dependencies[] = linkit
+dependencies[] = linkit_picker
+dependencies[] = l10n_update
+dependencies[] = hierarchical_select
+dependencies[] = taxonomy_menu
+dependencies[] = vppr
+dependencies[] = tfa
+dependencies[] = tfa_basic
+dependencies[] = legal
+dependencies[] = variable
+dependencies[] = i18n
+dependencies[] = translation_helpers
+dependencies[] = addressfield
+dependencies[] = statsd
+dependencies[] = syslog_advanced
+dependencies[] = messaging
+dependencies[] = content_approval
+dependencies[] = fasttoggle
+dependencies[] = views_bulk_operations
 
-;Enable the apim module
+;Enable our modules
 dependencies[] = ibm_apim
+dependencies[] = bannerblock
+dependencies[] = forum_approval
 
 version = VERSION
 

@@ -124,15 +124,15 @@ function ibm_apim_theme_menu_alter(&$items) {
 
 function ibm_apim_theme_user_menu_title() {
   global $user;
-  return user_is_logged_in() ? t($user->name) : t('User account');
+  return user_is_logged_in() ? $user->name : t('User account');
 }
 
 function ibm_apim_theme_menu_tree__user_menu(&$variables) {
   global $user;
   drupal_add_js('jQuery(document).ready(function(){
-      jQuery(".menu").dropit();
+      jQuery(".dropitmenu").dropit();
     });', 'inline');
-  $output = '<ul class="menu"><li title="' . $user->name . '"><a href="#"><div class="elipsis-names">' . $user->name . '</div> <span class="dropit-icon ui-icon-triangle-1-s" style="display: inline-block;"></span></a><ul id="dropdown-menu" class="dropdown-menu">' . $variables['tree'] . '</ul></li></ul>';
+  $output = '<ul class="dropitmenu"><li title="' . $user->name . '"><a href="#"><div class="elipsis-names">' . $user->name . '</div> <span class="dropit-icon ui-icon-triangle-1-s" style="display: inline-block;"></span></a><ul id="dropdown-menu" class="dropdown-menu">' . $variables['tree'] . '</ul></li></ul>';
 
   return $output;
 }

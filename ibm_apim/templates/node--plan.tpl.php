@@ -33,9 +33,16 @@ drupal_add_js('jQuery(document).ready(function(){
   <?php print render($title_prefix); ?>
 
   <div class="portal">
-		<div class="apimTitleFloat">
+		<div class="apimTitleContainer plan">
 			<div class="planName displayInlineTop">
-				<div class="planName"><?php print $title; ?></div>
+			<?php
+			$showversion = variable_get('ibm_apim_show_versions', 1);
+			$versiontext = '';
+			if ($showversion == 1) {
+			  $versiontext = ' (v' . $plan_version[0]['value'] . ')';
+			}
+			print "<div class='planName'>" . $title . $versiontext . "</div>";
+				?>
 				<div class="apimUpdated"><?php try {
 			  if (is_numeric($plan_updated[0]['value'])) {
 			    $epoch = (int)($plan_updated[0]['value'] / 1000);
@@ -53,7 +60,7 @@ drupal_add_js('jQuery(document).ready(function(){
   }
   ?>
 			</div>
-			<div class="displayInlineTop">
+			<div class="authInfo displayInlineTop">
 		  <?php
 
     switch ($plan_requiresapproval[0]['value']) {
@@ -70,85 +77,105 @@ drupal_add_js('jQuery(document).ready(function(){
 			<div class="highlightText"><?php print $usageTitle ?></div>
 				<div class="explanationText"><?php print $usageText ?></div>
 			</div>
-		</div>
 
-		<div class="planSelector">
-			<button type="button" id="planSignupButton"
-				data-href="?q=plan/subscribe/<?php print $plan_apiid[0]['safe_value'];?>/<?php print $plan_version[0]['safe_value'];?>"
-				data-title="Select an application" data-name="content"
-				data-rel="width:500;resizable:false;position:[center,60]"
-				class="simple-dialog my-link-class">Use this Plan</button>
-		</div>
+		   <div class="planSelector">
+		   <?php
+		 if (module_exists('application')) {
+		   $isdev = ibm_apim_check_is_developer();
+		   if ((isset($isdev) && $isdev == TRUE) && (!isset($details['subscribable']) || $details['subscribable'] != false)) {
+		      print '<button type="button" id="planSignupButton"
+		         data-href="?q=plan/subscribe/' . $plan_apiid[0]['safe_value'] . '/' . $plan_version[0]['safe_value']. '"
+		         data-title="Select an application" data-name="content"
+		         data-rel="width:500;resizable:false;position:[center,60]"
+		         class="simple-dialog my-link-class">'. t('Subscribe').'</button>';
+		   }
+		 }
+		   ?>
+
+		   </div>
+        </div>
 
 		<div class="clearBoth section apimMainContent">
-			<label for="app_description" class="label apimField apimDescription">Description</label>
+			<label class="label apimField apimDescription"><?php print t('Description'); ?></label>
 			<div id="app_description"><?php print $plan_description[0]['safe_value']; ?></div>
 		</div>
-
-		<div class="includedAPIsTitle">APIs included</div>
-		<div id="accordion">
-    <?php
+<?php
+if (module_exists('api')) {
+	print '<div class="includedAPIsTitle">'. t('APIs included') .'</div>';
+	print '<div id="accordion">';
 
     foreach ($apis as $api) {
       switch ($api['authorization']) {
         case 'clientID' :
-          $ident = "Client ID";
+          $ident = t('Client ID');
           break;
         case 'clientIDAndSecret' :
-          $ident = "Client ID & Client Secret";
+          $ident = t('Client ID & Client Secret');
           break;
         case 'none' :
-          $ident = "None";
+          $ident = t('None');
           break;
       }
       switch ($api['authentication']) {
         case 'basic' :
-          $auth = "Basic Auth";
+          $auth = t('Basic Auth');
           break;
         case 'none' :
-          $auth = "None";
+          $auth = t('None');
           break;
         case 'oauth' :
-          $auth = "OAuth";
+          $auth = t('OAuth');
           break;
       }
-      print "<div><h3>" . $api['name'] . "</h3>";
+      $showversion = variable_get('ibm_apim_show_versions', 1);
+      $versiontext = '';
+      if ($showversion == 1) {
+        $versiontext = ' (v' . $api['version'] . ')';
+      }
+      print "<div><h3>" . $api['name'] . $versiontext . "</h3>";
       print "<div class='portalApi animateMaxHeight'>
 		<div class='tableHeaderBackground clearTable'>
-			<div class='column resourceMethod'>Verb</div>
-			<div class='column ascendingSort resourcePathShort'>Path</div>
-			<div class='column resourceName'>Name</div>
-			<div class='column resourceDesc'>Description</div>
-			<div class='column resourceIdentification'>Identification</div>
-			<div class='column resourceAuthentication'>Authentication</div>
-			<div class='column resourceRateLimit'>Rate Limit</div>
+			<div class='column resourceMethod'>". t('Verb') ."</div>
+			<div class='column ascendingSort resourcePathShort'>". t('Path') ."</div>
+			<div class='column resourceName'>". t('Name') ."</div>
+			<div class='column resourceDesc'>". t('Description') ."</div>
+			<div class='column resourceIdentification'>". t('Identification') ."</div>
+			<div class='column resourceAuthentication'>". t('Authentication') ."</div>
+			<div class='column resourceRateLimit'>". t('Rate Limit') ."</div>
 		</div>
 	 <div class='resourceView resourcePlanView'>";
       foreach ($api['resources'] as $resource) {
+        if (isset($resource['rateLimit']['numRequests'])) {
+          $ratelimitstr = t('@requests requests per @period @timescale', array('@requests'=> check_plain($resource['rateLimit']['numRequests']), '@period' => check_plain($resource['rateLimit']['timePeriod']), '@timescale' => check_plain($resource['rateLimit']['timeScale'])));
+        } else {
+          $ratelimitstr = t('unlimited');
+        }
         print "<div class='displayInlineTop resourceHeadline'>
 		 <div class='displayInlineTop resourceMethod resourceMethodBadge " . strtoupper(check_plain($resource['verb'])) . "'>" . strtoupper(check_plain($resource['verb'])) . "</div>
 		 <div class='displayInlineTop resourcePathShort boundedText' title='" . check_plain($api['context']) . check_plain($resource['path']) . "'>" . check_plain($api['context']) . check_plain($resource['path']) . "</div>
 		 <div class='displayInlineTop resourceName boundedText' title='" . check_plain($resource['name']) . "'>" . check_plain($resource['name']) . "</div>
 		 <div class='displayInlineTop resourceDesc boundedText' title='" . check_plain($resource['description']) . "'>" . check_plain($resource['description']) . "</div>
-		 <div class='displayInlineTop boundedText tableLabel'>Identification:</div>
+		 <div class='displayInlineTop boundedText tableLabel'>". t('Identification:') ."</div>
 		 <div class='displayInlineTop resourceIdentification'>" . check_plain($ident) . "</div>
-		 <div class='displayInlineTop boundedText tableLabel'>Authentication:</div>
+		 <div class='displayInlineTop boundedText tableLabel'>". t('Authentication:') ."</div>
 		 <div class='displayInlineTop resourceAuthentication'>" . check_plain($auth) . "</div>
-		 <div class='displayInlineTop boundedText tableLabel'>Rate Limit:</div>
-		 <div class='displayInlineTop resourceRateLimit'>" . check_plain($resource['rateLimit']['numRequests']) . " requests per " . check_plain($resource['rateLimit']['timePeriod']) . " " . check_plain($resource['rateLimit']['timeScale']) . "</div>
+		 <div class='displayInlineTop boundedText tableLabel'>". t('Rate Limit:') ."</div>
+		 <div class='displayInlineTop resourceRateLimit'>" . $ratelimitstr . "</div>
 	   </div>";
       }
       print "</div></div></div>";
     }
-    ?>
-</div>
+
+ print "</div>";
+}
+?>
 
 		<div <?php print $content_attributes; ?>>
   <?php
   hide($content['comments']);
   hide($content['links']);
-  if (isset($content['field_tags'])) {
-    print render($content['field_tags']);
+  if (isset($content['field_plantags'])) {
+    print render($content['field_plantags']);
   }
   ?>
   </div>

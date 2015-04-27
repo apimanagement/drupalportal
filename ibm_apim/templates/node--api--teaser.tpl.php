@@ -15,11 +15,34 @@
 <article id="node-<?php print $node->nid; ?>"
 	class="<?php print $classes; ?> apimTeaser clearfix"
 	<?php print $attributes; ?>>
+	<?php $showplaceholders = variable_get('ibm_apim_show_placeholder_images', 1);?>
 
 	<div class="apimSummaryContainer">
 		<div class="apimOuterContainer">
 			<div class="apimSummary">
 				<div class="apimInnerContainer">
+	 <?php if (isset($content['api_image'])) : ?>
+						<div class="apimIcon">
+							<?php print render($content['api_image']); ?>
+						</div>
+     <?php elseif($showplaceholders != 0): ?>
+				<div class="apimIcon">
+					<div class="field field-name-api-image field-type-image field-label-hidden view-mode-teaser">
+					<div class="field-items">
+					<figure class="clearfix field-item even">
+					 <img typeof="foaf:Image" class="image-style-none" src="<?php print file_create_url(drupal_get_path('module', 'ibm_apim') . '/images/placeholder_image.png');?>" width="123" height="123" alt="">
+					</figure>
+					</div>
+					</div>
+				</div>
+	  <?php else: ?>
+	     <div class="apimIcon" style="display:none"></div>
+      <?php endif; ?>
+      <div class="apimTeaserRating">
+      <?php if (isset($content['field_apirating'])) {
+    $content['field_apirating']['#label_display'] = 'hidden';
+    print render($content['field_apirating']);
+  } ?></div>
 					<h3 class="apimSummaryTitle"><?php print $titlelink; ?></h3>
 					<div class="apimUpdated">
 	<?php try {
@@ -32,19 +55,9 @@
 			   print $updateddate->format('Y-m-d');
     } catch (Exception $e) {
     } ?></div>
-     <?php if (isset($content['api_image'])) : ?>
-        <div>
-						<div class="apimIcon">
-							<img src="<?php print $api_apiid[0]['safe_value'] ?>"
-								height="100" width="100" alt="<?php print $title; ?>" />
-						</div>';
-     <?php else: ?>
-        <div>
-							<div class="apimIcon" style="display: none"></div>
-      <?php endif; ?>
-      <div class="apimSummaryDescription ellipsis">
-								<p><?php print $api_description[0]['safe_value']; ?></p>
-							</div>
+
+                        <div class="apimSummaryDescription">
+						  <p class="fade" title="<?php print $api_description[0]['safe_value']; ?>"><?php print $api_description[0]['safe_value']; ?></p>
 						</div>
 					</div>
 				</div>

@@ -1,9 +1,10 @@
 name = IBM API Management Plan
 description = IBM API Management Plan Node Content Type
-package = IBM API Management v3
+package = IBM API Management v4
 core = 7.x
 dependencies[] = field
 dependencies[] = node
 dependencies[] = ibm_apim
+dependencies[] = ctools
 
 version = VERSION

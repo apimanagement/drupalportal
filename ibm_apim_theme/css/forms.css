@@ -104,7 +104,7 @@ select {
 }
 /* Elements */
 input, select, textarea, button {
-  font-family: "Helvetica Neue", Helvetica, Clean, Arial, sans-serif;
+  font-family: Verdana, Geneva, 'DejaVu Sans', Arial, Helvetica, sans-serif;
 }
 input.form-text {
   max-width: 100%;
@@ -116,17 +116,14 @@ textarea.form-textarea,
 textarea {
   border: solid 2px #e6e4de;
   padding: 0.5em;
-  -moz-border-radius: 3px 3px 0 0;
-  -webkit-border-top-right-radius: 3px;
-  -webkit-border-top-left-radius: 3px;
-  border-radius: 3px 3px 0 0;
+  -moz-border-radius: 0 0 0 0;
+  -webkit-border-top-right-radius: 0;
+  -webkit-border-top-left-radius: 0;
+  border-radius: 0 0 0 0;
 }
 input.form-text,
 select[multiple="multiple"] {
   border: solid 2px #e6e4de !important;  
-  -moz-border-radius: 6px;
-  -webkit-border-radius: 6px;
-  border-radius: 6px;
   padding-left: 5px;
   padding-right: 5px;
 }
@@ -147,20 +144,21 @@ input[type="submit"],
 input.form-submit,
 .form-actions a,
 .form-actions a:visited,
-.button, a.button, a.button:visited {
-  background: #e6e4e2 url(images/ui/ui-bg_highlight-soft_90_e6e4e2_1x100.png) 50% 50% repeat-x;
+.button, a.button, a.button:visited,
+.banner_block .banner_button a,
+.portal .migratePlanContainer .migrateButton a,
+.numberedList a,
+.supportList a {
+  background-image: none;
+  color: #ffffff;
+  padding: 0.5em 1.5em;
   border: 1px solid #e6e4e2;
-  border-bottom-color: #bbb;
-  border-right-color: #bbb;
-  color: #000;
+  border-bottom-color: #bbbbbb;
+  border-right-color: #bbbbbb;
   font-size: 1em;
   font-weight: 500;
-  padding: 0.5em 1em;
   margin: 0 0.5em 0 0;
   overflow: hidden;
-  -moz-border-radius: 4px;
-  -webkit-border-radius: 4px;
-  border-radius: 4px;
 }
 button:hover,
 input[type="submit"]:hover,
@@ -171,13 +169,26 @@ input.form-submit:hover,
 .button:hover,
 a.button:hover,
 a.button:focus,
-a.button:active {
-  background: #d6d4d1 url(images/ui/ui-bg_highlight-soft_50_d6d4d1_1x100.png) 50% 50% repeat-x;
-  border: 1px solid #e1dedb;
-  border-bottom-color: #aaa;
-  border-right-color: #aaa;
-  color: #000;
+a.button:active,
+.banner_block .banner_button a:hover,
+.banner_block .banner_button a:focus,
+.banner_block .banner_button a:active,
+.portal .migratePlanContainer .migrateButton a:hover,
+.portal .migratePlanContainer .migrateButton a:focus,
+.portal .migratePlanContainer .migrateButton a:active,
+.numberedList a:hover,
+.numberedList a:focus,
+.numberedList a:active,
+.supportList a:hover,
+.supportList a:focus,
+.supportList a:active {
+  background-image: none;
+  color: #ffffff;
+  border: 1px solid #4884d1;
+  border-bottom-color: #aaaaaa;
+  border-right-color: #aaaaaa;
   cursor: pointer;
+  text-decoration: none;
 }
 textarea:focus,
 input[type="password"]:focus,
@@ -204,7 +215,7 @@ select[multiple="multiple"]:focus,
   padding-left: 0.4em;
 }
 .form-required {
-  color: #fda61f;
+  color: #bd530b;
   font: bold 1em Tahoma, Verdana, Geneva;
 }
 

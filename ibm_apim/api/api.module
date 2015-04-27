@@ -59,21 +59,82 @@ function api_node_view($node, $view_mode) {
 }
 
 /**
+ * Implements hook_theme().
+ */
+function api_theme($existing, $type, $theme, $path) {
+  return array(
+    'api_node_form' => array(
+      'render element' => 'form',
+      'template' => 'api-node-form',
+
+      // this will set to module/theme path by default:
+      'path' => drupal_get_path('module', 'ibm_apim') . '/templates'));
+}
+
+/**
+ * Preprocessor for theme('api_node_form').
+ */
+function template_preprocess_api_node_form(&$variables) {
+  hide($variables['form']['api_apimhostname']);
+  hide($variables['form']['api_providerid']);
+  hide($variables['form']['api_environmentid']);
+  hide($variables['form']['api_description']);
+  hide($variables['form']['api_version']);
+  hide($variables['form']['title']);
+  hide($variables['form']['api_apiid']);
+  hide($variables['form']['api_context']);
+  hide($variables['form']['api_protocol']);
+  hide($variables['form']['api_authentication']);
+  hide($variables['form']['api_authorization']);
+  hide($variables['form']['api_authorizationtokenurl']);
+  hide($variables['form']['api_authorizationurl']);
+  hide($variables['form']['api_url']);
+  hide($variables['form']['api_updated']);
+  hide($variables['form']['api_oauthconfig']);
+  hide($variables['form']['api_soapversion']);
+  hide($variables['form']['api_resources']);
+
+  // Extract the form buttons, and put them in independent variable.
+  $variables['buttons'] = $variables['form']['actions'];
+  hide($variables['form']['actions']);
+}
+
+/**
  * Implements hook_menu().
  */
 function api_menu() {
+  // the use of _api_path_param_to_arg in some of these menu entries is to avoid a menu_translate error message
+  // we cant use a proper load method since we need both args to return the proper object
   $items = array();
   $items['api'] = array(
-    'title' => t('APIs'),
+    'title' => 'APIs',
     'page callback' => 'api_collection_callback',
     'menu_name' => 'main-menu',
     'weight' => 5,
-    'description' => t('See how you can use our data'),
+    'description' => 'See how you can use our data',
     'access callback' => TRUE);
-  $items['api/docdownload/%/%/%'] = array(
+  $items['api/docdownload/%'] = array(
     'title' => 'API Documents Proxy',
     'page callback' => '_api_document_proxy_callback',
-    'page arguments' => array(2, 3, 4),
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK);
+  $items['api/wsdldownload/%/%'] = array(
+    'title' => 'API WSDL Proxy',
+    'page callback' => '_api_wsdl_proxy_callback',
+    'page arguments' => array(2, 3),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK);
+  $items['api/swaggerdownload/%/%'] = array(
+    'title' => 'API Swagger Proxy',
+    'page callback' => '_api_swagger_proxy_callback',
+    'page arguments' => array(2, 3),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK);
+  $items['api/%_api_path_param_to_arg/%_api_path_param_to_arg'] = array(
+    'title' => 'View',
+    'page callback' => 'api_collection_callback',
+    'page arguments' => array(1, 2),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK);
   return $items;
@@ -83,22 +144,27 @@ function api_menu() {
  * Implements hook_node_access().
  * This is checking if the specified api is returned from apim, if not it blocks access.
  */
-function api_access($node, $op, $account) {
+function api_node_access($node, $op, $account) {
   $type = is_string($node) ? $node : $node->type;
   $apifound = FALSE;
-  $apis = api_list_contents();
-  if ($apis) {
-    foreach ($apis as $api) {
-      if (isset($node->api_apiid) && $api['id'] == $node->api_apiid[$node->language][0]['value']) {
-        $apifound = TRUE;
+  if ($type == 'api' && $op == 'view') {
+    $apis = api_list_contents();
+    if ($apis) {
+      foreach ($apis as $api) {
+        if (isset($node->api_apiid) && $api['id'] == $node->api_apiid[$node->language][0]['value']) {
+          $apifound = TRUE;
+        }
       }
     }
-  }
-  if ($apifound == TRUE) {
-    return NODE_ACCESS_ALLOW;
+    if ($apifound == TRUE) {
+      return NODE_ACCESS_ALLOW;
+    }
+    else {
+      return NODE_ACCESS_DENY;
+    }
   }
   else {
-    return NODE_ACCESS_DENY;
+    return NODE_ACCESS_IGNORE;
   }
 }
 
@@ -113,18 +179,41 @@ function api_preprocess_node(&$variables) {
     $variables['theme_hook_suggestions'][] = 'node__api__search_result';
   }
   if ($variables['node']->type == 'api') {
-    $variables['titlelink'] = '<span class="apimTitle"> <a href="' . url('api/' . $variables['api_apiid'][0]['safe_value'] . '/' . $variables['api_version'][0]['safe_value']) . '">' . $variables['title'] . '</a> </span>';
+    $showversion = variable_get('ibm_apim_show_versions', 1);
+    $versiontext = '';
+    if ($showversion == 1) {
+      $versiontext = '(v' . $variables['api_version'][0]['safe_value'] . ')';
+    }
+    $variables['titlelink'] = '<span class="apimTitle"> <a href="' . url('api/' . $variables['api_apiid'][0]['safe_value'] . '/' . $variables['api_version'][0]['safe_value']) . '">' . $variables['title'] . '</a> ' . $versiontext . '</span>';
     if ($variables['view_mode'] == 'full') {
       $plans = _api_get_plans_for_api($variables['api_apiid'][0]['value'], $variables['api_version'][0]['value']);
       $variables['plans'] = $plans;
-      $forumID = taxonomy_get_term_by_name(_api_sanitise_apiname(html_entity_decode($variables['title']), ENT_QUOTES));
-      if (!empty($forumID)) {
-        reset($forumID);
-        $first_key = key($forumID);
-        $variables['apiforumlink'] = '<a href="' . url('forum/' . $forumID[$first_key]->tid) . '">' . t('Discuss this API in the forum') . '</a>';
+      if (module_exists('forum')) {
+        $forumID = taxonomy_get_term_by_name(_api_sanitise_apiname(html_entity_decode($variables['title']), ENT_QUOTES));
+        if (!empty($forumID)) {
+          reset($forumID);
+          $first_key = key($forumID);
+          $variables['apiforumlink'] = '<a href="' . url('forum/' . $forumID[$first_key]->tid) . '">' . t('Discuss this API in the forum') . '</a>';
+        }
       }
-      $apps = application_list_contents();
-      $variables['apps'] = $apps;
+      if (module_exists('application')) {
+        $apps = application_list_contents();
+        $variables['apps'] = $apps;
+      }
+      else {
+        $variables['apps'] = array();
+      }
+      if (isset($variables['api_oauthconfig'][0]['value'])) {
+        $variables['oauthconfig'] = unserialize($variables['api_oauthconfig'][0]['value']);
+      }
+      else {
+        $variables['oauthconfig'] = array(
+          'authorizationEndpointURL' => null,
+          'tokenEndpointURL' => null,
+          'grantType' => array(),
+          'refreshTokensEnabled' => false,
+          'tokenRevocationURL' => null);
+      }
     }
   }
 }
@@ -181,17 +270,18 @@ function api_custom_comment_submit_handler($form, &$form_state) {
 function api_collection_callback($apiid = NULL, $apiversion = NULL) {
   global $user;
   $build = array();
-  $host = variable_get('ibm_apim_host');
-  if (empty($host)) {
+  $host_pieces = _ibm_apim_parse_apim_host();
+  if (empty($host_pieces)) {
     drupal_set_message(t('IBM APIM Module is not correctly configured. Specify a valid hostname and try again.'), 'error');
     return;
   }
+  $limit = variable_get('default_nodes_main', 10);
 
   if ($apiid == NULL || $apiversion == NULL) {
     $nodes = array();
 
-    $query = db_select('node', 'n')->extend('PagerDefault');
-    $nids = $query->fields('n', array('nid'))->condition('type', 'api')->condition('status', 1)->limit(variable_get('default_nodes_main', 100))->addTag('node_access')->execute()->fetchCol();
+    $query = db_select('node', 'n');
+    $nids = $query->fields('n', array('nid'))->condition('type', 'api')->condition('status', 1)->addTag('node_access')->execute()->fetchCol();
     if (!empty($nids)) {
       $nodes = node_load_multiple($nids);
     }
@@ -215,7 +305,7 @@ function api_collection_callback($apiid = NULL, $apiversion = NULL) {
       }
     }
     // rerun query now we've created entries for any new APIs we found
-    $nids = $query->fields('n', array('nid'))->condition('type', 'api')->condition('status', 1)->limit(variable_get('default_nodes_main', 100))->addTag('node_access')->execute()->fetchCol();
+    $nids = $query->fields('n', array('nid'))->condition('type', 'api')->condition('status', 1)->addTag('node_access')->execute()->fetchCol();
     $finalnids = array();
 
     if (!empty($nids)) {
@@ -233,11 +323,18 @@ function api_collection_callback($apiid = NULL, $apiversion = NULL) {
         }
       }
 
-      $finalnodes = node_load_multiple($finalnids);
+      // handle paging
+      $page = pager_find_page();
+      $total = count($finalnids);
+      $offset = $limit * $page;
+      $chunk = array_slice($finalnids, $offset, $limit);
+      pager_default_initialize($total, $limit);
+
+      $finalnodes = node_load_multiple($chunk);
       if ($finalnodes) {
         $build = array(
-          'nodes' => node_view_multiple($finalnodes),
-          'pager' => array('#markup' => theme('pager')));
+          'content' => node_view_multiple($finalnodes),
+          'pager' => array('#markup' => theme('pager'), '#weight' => $limit));
       }
       else {
         drupal_set_message(t('No apis have been found.'), 'warning');
@@ -257,39 +354,15 @@ function api_collection_callback($apiid = NULL, $apiversion = NULL) {
       $results = $query->execute();
 
       if (isset($results['node'])) {
-        $node = node_load(array_keys($results['node'])[0]);
+        $keys = array_keys($results['node']);
+        $node = node_load($keys[0]);
         _api_updateExistingAPINode($node, $api);
-        $node = node_load($node->nid);
-        // load it again now we've updated it
-        // $build = node_page_view($node);
-        $build = node_page_view($node, 'full', NULL);
-        $more = module_invoke_all('node_view', $node, 'full', NULL);
-        // Only append comments when we are building a node on its own node detail
-        // page. Hardcoded here as comment module will do a node_is_page check which we wouldnt pass
-        // since path is /api not /node
-        $comments_enabled = variable_get('comment_api', 1);
-        if ($node->comment && empty($node->in_preview) && ($comments_enabled == 1)) {
-          $node->content['comments'] = comment_node_page_additions($node);
-        }
-        $build_all = array_merge($build, $more);
-        return $build_all;
+        drupal_goto('node/' . $node->nid);
       }
       else {
         // no existing node for this API so create one
         $nid = _api_createNewApiNode($api);
-        $node = node_load($nid);
-
-        $build = node_page_view($node, 'full', NULL);
-        $more = module_invoke_all('node_view', $node, 'full', NULL);
-        // Only append comments when we are building a node on its own node detail
-        // page. Hardcoded here as comment module will do a node_is_page check which we wouldnt pass
-        // since path is /api not /node
-        $comments_enabled = variable_get('comment_api', 1);
-        if ($node->comment && empty($node->in_preview) && ($comments_enabled == 1)) {
-          $node->content['comments'] = comment_node_page_additions($node);
-        }
-        $build_all = array_merge($build, $more);
-        return $build_all;
+        drupal_goto('node/' . $nid);
       }
     }
     else {
@@ -304,23 +377,36 @@ function api_collection_callback($apiid = NULL, $apiversion = NULL) {
  * Used to create the new placeholder nodes for any new APIs returned by APIm
  */
 function _api_createNewAPINode($api) {
+  $hostvariable = variable_get('ibm_apim_host');
+  $apim_session = &_ibm_apim_get_apim_session();
   global $user;
   $node = new stdClass();
   $node->title = $api['name'];
   $node->type = "api";
   node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
   $node->language = LANGUAGE_NONE;
-  $node->uid = $user->uid;
+  $node->uid = 1;
   $node->status = 1;
   $node->promote = 0;
   $node->comment = 2;
 
-  $node->api_apiid[$node->language][] = array(
-    'value' => $api['id'],
+  $node->api_apimhostname[$node->language][] = array(
+    'value' => $hostvariable,
     'format' => 'plain_text');
+  $node->api_providerid[$node->language][] = array(
+    'value' => $apim_session['org'],
+    'format' => 'plain_text');
+  $node->api_environmentid[$node->language][] = array(
+    'value' => $apim_session['env'],
+    'format' => 'plain_text');
+  $node->api_apiid[$node->language][] = array('value' => $api['id'], 'format' => 'plain_text');
   $node->api_version[$node->language][] = array(
     'value' => $api['version'],
     'format' => 'plain_text');
+  // ensure description is at least set to empty string
+  if (!isset($api['description']) || empty($api['description'])) {
+    $api['description'] = '';
+  }
   $node->api_description[$node->language][] = array(
     'value' => $api['description'],
     'format' => 'plain_text');
@@ -342,9 +428,10 @@ function _api_createNewAPINode($api) {
   $node->api_authorizationurl[$node->language][] = array(
     'value' => $api['authorizationURL'],
     'format' => 'plain_text');
-  $node->api_url[$node->language][] = array(
-    'value' => $api['url'],
+  $node->api_oauthconfig[$node->language][] = array(
+    'value' => serialize($api['oauthConfig']),
     'format' => 'plain_text');
+  $node->api_url[$node->language][] = array('value' => $api['url'], 'format' => 'plain_text');
   $node->api_updated[$node->language][] = array(
     'value' => $api['updatedAt'],
     'format' => 'plain_text');
@@ -363,9 +450,18 @@ function _api_createNewAPINode($api) {
  * Used to update the placeholder node for any new API details returned by APIm
  */
 function _api_updateExistingAPINode($node, $api) {
+  $hostvariable = variable_get('ibm_apim_host');
+  $apim_session = &_ibm_apim_get_apim_session();
   $node->title = $api['name'];
+  $node->api_apimhostname[$node->language][0]['value'] = $hostvariable;
+  $node->api_providerid[$node->language][0]['value'] = $apim_session['org'];
+  $node->api_environmentid[$node->language][0]['value'] = $apim_session['env'];
   $node->api_apiid[$node->language][0]['value'] = $api['id'];
   $node->api_version[$node->language][0]['value'] = $api['version'];
+  // ensure description is at least set to empty string
+  if (!isset($api['description']) || empty($api['description'])) {
+    $api['description'] = '';
+  }
   $node->api_description[$node->language][0]['value'] = $api['description'];
   $node->api_context[$node->language][0]['value'] = $api['context'];
   $node->api_protocol[$node->language][0]['value'] = $api['protocol'];
@@ -373,6 +469,7 @@ function _api_updateExistingAPINode($node, $api) {
   $node->api_authentication[$node->language][0]['value'] = $api['authentication'];
   $node->api_authorizationTokenURL[$node->language][0]['value'] = $api['authorizationTokenURL'];
   $node->api_authorizationurl[$node->language][0]['value'] = $api['authorizationURL'];
+  $node->api_oauthconfig[$node->language][0]['value'] = serialize($api['oauthConfig']);
   $node->api_url[$node->language][0]['value'] = $api['url'];
   $node->api_updated[$node->language][0]['value'] = $api['updatedAt'];
   node_save($node);
@@ -385,37 +482,39 @@ function _api_create_forum($apiname = NULL, $apidescription = NULL) {
   if (isset($apiname)) {
     // sanitise api name
     $cleanname = _api_sanitise_apiname($apiname);
+    if (module_exists('forum')) {
 
-    module_load_include('inc', 'forum', 'forum.admin');
-    // get the container ID
-    $containerID = taxonomy_get_term_by_name('APIs');
-    if (empty($containerID)) {
-      _api_create_forum_container();
+      module_load_include('inc', 'forum', 'forum.admin');
+      // get the container ID
       $containerID = taxonomy_get_term_by_name('APIs');
       if (empty($containerID)) {
-        // container doesnt exist and failed to create it. abort.
-        drupal_set_message(t('Failed to find or create the forum container for this API.'), 'error');
+        _api_create_forum_container();
+        $containerID = taxonomy_get_term_by_name('APIs');
+        if (empty($containerID)) {
+          // container doesnt exist and failed to create it. abort.
+          drupal_set_message(t('Failed to find or create the forum container for this API.'), 'error');
+          return;
+        }
+      }
+      $forumID = taxonomy_get_term_by_name($cleanname);
+      if (!empty($forumID)) {
+        // forum by this name already exists. abort (silently).
         return;
       }
-    }
-    $forumID = taxonomy_get_term_by_name($cleanname);
-    if (!empty($forumID)) {
-      // forum by this name already exists. abort (silently).
-      return;
-    }
-    else {
-      reset($containerID);
-      $first_key = key($containerID);
-      $forum_form_fields = array();
-      $forum_form_fields['values']['name'] = $cleanname;
-      $forum_form_fields['values']['description'] = $apidescription;
-      $forum_form_fields['values']['parent'][0] = $containerID[$first_key]->tid;
-      $forum_form_fields['values']['weight'] = 0;
-      $forum_form_fields['values']['vid'] = variable_get('forum_nav_vocabulary', 1);
-      $form_state = form_state_defaults();
-      $forum = forum_form_forum($forum_form_fields, $form_state);
-      $forum['form_id']['#value'] = "forum-form-forum";
-      forum_form_submit($forum, $forum_form_fields);
+      else {
+        reset($containerID);
+        $first_key = key($containerID);
+        $forum_form_fields = array();
+        $forum_form_fields['values']['name'] = $cleanname;
+        $forum_form_fields['values']['description'] = $apidescription;
+        $forum_form_fields['values']['parent'][0] = $containerID[$first_key]->tid;
+        $forum_form_fields['values']['weight'] = 0;
+        $forum_form_fields['values']['vid'] = variable_get('forum_nav_vocabulary', 1);
+        $form_state = form_state_defaults();
+        $forum = forum_form_forum($forum_form_fields, $form_state);
+        $forum['form_id']['#value'] = "forum-form-forum";
+        forum_form_submit($forum, $forum_form_fields);
+      }
     }
   }
 
@@ -429,9 +528,7 @@ function _api_create_forum($apiname = NULL, $apidescription = NULL) {
 
   foreach ($messages as $type => $type_messages) {
     foreach ($type_messages as $msg) {
-      watchdog(__FUNCTION__, '%type: %msg', array(
-        '%type' => $type,
-        '%msg' => $msg), $type_to_severity[$type]);
+      watchdog('_api_create_forum', '%type: %msg', array('%type' => $type, '%msg' => $msg), $type_to_severity[$type]);
     }
   }
 }
@@ -440,19 +537,21 @@ function _api_create_forum($apiname = NULL, $apidescription = NULL) {
  * Create the APIs Forum Container if it doesn't already exist.
  */
 function _api_create_forum_container() {
-  module_load_include('inc', 'forum', 'forum.admin');
+  if (module_exists('forum')) {
+    module_load_include('inc', 'forum', 'forum.admin');
 
-  $form_state = form_state_defaults();
-  $forum_container_fields = array();
-  $forum_container_fields['values']['form_id'] = "forum_form_container";
-  $forum_container_fields['values']['name'] = 'APIs';
-  $forum_container_fields['values']['description'] = 'Get help and advice on the use of our APIs.';
-  $forum_container_fields['values']['parent'][0] = 0;
-  $forum_container_fields['values']['weight'] = 0;
-  $forum_container_fields['values']['vid'] = variable_get('forum_nav_vocabulary', 1);
-  $container = forum_form_container($forum_container_fields, $form_state);
-  $container['form_id']['#value'] = 'forum_form_container';
-  forum_form_submit($container, $forum_container_fields);
+    $form_state = form_state_defaults();
+    $forum_container_fields = array();
+    $forum_container_fields['values']['form_id'] = "forum_form_container";
+    $forum_container_fields['values']['name'] = 'APIs';
+    $forum_container_fields['values']['description'] = 'Get help and advice on the use of our APIs.';
+    $forum_container_fields['values']['parent'][0] = 0;
+    $forum_container_fields['values']['weight'] = 0;
+    $forum_container_fields['values']['vid'] = variable_get('forum_nav_vocabulary', 1);
+    $container = forum_form_container($forum_container_fields, $form_state);
+    $container['form_id']['#value'] = 'forum_form_container';
+    forum_form_submit($container, $forum_container_fields);
+  }
 }
 /*
  * This method sanitises the API names to ensure that it is a valid forum name
@@ -479,7 +578,8 @@ function _api_sanitise_apiname($apiname = NULL) {
  */
 function api_list_contents() {
   $api_data = NULL;
-  $developerOrgs = ibm_apim_get_current_developer_org()['id'];
+  $org = ibm_apim_get_current_developer_org();
+  $developerOrgs = $org['id'];
 
   if (isset($developerOrgs)) {
     $developer_org_url = '/orgs/' . $developerOrgs;
@@ -489,8 +589,8 @@ function api_list_contents() {
   }
   $url = '/v1/portal' . $developer_org_url . '/apis';
 
-  $result = _ibm_apim_call($url);
-  if (isset($result) && isset($result->data)) {
+  $result = ibm_apim_call($url);
+  if (isset($result) && isset($result->data) && !isset($result->data['errors'])) {
     $api_data = $result->data;
   }
   return $api_data;
@@ -519,22 +619,48 @@ function api_details_contents($apiid, $apiversion) {
     $base_url = '';
   }
 
-  $developerOrgs = ibm_apim_get_current_developer_org()['id'];
-
-  if (isset($developerOrgs)) {
-    $developer_org_url = '/orgs/' . $developerOrgs;
+  // check if this api is already cached in the session, if so return that
+  $found = false;
+  $index = 0;
+  if (isset($apim_session['apis'])) {
+    foreach ($apim_session['apis'] as $api) {
+      $index++;
+      if (isset($api) && isset($api->id) && isset($api->version)) {
+        if ($api->id == $apiid && $api->version == $apiversion) {
+          if (isset($api->data)) {
+            $found = true;
+            return $api->data;
+          }
+          else {
+            // if exists but no data then remove it from the cache
+            unset($apim_session['apis'][$index]);
+          }
+        }
+      }
+    }
   }
-  else {
-    $developer_org_url = '';
+  if ($found == false) {
+    $org = ibm_apim_get_current_developer_org();
+    $developerOrgs = $org['id'];
+    if (isset($developerOrgs)) {
+      $developer_org_url = '/orgs/' . $developerOrgs;
+    }
+    else {
+      $developer_org_url = '';
+    }
+    $url = '/v1/portal' . $developer_org_url . '/apis/' . $apiid . '/v' . $apiversion;
+    $result = ibm_apim_call($url);
+    if (isset($result) && isset($result->data) && !isset($result->data['errors'])) {
+      $returnValue = $result->data;
+      $returnValue['base_url'] = $base_url;
+      // cache it in the session
+      $apim_session['apis'][] = array(
+        'id' => $apiid,
+        'version' => $apiversion,
+        'data' => $returnValue);
+    }
+    return $returnValue;
   }
-
-  $url = '/v1/portal' . $developer_org_url . '/apis/' . $apiid . '/v' . $apiversion;
-  $result = _ibm_apim_call($url);
-  if (isset($result) && isset($result->data)) {
-    $returnValue = $result->data;
-    $returnValue['base_url'] = $base_url;
-  }
-  return $returnValue;
 }
 
 /**
@@ -552,7 +678,8 @@ function api_details_contents($apiid, $apiversion) {
  */
 function api_documents_contents($apiid, $apiversion) {
   $returnValue = NULL;
-  $developerOrgs = ibm_apim_get_current_developer_org()['id'];
+  $org = ibm_apim_get_current_developer_org();
+  $developerOrgs = $org['id'];
 
   if (isset($developerOrgs)) {
     $developer_org_url = '/orgs/' . $developerOrgs;
@@ -562,7 +689,7 @@ function api_documents_contents($apiid, $apiversion) {
   }
 
   $url = '/v1/portal' . $developer_org_url . '/apis/' . $apiid . '/v' . $apiversion . '/documents';
-  $result = _ibm_apim_call($url);
+  $result = ibm_apim_call($url);
   if (isset($result) && isset($result->data)) {
     $returnValue = $result->data;
   }
@@ -667,28 +794,25 @@ function api_getCSSforMimetype($mimetype) {
  */
 function _api_get_plans_for_api($apiid, $apiversion) {
   $results = array();
-  $plans_data = plan_list_contents();
-  if ($plans_data) {
-    foreach ($plans_data as $plan) {
-      $plan_details = plan_details_contents($plan['id'], $plan['version']);
-      if (!isset($plan['displayName'])) {
-        $plan['displayName'] == '';
-      }
-      if (!isset($plan['name'])) {
-        $plan['name'] == '';
-      }
-      if (isset($plan_details['apis'])) {
-        foreach ($plan_details['apis'] as $api) {
-          if ($api['id'] == $apiid && $api['version'] == $apiversion) {
-            array_push($results, array(
-              'id' => $plan['id'],
-              'version' => $plan['version'],
-              'name' => $plan['name'],
-              'displayName' => $plan['displayName'],
-              'version' => $plan['version'],
-              'updatedAt' => $plan['updatedAt'],
-              'requiresApproval' => $plan['requiresApproval'],
-              'url' => $plan['url']));
+  if (module_exists('plan')) {
+    $plans_data = plan_list_contents();
+    if ($plans_data) {
+      foreach ($plans_data as $plan) {
+        $plan_details = plan_details_contents($plan['id'], $plan['version']);
+        if (!isset($plan['displayName'])) {
+          $plan['displayName'] == '';
+        }
+        if (!isset($plan['name'])) {
+          $plan['name'] == '';
+        }
+        if (isset($plan_details['apis'])) {
+          foreach ($plan_details['apis'] as $api) {
+            if ($api['id'] == $apiid && $api['version'] == $apiversion) {
+              // only include subscribable Plans (or plans without subscribable set)
+              if (!isset($plan_details['subscribable']) || $plan_details['subscribable'] != false) {
+                array_push($results, $plan_details);
+              }
+            }
           }
         }
       }
@@ -697,27 +821,64 @@ function _api_get_plans_for_api($apiid, $apiversion) {
   return $results;
 }
 
-function _api_document_proxy_callback($apiid, $apiversion, $filename) {
+/**
+ * Callback for swagger proxy
+ */
+function _api_swagger_proxy_callback($apiid, $apiversion) {
+  if (isset($apiid) && isset($apiversion)) {
+    $swaggerjson = ibm_apim_get_api_swagger($apiid, $apiversion);
+    if (isset($swaggerjson)) {
+      return drupal_json_output($swaggerjson);
+    }
+  }
+}
+
+/**
+ * Callback for document proxy
+ */
+function _api_document_proxy_callback($encodedurl) {
+  $url = base64_decode($encodedurl);
+  _api_download_proxy($url);
+}
+
+/**
+ * Callback for wsdl proxy
+ */
+function _api_wsdl_proxy_callback($apiid, $apiversion) {
   // Make sure we have the session variables set
   _ibm_apim_check_and_get_config();
   $apim_session = &_ibm_apim_get_apim_session();
-  $host = variable_get('ibm_apim_host');
-  if (empty($host)) {
+  $host_pieces = _ibm_apim_parse_apim_host();
+  if (empty($host_pieces)) {
     drupal_set_message(t('IBM APIM Module is not correctly configured. Specify a valid hostname and try again.'), 'error');
     return;
   }
-  $url = 'https://' . $host . '/v1/portal/apis/' . $apiid . '/' . $apiversion . '/documents/' . $filename . '/file';
+  $url = $host_pieces['url'] . '/v1/portal/apis/' . $apiid . '/' . $apiversion . '/wsdl';
+  _api_download_proxy($url);
+}
+
+/**
+ * Generic API download proxy, used for documents and wsdls
+ */
+function _api_download_proxy($url) {
+  // Make sure we have the session variables set
+  _ibm_apim_check_and_get_config();
+  $apim_session = &_ibm_apim_get_apim_session();
+  if (empty($url)) {
+    drupal_set_message(t('URL not specified. Specify a valid URL and try again.'), 'error');
+    return;
+  }
 
   $ch = curl_init($url);
   if (isset($apim_session['auth'])) {
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-    "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env'],
-    "Authorization: Basic " . $apim_session['auth']));
-  } else {
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-    "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env']));
+      "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env'],
+      "Authorization: Basic " . $apim_session['auth']));
   }
-
+  else {
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+      "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env']));
+  }
 
   curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
   curl_setopt($ch, CURLOPT_HEADER, true);
@@ -742,4 +903,8 @@ function _api_document_proxy_callback($apiid, $apiversion, $filename) {
   }
 
   print $contents;
+}
+
+function _api_path_param_to_arg($arg) {
+  return $arg;
 }

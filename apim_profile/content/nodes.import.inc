@@ -32,10 +32,10 @@ function apim_profile_create_nodes() {
     'body' => array(
       'und' => array(
         array(
-          'value' => "<h3>Browse the available APIs</h3><p>Take a look at our APIs to see what choices are available. Is there an API you can exploit in one of your applications? Use the supplied APIs to quickly construct a fully featured application.<br/><a href=\"api\">Explore our APIs</a></p><h3>Sign Up</h3><p>Found an API? Sign up now to create an account and get started. It is free to join.</p><h3>Register an application</h3><p>Before you can use an API you have to register your application. When you register an application, the application is assigned a unique client ID and client secret. You must use the client ID when you call an API that requires you to identify your application by using a client ID, or a client ID and client secret. Check the API description for the details.</p><h3>Select	a plan</h3><p>Finally, now that your application is registered, you need to subscribe to a plan. The plan determines the number of API calls that your application can make. Some plans are free and no approval is required, some require approval, and some require approval and a monthly subscription. Think about what you need and choose the most suitable plan.</p><p>All done! You are signed up, registered, and ready to go.</p>",
+          'value' => "<ol class=\"numberedList\"><li><h3>Browse the available APIs</h3><p>Take a look at our APIs to see what choices are available. Is there an API you can exploit in one of your applications? Use the supplied APIs to quickly construct a fully featured application.<br><a href=\"api\">Explore our APIs</a></p></li><li><h3>Sign Up</h3><p>Found an API? Sign up now to create an account and get started. It is free to join.<br><a href=\"user/register\">Create an account</a></p></li><li><h3>Register an application</h3><p>Before you can use an API you have to register your application. When you register an application, the application is assigned a unique client ID and client secret. You must use the client ID when you call an API that requires you to identify your application by using a client ID, or a client ID and client secret. Check the API description for the details.</p></li><li><h3>Select a plan</h3><p>Finally, now that your application is registered, you need to subscribe to a plan. The plan determines the number of API calls that your application can make. Some plans are free and no approval is required, some require approval, and some require approval and a monthly subscription. Think about what you need and choose the most suitable plan.</p></li></ol><p>All done! You are signed up, registered, and ready to go.</p>",
           'summary' => 'This is a getting started page',
           'format' => 'full_html',
-          'safe_value' => "<h3>Browse the available APIs</h3><p>Take a look at our APIs to see what choices are available. Is there an API you can exploit in one of your applications? Use the supplied APIs to quickly construct a fully featured application.<br/><a href=\"api\">Explore our APIs</a></p><h3>Sign Up</h3><p>Found an API? Sign up now to create an account and get started. It is free to join.</p><h3>Register an application</h3><p>Before you can use an API you have to register your application. When you register an application, the application is assigned a unique client ID and client secret. You must use the client ID when you call an API that requires you to identify your application by using a client ID, or a client ID and client secret. Check the API description for the details.</p><h3>Select	a plan</h3><p>Finally, now that your application is registered, you need to subscribe to a plan. The plan determines the number of API calls that your application can make. Some plans are free and no approval is required, some require approval, and some require approval and a monthly subscription. Think about what you need and choose the most suitable plan.</p><p>All done! You are signed up, registered, and ready to go.</p>",
+          'safe_value' => "<ol class=\"numberedList\"><li><h3>Browse the available APIs</h3><p>Take a look at our APIs to see what choices are available. Is there an API you can exploit in one of your applications? Use the supplied APIs to quickly construct a fully featured application.<br><a href=\"api\">Explore our APIs</a></p></li><li><h3>Sign Up</h3><p>Found an API? Sign up now to create an account and get started. It is free to join.<br><a href=\"user/register\">Create an account</a></p></li><li><h3>Register an application</h3><p>Before you can use an API you have to register your application. When you register an application, the application is assigned a unique client ID and client secret. You must use the client ID when you call an API that requires you to identify your application by using a client ID, or a client ID and client secret. Check the API description for the details.</p></li><li><h3>Select a plan</h3><p>Finally, now that your application is registered, you need to subscribe to a plan. The plan determines the number of API calls that your application can make. Some plans are free and no approval is required, some require approval, and some require approval and a monthly subscription. Think about what you need and choose the most suitable plan.</p></li></ol><p>All done! You are signed up, registered, and ready to go.</p>",
           'safe_summary' => "<p>This is a getting started page</p>"))),
     'rdf_mapping' => array(
       'rdftype' => array('foaf:Document'),
@@ -87,7 +87,7 @@ function apim_profile_create_nodes() {
   $supportnode = (object) array(
     'vid' => NULL,
     'uid' => '1',
-    'title' => 'Having problems, looking for help? Check out the following support options...',
+    'title' => 'Looking for help?',
     'log' => '',
     'status' => '1',
     'comment' => '1',
@@ -107,10 +107,10 @@ function apim_profile_create_nodes() {
     'body' => array(
       'und' => array(
         array(
-          'value' => '<h3>Developer forum</h3><p><span style="line-height: 1.538em;"><p>Search and participate in our developer forum, click <a href="forum">Forum</a>. Ask questions because the experienced developers in the forum community might know the answers and are happy to help.</p><h3>FAQ</h3><p><span style="line-height: 1.538em;">Look in our frequently asked questions section, click the <a href="faq-page">Frequently Asked Questions</a> link, to see if you can find the details that you need</span></p><h3>Support Tickets</h3><p><span style="line-height: 1.538em;">Should it be necessary, click the <a href="support">Raise a support ticket</a> link, to see open support tickets or raise a new one.</span></p><h3>Contact us</h3><p><span style="line-height: 1.538em;">To ask us a question or to send us feedback, open and complete the Contact Form, click <a href="contact">Contact Us</a>. Enter your email address, or other contact details, so that we can get back to you.</span></p>',
+          'value' => '<ul class="supportList"><li><h3>Developer forum</h3><p>Search and participate in our developer forum. Ask questions because the experienced developers in the forum community might know the answers and are happy to help.<br><a href="forum">Visit developer forum</a></p></li><li><h3>FAQ</h3><p>Look in our frequently asked questions section to see if you can find the details that you need<br><a href="faq-page">Visit Frequently Asked Questions</a></p></li><li><h3>Support Tickets</h3><p>Should it be necessary this section is where you can see open support tickets or raise a new one.<br><a href="support">Raise a support ticket</a></p></li><li><h3>Contact us</h3><p>To ask a question or to send us feedback, open and complete the Contact Form. <br><a href="contact">Contact us</a></p></li></ul>',
           'summary' => '',
           'format' => 'full_html',
-          'safe_value' => "<h2>Having problems, looking for help? Check out the following support options... </h2><h3>Developer forum</h3><p><span><p>Search and participate in our developer forum, click <a href=\"forum\">Forum</a>. Ask questions because the experienced developers in the forum community might know the answers and are happy to help.</p><h3>FAQ</h3><p><span>Look in our frequently asked questions section, click the <a href=\"faq-page\">Frequently Asked Questions</a> link, to see if you can find the details that you need</span></p><h3>Support Tickets</h3><p><span style=\"line-height: 1.538em;\">Should it be necessary, click the <a href=\"support\">Raise a support ticket</a> link, to see open support tickets or raise a new one.</span></p><h3>Contact us</h3><p><span>To ask us a question or to send us feedback, open and complete the Contact Form, click <a href=\"contact\">Contact Us</a>. Enter your email address, or other contact details, so that we can get back to you.</span></p>\n",
+          'safe_value' => '<ul class="supportList"><li><h3>Developer forum</h3><p>Search and participate in our developer forum. Ask questions because the experienced developers in the forum community might know the answers and are happy to help.<br><a href="forum">Visit developer forum</a></p></li><li><h3>FAQ</h3><p>Look in our frequently asked questions section to see if you can find the details that you need<br><a href="faq-page">Visit Frequently Asked Questions</a></p></li><li><h3>Support Tickets</h3><p>Should it be necessary this section is where you can see open support tickets or raise a new one.<br><a href="support">Raise a support ticket</a></p></li><li><h3>Contact us</h3><p>To ask a question or to send us feedback, open and complete the Contact Form. <br><a href="contact">Contact us</a></p></li></ul>',
           'safe_summary' => ''))),
     'rdf_mapping' => array(
       'rdftype' => array('foaf:Document'),
@@ -290,7 +290,7 @@ function apim_profile_create_nodes() {
     'sticky' => '0',
     'nid' => NULL,
     'type' => 'faq',
-    'language' => 'und',
+    'language' => 'en',
     'created' => '1417508096',
     'changed' => '1417508096',
     'tnid' => '0',
@@ -354,7 +354,7 @@ function apim_profile_create_nodes() {
     'sticky' => '0',
     'nid' => NULL,
     'type' => 'faq',
-    'language' => 'und',
+    'language' => 'en',
     'created' => '1417513784',
     'changed' => '1417513798',
     'tnid' => '0',
@@ -418,7 +418,7 @@ function apim_profile_create_nodes() {
     'sticky' => '0',
     'nid' => NULL,
     'type' => 'faq',
-    'language' => 'und',
+    'language' => 'en',
     'created' => '1417514088',
     'changed' => '1417514088',
     'tnid' => '0',
@@ -482,7 +482,7 @@ function apim_profile_create_nodes() {
     'sticky' => '0',
     'nid' => NULL,
     'type' => 'faq',
-    'language' => 'und',
+    'language' => 'en',
     'created' => '1417514520',
     'changed' => '1417514520',
     'tnid' => '0',
@@ -546,7 +546,7 @@ function apim_profile_create_nodes() {
     'sticky' => '0',
     'nid' => NULL,
     'type' => 'faq',
-    'language' => 'und',
+    'language' => 'en',
     'created' => '1417515201',
     'changed' => '1417515300',
     'tnid' => '0',

@@ -1,12 +1,20 @@
 /* Page */
-html, body,
+body,
 .apimInnerContainer {
   background-color: #fefefe;
   color: #000000;
 }
+/* no background for tinymce */
+body#tinymce {
+  background: none;
+}
+
+.fade:after {
+  background: linear-gradient(to right, rgba(255, 255, 255, 0), #fefefe 70%);
+}
 
 body.teaser-mode .columns-inner {
-  background-color: #f0f4f5;
+
 }
 
 ul.secondary,
@@ -20,38 +28,46 @@ ul.secondary,
 #skip-link a,
 ul.tabs li a,
 ul.tabs li a:visited {
-  background-color: #eeeeee;
-  color: #000001;
+  color: #0077d9;
 }
 ul.tabs li a:hover,
 ul.tabs li a:focus,
 ul.tabs li a:active,
 ul.tabs li a.active,
 ul.tabs li a.active:visited {
-  background-color: #ededed;
-  color: #000100;
+  color: #000100 !important;
+  border-bottom: 2px solid #000100;
 }
 
 /* Links */
 a,
-a:visited {
-  color: #42a9be;
+a:visited,
+.portal .portalApi .testAPILink a,
+.portal .portalApi .testAPILink a:visited {
+  color: #0077d9;
 }
 a:hover,
 a:focus,
-a:active {
-  color: #1c6ea0;
+a:active,
+.portal .portalApi .testAPILink a:hover,
+.portal .portalApi .testAPILink a:focus,
+.portal .portalApi .testAPILink a:active {
+  color: #0061b1;
 }
 
 a.active {
-  color: #1c6ea0 !important;
+  color: #0061b1 !important;
 }
 
 .pager a:hover,
 .pager a:active,
 .pager a:focus {
-  background-color: #42a9be;
+  background-color: #0077d9;
   color: #fff;
+}
+
+h3.apimSummaryTitle {
+  color: #0077d9;
 }
 
 /* Identity */
@@ -77,11 +93,13 @@ h2#site-slogan {
 .region-header a:hover,
 .region-header a:focus,
 .region-header a:active {
-  color: #42a9ba;
+  color: #39a6ff !important;
 }
 
 /* Footer */
-.breadcrumb,
+.breadcrumb {
+  color: #010101;
+}
 #page > footer,
 #page > footer .block-title {
   background-color: #f1f5f6;
@@ -90,7 +108,7 @@ h2#site-slogan {
 .breadcrumb a,
 #page > footer a,
 #page > footer a:visited {
- color: #1c6ea0;
+ color: #0061b1;
 }
 .breadcrumb a:hover,
 .breadcrumb a:focus,
@@ -98,18 +116,26 @@ h2#site-slogan {
 #page > footer a:hover,
 #page > footer a:focus,
 #page > footer a:active {
-  color: #42a9be;
+  color: #0077d9;
+}
+
+.portal .explanationText {
+  color: #656565;
+}
+
+.singleOrg {
+  color: #bac0c6;
 }
 
 /* Menu bar */
 .menu-toggle a {
-  color: #bac0c6;
+  color: #656565;
 }
 #menu-bar-wrapper {
   background: transparent;
 }
 .nav .block-menu ul li a {
-  color: #bac0c6;
+  color: #656565;
   opacity: 0.95;
 }
 .nav .block-menu ul a:focus,
@@ -214,7 +240,7 @@ h2#site-slogan {
 }
 
 body.not-front #page > header {
-  border-bottom: 1px solid #bac0c6;
+  border-bottom: 1px solid #656565;
 }
 
 body.page-home #columns.no-menu-bar {
@@ -233,13 +259,14 @@ body.page-home #columns.no-menu-bar {
   background-color: transparent;
 }
 #menu-bar {
-  background-color: #ffffff;
+  background-color: #f8f8ff;
+  border-bottom: 1px solid #dfdfe6;
 }
 
 /* Titles */
 h1,
 .front h2.block-title {
-  color: #8CC63F;
+  color: #6a6a6a;
 }
 .comment header h3 a,
 h1 a,
@@ -250,32 +277,47 @@ h2 {
 
 /* input fields */
 input, textarea {
-  background-color: #ffffff;
+  background-color: #fffffe;
   color: #000000;
+}
+textarea:disabled, 
+input:disabled {
+  background-color: #ebebe4;
 }
 
 /* Label */
 .portal .label,
 .apimUpdated,
+.apimField,
 .apiDocTitle,
 .portal .sectionHeader,
 .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading h2 a,
-.swagger-section .swagger-ui-wrap ul#resources li.resource div.heading ul.options li a
- {
-  color: #b1b2b3;
+.swagger-section .swagger-ui-wrap ul#resources li.resource div.heading ul.options li a {
+  color: #656565;
+}
+
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading h2 a,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource div.heading h2 a:hover,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource:hover div.heading h2 a,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource.active div.heading h2 a {
+  color: #656565;
+}
+.portal .swagger-section .swagger-ui-wrap .model-signature .signature-nav a {
+  color: #656565;
 }
 
 /* Summary Text */
 .apimSummaryDescription,
 .portal .explanationText,
 .summaryText,
-.form-item .description {
+.form-item .description,
+.swagger-section .swagger-ui-wrap p {
  color: #333333;
 }
 
 /* Highlight Text */
 .portal .highlightText {
-  color: #0180e9;
+  color: #295a46;
 }
 
 /* Border Color */
@@ -283,13 +325,112 @@ input, textarea {
 .section,
 .resourceView.resourcePlanView,
 .resourceHeadline,
+.planSelector,
 .apimSummary,
+.apimTitleContainer .displayInlineTop.planName,
+.plan .authInfo,
 .swagger-section {
   border-color: #dddddd !important;
+}
+.portal .swagger-section #swagger-ui-container.swagger-ui-wrap {
+  border-left: 1px #dddddd solid;
+  border-right: 1px #dddddd solid;
+  border-bottom: 1px #dddddd solid;
+}
+
+.apimSummary {
+  border-bottom: 1px solid #dddddd;
 }
 
 /* Swagger Color */
 .portal .swagger-section #header {
-    background-color: #eeeeee;
-    border-color: #dddddd;
+  background-color: #ffffff;
+  border-color: #dddddd;
+}
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation div.heading h3 span.http_method a {
+  color: #feffff;
+}
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.post div.heading,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.put div.heading,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.get div.heading,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.delete div.heading,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.post div.content,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.put div.content,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.get div.content,
+.portal .swagger-section .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation.delete div.content {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.portal .swagger-section .swagger-ui-wrap pre,
+.portal .swagger-section .swagger-ui-wrap .markdown pre,
+.portal .swagger-section .swagger-ui-wrap .model-signature pre:hover,
+.portal .swagger-section textarea {
+  background-color: #f0f0f0;
+  border: 1px solid #dddddd;
+}
+
+/* forums */
+.forum-table-wrap .forum-table-superheader {
+  background-color: #dfeaf3;
+  border-color: #dfeaf3;
+}
+/* plans on api view */
+.apimMainContent .appPlanName {
+  background-color: #eeeeee;
+}
+.apiPlanSummary.apimMainContent .appPlanName {
+  background: inherit;
+}
+.apiPlanSummary .planSubscribe a,
+.apiPlanSummary .planSubscribe a:link,
+.apiPlanSummary .planSubscribe a:visited,
+.apimPlansApis .ui-accordion-header .testAPILink a,
+.apimPlansApis .ui-accordion-header .testAPILink a:link,
+.apimPlansApis .ui-accordion-header .testAPILink a:visited {
+  color: #0077d9;
+}
+.apiPlanSummary .planSubscribe a:hover,
+.apiPlanSummary .planSubscribe a:focus,
+.apiPlanSummary .planSubscribe a:active,
+.apimPlansApis .ui-accordion-header .testAPILink a:hover,
+.apimPlansApis .ui-accordion-header .testAPILink a:focus,
+.apimPlansApis .ui-accordion-header .testAPILink a:active {
+  text-decoration: underline;
+  color: #0061b1;
+}
+.portal .apiPlanSummary .portalApi .resourceDesc,
+.portal .apiPlanSummary .portalApi .planHeader {
+  color: #767676;
+}
+
+.apiPlanSummary .ui-accordion h3.ui-accordion-header.ui-state-default {
+  background-color: #eeeeee;
+  border: 1px solid #dddddd;
+}
+.apiPlanSummary .ui-accordion h3.ui-accordion-header.ui-state-active {
+  background: inherit;
+  border: 1px solid #dddddd;
+}
+.apiPlanSummary .ui-accordion .portalApi.animateMaxHeight {
+  border: 1px solid #dddddd;
+  border-top: 0;
+}
+
+button,
+input[type="submit"],
+input.form-submit,
+.form-actions a,
+.form-actions a:visited,
+.button, a.button, a.button:visited,
+.banner_block .banner_button a,
+.portal .migratePlanContainer .migrateButton a,
+.numberedList a,
+.supportList a {
+  background-color: #0078d9;
+  color: #fffeff;
+}
+
+.numberedList li:before {
+  border: 1px solid #000000;
 }

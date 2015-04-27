@@ -6,6 +6,9 @@ table {
   margin: 1em 0;
   width: 100%;
 }
+.swagger-section .swagger-ui-wrap table {
+  border-width: 1px 1px 1px 1px;
+}
 th {
   font-weight: 600;
   text-align: left;

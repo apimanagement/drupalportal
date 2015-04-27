@@ -82,7 +82,7 @@ body.full-mode #block-ibm-apim-app-details-menu {
   background: url(images/search-button.png) no-repeat scroll center top transparent;
   border-color: #E4E4E4 #D2D2D2 #B4B4B4;
   cursor: pointer;
-  height: 25px;
+  height: 23px;
   margin-left: 0;
   margin-right: 0;
   overflow: hidden;
@@ -135,8 +135,8 @@ body.full-mode #block-ibm-apim-app-details-menu {
 }
 .dropit .dropit-open .dropit-submenu { display: block; }
 
-.menu ul { display: none; } 
-.menu ul.dropit-submenu {
+.dropitmenu ul { display: none; } 
+.dropitmenu ul.dropit-submenu {
     background-color: #fff;
     border: 1px solid #b2b2b2;
     padding: 6px 0;
@@ -148,19 +148,19 @@ body.full-mode #block-ibm-apim-app-details-menu {
        -moz-box-shadow: 0px 1px 3px rgba(0,0,0,0.15);
             box-shadow: 0px 1px 3px rgba(0,0,0,0.15);
 }          
-.menu ul.dropit-submenu a {
+.dropitmenu ul.dropit-submenu a {
     display: block;
     font-size: 14px;
     line-height: 25px;
     color: #7a868e;
     padding: 0 18px;
 }
-.menu ul.dropit-submenu a:hover {
+.dropitmenu ul.dropit-submenu a:hover {
     background: #248fc1;
     color: #fff;
     text-decoration: none;
 }
-.menu ul.dropit-submenu li{
+.dropitmenu ul.dropit-submenu li{
 	list-style-type: none;
 	list-style-image: none;
 }
@@ -172,11 +172,33 @@ body.full-mode #block-ibm-apim-app-details-menu {
 	margin-top: 5px;
     vertical-align: top;
 }
-ul.menu a:hover .dropit-icon,
-ul.menu a:focus .dropit-icon,
-ul.menu a:active .dropit-icon {
+ul.dropitmenu a:hover .dropit-icon,
+ul.dropitmenu a:focus .dropit-icon,
+ul.dropitmenu a:active .dropit-icon {
 	background-image: url(images/ui/ui-icons_2e83ff_256x240.png);
 }
-h1, .front h2.block-title {
-    text-align: center;
+
+.banner_block :first-child {
+  padding-top: 40px;
+}
+.banner_block h1{
+  margin-top: 0; 
+}
+.banner_block .banner_button {
+  padding-top: 40px;
+}
+
+.region-two-50-first .block-inner,
+.region-two-50-second .block-inner {
+  padding-bottom: 30px;
+  margin-left: 40px;
+  margin-right: 40px;
+}
+
+h2.block-title {
+  border-bottom: 1px solid #c8c8c8;
+}
+
+#block-ibm-apim-app-details-menu h2.block-title {
+  border-bottom: 0;
 }

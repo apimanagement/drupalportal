@@ -4,10 +4,20 @@
 function ibm_apim_install() {
   // disable user email verification as this module doesn't currently work with it enabled
   variable_set('user_email_verification', FALSE);
+
+  // create default fields
+  module_load_include('inc', 'ibm_apim', 'ibm_apim.userfields');
+  _ibm_apim_add_user_first_name_field();
+  _ibm_apim_add_user_last_name_field();
+  _ibm_apim_add_user_developerorg_field();
+  _ibm_apim_add_user_company_field();
+  _ibm_apim_add_user_phone_field();
+  if (module_exists('addressfield')) {
+    _ibm_apim_add_user_address_field();
+  }
 }
 
 /**
- *
  * Implementation of hook_requirements
  *
  * Check to see if php has curl support enabled. If it does not then this module will
@@ -18,13 +28,22 @@ function ibm_apim_requirements($phase) {
   $reqs = array();
   $t = get_t();
   if ($phase == "install" || $phase == "runtime") {
-    if (! function_exists("curl_init")) {
+    if (!function_exists("curl_init")) {
       $reqs['ibm_apim_curl'] = array(
-          'title' => $t('IBM API Management Module'),
-          'value' => FALSE,
-          'description' => $t('The IBM API Management module requires that PHP must have curl support enabled. This may require installation of a system package (e.g. php5-curl) or editing the curl.ini file located in the php config directory to enable curl support.'),
-          'severity' => REQUIREMENT_ERROR);
+        'title' => $t('IBM API Management Module'),
+        'value' => FALSE,
+        'description' => t('The IBM API Management module requires that PHP must have curl support enabled. This may require installation of a system package (e.g. php5-curl) or editing the curl.ini file located in the php config directory to enable curl support.'),
+        'severity' => REQUIREMENT_ERROR);
     }
+  }
+  if ($phase == 'runtime') {
+    $path = drupal_get_path('module', 'ibm_apim') . '/ibm_apim.info';
+    $info = drupal_parse_info_file($path);
+    $reqs['ibm_apim'] = array(
+      'title' => $t('IBM API Management'),
+      'severity' => REQUIREMENT_OK,
+      'value' => t('IBM API Management Advanced Portal version %ver', array(
+        '%ver' => $info['version'])));
   }
   return $reqs;
 }

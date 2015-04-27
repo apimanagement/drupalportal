@@ -19,8 +19,8 @@ div.messages {
   this is taken care of in theme settings as per above for normal gutters */
 #content .panel-display,
 #content .panel-flexible {
-  margin-left: -20px;
-  margin-right: -20px;
+  margin-left: -40px;
+  margin-right: -40px;
 }
 body.not-front .columns-inner {
 	padding-top: 20px;
@@ -98,6 +98,11 @@ a.feed-icon {
 /* Footer - the main page footer only */
 #page > footer {
   padding: 8px 0;
+  margin: 40px 0;
+}
+/* but not on front page */
+.front #page > footer {
+  margin: 0;
 }
 
 /* Feed icons */
@@ -239,7 +244,12 @@ div.messages {
 .search { background-position: 0 -330px; }
 .x { background-position: 0 -396px;}
 
-body.page-home .region-three-33-top .block-inner {
+
+body.page-home .region-two-50-top {
+  padding-bottom: 20px;
+}
+
+body.page-home .region-two-50-top .block-inner {
   margin-left: 0px;
   margin-right: 0px;
 }
@@ -247,4 +257,82 @@ body.page-home .region-three-33-top .block-inner {
 .reg-form,
 #forum-statistics {
   margin-bottom: 20px;	
+}
+
+/* minor tweaks for linkit editor popup dialog */
+.ui-dialog.ui-widget.ui-widget-content.linkit-wrapper {
+  height: 700px;
+  overflow: auto;
+}
+
+/* numbered list styles for getting started page */
+.numberedList {
+  counter-reset: page-list-counter;
+}
+.numberedList h3,
+.supportList h3 {
+  margin-top: 10px;
+}
+.numberedList a,
+.supportList a {
+  margin-top: 20px;
+  display: inline-block;
+}
+ol.numberedList,
+ul.supportList {
+  list-style-type: none;
+}
+.numberedList li {
+  position: relative;
+  padding: 4px 0 10px 60px;
+}
+.supportList li {
+  position: relative;
+  padding: 10px 0;
+}
+.numberedList li:before {
+  content: counter(page-list-counter);
+  counter-increment: page-list-counter;
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  border: 1px solid #000000;
+  width: 1em;
+  line-height: 1.5em;
+  padding-left: 0.55em;
+  font-size: 1.5em;
+  margin-top: 10px;
+}
+.numberedList li:after,
+.supportList li:after {
+  content:'';
+  position: absolute;
+  bottom: 0;
+  left: 23%;
+  width: 93%;
+  height: 1px;
+  margin-left: -17.5%;
+  background: #aaaaaa;
+}
+.supportList li:after {
+  width: 89%;
+}
+.numberedList li:last-child:after,
+.supportList li:last-child:after {
+  content:'';
+  height: 0;
+  background: none;
+}
+
+ul.tabs li a,
+ul.tabs li a:visited {
+  background: none;
+}
+ul.tabs li a:hover,
+ul.tabs li a:focus,
+ul.tabs li a:active,
+ul.tabs li a.active,
+ul.tabs li a.active:visited {
+  background: none;
 }

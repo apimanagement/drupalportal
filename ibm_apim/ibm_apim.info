@@ -1,12 +1,13 @@
 name = IBM API Management
-description = Integrate IBM API Management v3 into Drupal
+description = Integrate IBM API Management v4 into Drupal
 core = 7.x
-package = IBM API Management v3
+package = IBM API Management v4
 configure = admin/config/system/ibm_apim
 files[] = ibm_apim.module
 
 dependencies[] = entity
 dependencies[] = text
+dependencies[] = image
 
 scripts[] = js/dropit.js
 scripts[] = js/hideShowPassword.js
