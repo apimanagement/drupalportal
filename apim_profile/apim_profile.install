@@ -16,7 +16,6 @@ function apim_profile_install() {
 
   // Enable modules that are not enabled via the .info
   $modules = array(
-    'views_ui',
     'bean_admin_ui',
     'page_manager',
     'flag_bookmark',
@@ -45,7 +44,8 @@ function apim_profile_install() {
   module_enable($modules, TRUE);
 
   // Don't need these
-  module_disable(array('shortcut', 'group', 'dblog'), TRUE);
+  // disable SAML auth module for now - we'll enable it later if using IBMID
+  module_disable(array('shortcut', 'group', 'dblog', 'simplesamlphp_auth'), TRUE);
 
   // turn off display of error messages
   variable_set('error_level', '0');
@@ -241,7 +241,7 @@ function apim_profile_install() {
     'module' => 'ibm_apim',
     'delta' => 'developer_org_select',
     'status' => 1,
-    'cache' => 1,
+    'cache' => -1,
     'pages' => "",
     'title' => "<none>",
     'css_class' => "",
@@ -251,6 +251,17 @@ function apim_profile_install() {
     'region' => 'header',
     'module' => 'ibm_apim',
     'delta' => 'apim_notification_count',
+    'status' => 1,
+    'cache' => -1,
+    'pages' => "",
+    'title' => "<none>",
+    'css_class' => "",
+    'weight' => 15,
+    'theme' => 'ibm_apim_theme'))->execute();
+  db_insert('block')->fields(array(
+    'region' => 'header',
+    'module' => 'ibm_apim',
+    'delta' => 'apim_saml_token',
     'status' => 1,
     'cache' => -1,
     'pages' => "",
@@ -720,11 +731,6 @@ api/*',
   // configure captchas
   variable_set('captcha_default_challenge', 'image_captcha/Image');
   variable_set('captcha_persistence', "2");
-  db_update('captcha_points')->fields(array('captcha_type' => 'default'))->condition('form_id', 'comment_node_forum_form')->execute();
-  db_update('captcha_points')->fields(array('captcha_type' => 'default'))->condition('form_id', 'contact_personal_form')->execute();
-  db_update('captcha_points')->fields(array('captcha_type' => 'default'))->condition('form_id', 'contact_site_form')->execute();
-  db_update('captcha_points')->fields(array('captcha_type' => 'default'))->condition('form_id', 'forum_node_form')->execute();
-  db_update('captcha_points')->fields(array('captcha_type' => 'default'))->condition('form_id', 'user_register_form')->execute();
 
   // disable captcha on login forms & password change
   db_insert('captcha_points')->fields(array(
@@ -751,7 +757,8 @@ api/*',
     'view bean page',
     'view any banner_block bean',
     'search content',
-    'use advanced search');
+    'use advanced search',
+    'view any twitter_timeline bean');
   user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, $anonpermissions);
   $authpermissions = array(
     'access site-wide contact form',
@@ -772,14 +779,15 @@ api/*',
     'subscribe to content type',
     'create subscriptions',
     'subscribe to taxonomy terms',
-    'subscribe to taxonomy vocabulary');
+    'subscribe to taxonomy vocabulary',
+    'view any twitter_timeline bean');
   user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, $authpermissions);
-  //Find the correct vid for the tags vocab. The vid cannot be determined in a cluster as auto incremented
-  //fields have gaps in their sequence when using galera due some some cleverness in its auto increment protocol
+  // Find the correct vid for the tags vocab. The vid cannot be determined in a cluster as auto incremented
+  // fields have gaps in their sequence when using galera due some some cleverness in its auto increment protocol
   $vid = db_query("SELECT vid FROM taxonomy_vocabulary WHERE machine_name=:machine_name", array(
-      ':machine_name' => 'tags'))->fetchField();
-  $delete_terms='delete terms in ' . $vid;
-  $edit_terms='edit terms in ' . $vid;
+    ':machine_name' => 'tags'))->fetchField();
+  $delete_terms = 'delete terms in ' . $vid;
+  $edit_terms = 'edit terms in ' . $vid;
   $editor_role = user_role_load_by_name('content author');
   $editor_rid = $editor_role->rid;
   $editorpermissions = array(
@@ -833,12 +841,12 @@ api/*',
     'administer tags vocabulary terms',
     'access administration pages');
   user_role_grant_permissions($editor_rid, $editorpermissions);
-  //Find the correct vid for the tags vocab. The vid cannot be determined in a cluster as auto incremented
-  //fields have gaps in their sequence when using galera due some some cleverness in its auto increment protocol
+  // Find the correct vid for the tags vocab. The vid cannot be determined in a cluster as auto incremented
+  // fields have gaps in their sequence when using galera due some some cleverness in its auto increment protocol
   $vid = db_query("SELECT vid FROM taxonomy_vocabulary WHERE machine_name=:machine_name", array(
-      ':machine_name' => 'forums'))->fetchField();
-  $delete_terms='delete terms in ' . $vid;
-  $edit_terms='edit terms in ' . $vid;
+    ':machine_name' => 'forums'))->fetchField();
+  $delete_terms = 'delete terms in ' . $vid;
+  $edit_terms = 'edit terms in ' . $vid;
 
   $mod_role = user_role_load_by_name('forum moderator');
   $mod_rid = $mod_role->rid;
@@ -900,6 +908,14 @@ api/*',
   // configure FAQs
   variable_set('faq_display', 'hide_answer');
   variable_set('faq_hide_qa_accordion', 1);
+
+  // performance tuning options
+  variable_set('block_cache', 1);
+  variable_set('cache_lifetime', "0");
+  variable_set('page_cache_maximum_age', "900");
+  variable_set('page_compression', 1);
+  variable_set('preprocess_js', 1);
+  variable_set('preprocess_css', 1);
 
   // Update the menu router information.
   menu_rebuild();

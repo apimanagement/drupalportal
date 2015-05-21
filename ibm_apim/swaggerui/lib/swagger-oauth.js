@@ -69,12 +69,14 @@ function handleLogin() {
       var username = jQuery('input:text[name=username]').val();
       var password = jQuery('input:password[name=password]').val();
       var encodedString = Base64.encode(username + ':' + password);
-      window.authorizations.remove('basicauth');
-      window.authorizations.add('basicauth', new ApiKeyAuthorization('Authorization', 'Basic ' + encodedString, 'header'));
+      window.swaggerUi.api.clientAuthorizations.remove("basicauth");
+      var basicauthkey = new SwaggerClient.ApiKeyAuthorization("Authorization", 'Basic ' + encodedString, "header");
+      window.swaggerUi.api.clientAuthorizations.add("basicauth", basicauthkey);
     } else if (authType == 'oauth') {
       var tokentxt = jQuery('input:text[name=token]').val();
-      window.authorizations.remove('oauth');
-      window.authorizations.add('oauth', new ApiKeyAuthorization('Authorization', 'Bearer ' + tokentxt, 'header'));
+      window.swaggerUi.api.clientAuthorizations.remove("oauth");
+      var oauthkey = new SwaggerClient.ApiKeyAuthorization("Authorization", 'Bearer ' + tokentxt, "header");
+      window.swaggerUi.api.clientAuthorizations.add("oauth", oauthkey);
     }
   });
 

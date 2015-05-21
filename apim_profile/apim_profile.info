@@ -91,6 +91,8 @@ dependencies[] = messaging
 dependencies[] = content_approval
 dependencies[] = fasttoggle
 dependencies[] = views_bulk_operations
+dependencies[] = simplesamlphp_auth
+dependencies[] = angularjs
 
 ;Enable our modules
 dependencies[] = ibm_apim

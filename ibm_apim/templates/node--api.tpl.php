@@ -352,7 +352,16 @@ if ($protocol == "soap") {
            print '<div class="input clientIDSelector"><label for="input_clientKey">'.t("Client ID:").'</label> <select id="input_clientKey">';
            print '<option selected disabled>'. t('Select an application').'</option>';
            foreach ($apps as $app) {
-             print '<option value="' . check_plain($app['clientID']) . '">'. check_plain($app['name']).'</option>';
+             foreach ($app['appCredentials'] as $cred) {
+               if (isset($cred['description']) && $cred['description'] != null) {
+                 $origstring = check_plain($cred['description']);
+                 $truncated = (strlen($origstring) > 13) ? substr($origstring,0,10).'...' : $origstring;
+                 $descr = " - " . $truncated;
+               } else {
+                 $descr = '';
+               }
+             print '<option value="' . check_plain($cred['clientID']) . '">'. check_plain($app['name']) . $descr . '</option>';
+             }
            }
            print '</select></div>';
          } else {

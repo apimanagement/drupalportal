@@ -226,11 +226,19 @@ h3.apimSummaryTitle {
   display: block;
 }
 
-.apimapimTitleContainerat {
-
-}
 .api .apimTitleContainer {
   display: inline-block;
+}
+div.credentialTitle {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+div.credentialTitle .addCredentials {
+  font-weight: normal;
+  font-size: 0.9em;
+  border-left: 1px solid #dddddd;
+  margin-left: 15px;
+  padding-left: 10px;
 }
 
 .planSelector {
@@ -590,7 +598,7 @@ h3.apimSummaryTitle {
 }
 
 .portal .portalApi .resourceMethod {
-  width: 60px;
+  width: 65px;
   margin-right: 10px;
   line-height: 21px;
 }
@@ -745,14 +753,20 @@ a.elipsis-names {
 .passwordToggleContainer {
   display: inline-block;
 }
-input.toggle-password {
+.passwordToggleContainer a.buttonLink {
+  margin-left: 30px;
+}
+input.toggle-password,
+input.clientSecretInput {
   background-color: inherit;
-  border: 0;
+  border: 1px solid #dddddd;
   color: inherit;
   min-width: 350px;
   font-family: inherit;
   font-size: 16px;
   line-height: 1.5em;
+  padding-left: 3px;
+  margin-right: 20px;
 }
 .passwordToggleContainer label {
   display: inline;
@@ -1012,17 +1026,45 @@ div.app_oauth_redirecturi,
 div.client_secret {
   margin-bottom: 10px;
 }
-div.client_secret,
 div.passwordToggleContainer {
   margin-bottom: 10px;
   display: inline-block;
-  margin-left: 30px;
 }
 label.apiClientSecret,
 label.apiClientID {
   display: inline-block;
 }
-
+div.credentialTable {
+  display: table;
+  border-bottom: 1px solid #ddd;
+}
+div.credentialTable:last-child {
+  border-bottom: 0;
+}
+div.credentialContainer {
+  display: table-row;
+}
+div.credentialPreSpacer,
+div.credentialPostSpacer {
+  display: table-row;
+  height: 15px;
+}
+div.credentialSpacer {
+  display: table-cell;
+}
+div.credentialInfoDescription {
+  padding-bottom: 8px;
+}
+div.credentialActions {
+  display: table-cell;
+  vertical-align: middle;
+  border-left: 1px solid #DDD;
+  padding-left: 20px;
+}
+div.credentialInfo {
+  display: table-cell;
+  padding-right: 20px;
+}
 .portalApi.animateMaxHeight {
   max-height: 500px; 
   overflow-y: auto; 
@@ -1169,7 +1211,7 @@ span.flag-wrapper.flag-bookmarks {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 30%;
+  width: 15%;
   height: 1.2em;
   background: linear-gradient(to right, rgba(255, 255, 255, 0), #FFF 70%);
 }

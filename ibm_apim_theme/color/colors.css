@@ -329,7 +329,11 @@ input:disabled {
 .apimSummary,
 .apimTitleContainer .displayInlineTop.planName,
 .plan .authInfo,
-.swagger-section {
+.swagger-section,
+input.toggle-password,
+input.clientSecretInput,
+div.credentialDelete,
+div.credentialTitle .addCredentials {
   border-color: #dddddd !important;
 }
 .portal .swagger-section #swagger-ui-container.swagger-ui-wrap {
@@ -424,6 +428,7 @@ input.form-submit,
 .form-actions a:visited,
 .button, a.button, a.button:visited,
 .banner_block .banner_button a,
+a.buttonLink,
 .portal .migratePlanContainer .migrateButton a,
 .numberedList a,
 .supportList a {

@@ -26,15 +26,15 @@ drupal_add_js('jQuery(document).ready(function(){
       });
     });', 'inline');
 drupal_add_js('jQuery(document).ready(function(){
-      jQuery("#show-clientID").change(function(){
-        jQuery("#clientID").hideShowPassword(jQuery(this).prop("checked"));
-      });
-    });', 'inline');
+        jQuery("#show-clientID").change(function(){
+          jQuery("#clientID").hideShowPassword(jQuery(this).prop("checked"));
+        });
+      });', 'inline');
 drupal_add_js('jQuery(document).ready(function(){
-      jQuery("#show-clientSecret").change(function(){
-        jQuery("#clientSecret").hideShowPassword(jQuery(this).prop("checked"));
-      });
-    });', 'inline');
+        jQuery("#show-clientSecret").change(function(){
+          jQuery("#clientSecret").hideShowPassword(jQuery(this).prop("checked"));
+        });
+      });', 'inline');
 ?>
 <div class="breadcrumb"><?php print l("< " .t('Back to Apps'), 'application');?></div>
 <article id="node-<?php print $node->nid; ?>"
@@ -115,18 +115,42 @@ print '<span class="apimImageActions">'.$uploadimagelink;
 
 
 	<?php
-  if (isset($isdev) && $isdev == TRUE) {
-		print '<div class="clearBoth section apimMainContent"><label for="clientID" class="label apimField apiClientID">'. t('Client ID') .'</label>
-			<div class="passwordToggleContainer">
-			<input type="checkbox" id="show-clientID"> <label
-				for="show-clientID">'. t('Show'). '</label> &nbsp;&nbsp;&nbsp;&nbsp;' . $resetclientidlink .'</div>
-            <div id="app_client_id" class="app_client_id">
-			<input class="toggle-password" id="clientID" type="password" readonly
-				value="'. $appclientid .'">
+ if (isset($isdev) && $isdev == TRUE) {
+   print '<div class="credentialList clearBoth section apimMainContent"><div class="credentialTitle">' . t('Client Credentials') . '<span class="addCredentials">' . $addcredentialslink . '</span></div>';
+    $credcount = count($credentials);
+    $index = 0;
+    foreach ($credentials as $cred) {
+      drupal_add_js('jQuery(document).ready(function(){
+        jQuery("#show-clientID'.$index.'").change(function(){
+          jQuery("#clientID'.$index.'").hideShowPassword(jQuery(this).prop("checked"));
+        });
+      });', 'inline');
+     print '<div class="credentialTable"><div class="credentialPreSpacer"><div class="credentialSpacer"></div><div class="credentialSpacer"></div></div><div class="credentialContainer">
+       <div class="credentialInfo">
+        <div class="credentialInfoDescription">'. $cred['description'] .'</div>
+        <label for="clientID" class="label apimField apiClientID">'. t('Client ID') .'</label>
+        <div id="app_client_id" class="app_client_id">
+		  <input class="toggle-password" id="clientID'.$index.'" type="password" readonly value="'. $cred['clientID'] .'" />
+          <div class="passwordToggleContainer">
+			<input type="checkbox" id="show-clientID'.$index.'" /> <label for="show-clientID'.$index.'">'. t('Show'). '</label> &nbsp;&nbsp;&nbsp;&nbsp; <a class="buttonLink" href="' . url("application/" . $application_apiid[0]['value'] . "/reset-clientid/" . $cred['id']) . '">' . t('Reset') . '</a>
+          </div>
 		</div>
-		<label class="label apimField apiClientSecret">'. t('Client Secret') . '</label>
-		<div class="client_secret">' . $verifysecretlink .'&nbsp;&nbsp;&nbsp;&nbsp;' . $resetsecretlink .'</div></div>';
+		<label for="clientSecret" class="label apimField apiClientSecret">'. t('Client Secret') . '</label>
+		<div class="client_secret">
+          <input id="clientSecret'.$index.'" class="clientSecretInput" disabled readonly /> <a class="buttonLink" href="' . url("application/" . $application_apiid[0]['value'] . "/verify/". $cred['id']) . '">' . t('Verify') . '</a> &nbsp;&nbsp;&nbsp;&nbsp; <a class="buttonLink" href="' . url("application/" . $application_apiid[0]['value'] . "/reset-secret/" . $cred['id']) . '">' . t('Reset') . '</a>
+        </div>
+       </div>';
 
+       print '<div class="credentialActions">
+        <a href="' . url("application/" . $application_apiid[0]['value'] . "/update-clientcreds/". $cred['id']) . '">' . t('Update') . '</a>';
+       if ($credcount > 1) {
+          print ' | <a href="' . url("application/" . $application_apiid[0]['value'] . "/delete-clientcreds/". $cred['id']) . '">' . t('Delete') . '</a>';
+       }
+       print '</div>';
+     print '</div><div class="credentialPostSpacer"><div class="credentialSpacer"></div><div class="credentialSpacer"></div></div></div>';
+     $index++;
+   }
+   print '</div>';
   }
 		?>
 
