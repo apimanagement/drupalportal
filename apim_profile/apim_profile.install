@@ -40,12 +40,12 @@ function apim_profile_install() {
     'notifications_forum',
     'notifications_account',
     'content_approval_field',
-    'fasttoggle_node');
+    'fasttoggle_node',
+    'site_uploader');
   module_enable($modules, TRUE);
 
   // Don't need these
-  // disable SAML auth module for now - we'll enable it later if using IBMID
-  module_disable(array('shortcut', 'group', 'dblog', 'simplesamlphp_auth'), TRUE);
+  module_disable(array('shortcut', 'group', 'dblog'), TRUE);
 
   // turn off display of error messages
   variable_set('error_level', '0');
@@ -251,17 +251,6 @@ function apim_profile_install() {
     'region' => 'header',
     'module' => 'ibm_apim',
     'delta' => 'apim_notification_count',
-    'status' => 1,
-    'cache' => -1,
-    'pages' => "",
-    'title' => "<none>",
-    'css_class' => "",
-    'weight' => 15,
-    'theme' => 'ibm_apim_theme'))->execute();
-  db_insert('block')->fields(array(
-    'region' => 'header',
-    'module' => 'ibm_apim',
-    'delta' => 'apim_saml_token',
     'status' => 1,
     'cache' => -1,
     'pages' => "",
@@ -704,6 +693,10 @@ api/*',
 
   variable_set('ibm_apim_show_register_app', 1);
 
+  variable_set('ibm_apim_enable_api_test', 1);
+
+  variable_set('ibm_apim_autotag_with_phase', 1);
+
   // set user registration defaults
   variable_set('ibm_apim_username_show', FALSE);
   variable_set('ibm_apim_username_reqd', FALSE);
@@ -915,7 +908,46 @@ api/*',
   variable_set('page_cache_maximum_age', "900");
   variable_set('page_compression', 1);
   variable_set('preprocess_js', 1);
-  variable_set('preprocess_css', 1);
+  variable_set('preprocess_css', 0);
+
+  // disable cloning of our content types
+  variable_set('clone_omitted', array(
+    'api' => 'api',
+    'application' => 'application',
+    'plan' => 'plan',
+    'article' => 0,
+    'page' => 0,
+    'blog' => 0,
+    'faq' => 0,
+    'forum' => 0,
+    'poll' => 0,
+    'support_ticket' => 0));
+
+  // setup some example security questions
+  drupal_load('module', 'security_questions');
+  security_questions_add_question('What is the name of the place your wedding reception was held?');
+  security_questions_add_question('In what city or town does your nearest sibling live?');
+  security_questions_add_question('What was the name of your elementary / primary school?');
+  security_questions_add_question('In what town or city did you meet your spouse/partner?');
+  security_questions_add_question('What time of the day were you born? (hh:mm)');
+  module_disable(array('security_questions'), TRUE);
+
+  // configure cron
+  variable_set('ultimate_cron_plugin_logger_default', 'cache');
+  variable_set('ultimate_cron_plugin_logger_cache_settings', array(
+    'bin' => 'cache_ultimate_cron',
+    'timeout' => '-1'));
+  variable_set('ultimate_cron_plugin_launcher_serial_settings', array(
+    'lock_timeout' => '3600',
+    'max_threads' => '1',
+    'poorman_keepalive' => 1,
+    'thread' => 'any'));
+
+  // Make our cron job run every minute
+  db_insert('ultimate_cron_job')->fields(array(
+    'name' => 'ibm_apim_cron',
+    'title' => 'Default cron handler',
+    'settings' => 'a:3:{s:9:"scheduler";a:2:{s:4:"name";s:0:"";s:6:"simple";a:1:{s:5:"rules";a:1:{i:0;s:9:"* * * * *";}}}s:8:"launcher";a:2:{s:4:"name";s:0:"";s:6:"serial";a:0:{}}s:6:"logger";a:2:{s:4:"name";s:0:"";s:5:"cache";a:0:{}}}'))->execute();
 
   // Update the menu router information.
   menu_rebuild();
@@ -2061,4 +2093,78 @@ function apim_profile_create_bannerblock() {
         'status' => 1,
         'display' => 1)));
   $bean->save();
+}
+
+/*
+ * Update code to handle upgrade from earlier version
+ */
+function apim_profile_update_7400() {
+  // enable cron
+  $modules = array('d3', 'clone', 'angularjs', 'menu_item_visibility', 'site_uploader', 'ultimate_cron');
+  module_enable($modules, TRUE);
+
+  // configure cron
+  if (variable_get('ultimate_cron_plugin_logger_default', NULL) == NULL) {
+    variable_set('ultimate_cron_plugin_logger_default', 'cache');
+  }
+
+  if (variable_get('ultimate_cron_plugin_logger_cache_settings', NULL) == NULL) {
+    variable_set('ultimate_cron_plugin_logger_cache_settings', array(
+      'bin' => 'cache_ultimate_cron',
+      'timeout' => '-1'));
+  }
+
+  if (variable_get('ultimate_cron_plugin_launcher_serial_settings', NULL) == NULL) {
+    variable_set('ultimate_cron_plugin_launcher_serial_settings', array(
+      'lock_timeout' => '3600',
+      'max_threads' => '1',
+      'poorman_keepalive' => 1,
+      'thread' => 'any'));
+  }
+
+  // Make our cron job run every minute
+  $name = db_query("SELECT name FROM {ultimate_cron_job} WHERE name='ibm_apim_cron'")->fetchField();
+
+  if ($name != 'ibm_apim_cron') {
+    db_insert('ultimate_cron_job')->fields(array(
+      'name' => 'ibm_apim_cron',
+      'title' => 'Default cron handler',
+      'settings' => 'a:3:{s:9:"scheduler";a:2:{s:4:"name";s:0:"";s:6:"simple";a:1:{s:5:"rules";a:1:{i:0;s:9:"* * * * *";}}}s:8:"launcher";a:2:{s:4:"name";s:0:"";s:6:"serial";a:0:{}}s:6:"logger";a:2:{s:4:"name";s:0:"";s:5:"cache";a:0:{}}}'))->execute();
+  }
+
+  if (variable_get('ibm_apim_enable_api_test', NULL) == NULL) {
+    variable_set('ibm_apim_enable_api_test', 1);
+  }
+  if (variable_get('ibm_apim_autotag_with_phase', NULL) == NULL) {
+    variable_set('ibm_apim_autotag_with_phase', 1);
+  }
+
+  // disable cloning of our content types
+  variable_set('clone_omitted', array(
+    'api' => 'api',
+    'application' => 'application',
+    'plan' => 'plan',
+    'article' => 0,
+    'page' => 0,
+    'blog' => 0,
+    'faq' => 0,
+    'forum' => 0,
+    'poll' => 0,
+    'support_ticket' => 0));
+
+  // setup some example security questions
+  $modules = array('security_questions');
+  module_enable($modules, TRUE);
+  drupal_load('module', 'security_questions');
+  $questions = security_questions_question_load_multiple();
+  if (!isset($questions) || empty($questions) || count($questions) == 0) {
+    security_questions_add_question('What is the name of the place your wedding reception was held?');
+    security_questions_add_question('In what city or town does your nearest sibling live?');
+    security_questions_add_question('What was the name of your elementary / primary school?');
+    security_questions_add_question('In what town or city did you meet your spouse/partner?');
+    security_questions_add_question('What time of the day were you born? (hh:mm)');
+  }
+  module_disable(array('security_questions'), TRUE);
+
+  variable_set('preprocess_css', 0);
 }

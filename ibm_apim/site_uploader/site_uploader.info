@@ -1,0 +1,8 @@
+name = IBM API Management Site Uploader
+description = A module to override the drupal core theme and module uploaders to allow site specific modules and themes.
+package = IBM API Management v4
+core = 7.x
+files[] = site_uploader.updater.inc
+dependencies[] = ibm_apim
+
+version = VERSION

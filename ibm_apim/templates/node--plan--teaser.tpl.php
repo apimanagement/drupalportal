@@ -32,7 +32,7 @@
     } catch (Exception $e) {
     } ?></div>
 					<div class="apimSummaryDescription">
-					  <p class="fade" title="<?php print $plan_description[0]['safe_value']; ?>"><?php print $plan_description[0]['safe_value']; ?></p>
+					  <p class="apimFade" title="<?php print $plan_description[0]['safe_value']; ?>"><?php print $plan_description[0]['safe_value']; ?></p>
 					</div>
 				</div>
 			</div>

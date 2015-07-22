@@ -4,6 +4,7 @@ core = 7.x
 package = IBM API Management v4
 configure = admin/config/system/ibm_apim
 files[] = ibm_apim.module
+files[] = ibm_apim.analytics.inc
 
 dependencies[] = entity
 dependencies[] = text

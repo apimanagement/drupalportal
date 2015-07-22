@@ -12,6 +12,7 @@ function application_install() {
   // Ensure the application node type is available.
   node_types_rebuild();
   _application_add_custom_fields();
+  variable_set('comment_application', '1');
 }
 
 /**
@@ -57,10 +58,6 @@ function _application_installed_fields() {
     'application_public' => array(
       'field_name' => 'application_public',
       'label' => t('Public'),
-      'type' => 'text'),
-    'application_credentialsurl' => array(
-      'field_name' => 'application_credentialsurl',
-      'label' => t('Credentials URL'),
       'type' => 'text'),
     'application_enabled' => array(
       'field_name' => 'application_enabled',
@@ -149,13 +146,6 @@ function _application_installed_instances() {
       'label' => t('Public'),
       'widget' => array('type' => 'text_textfield'),
       'display' => array('default' => array('label' => t('Public'), 'type' => 'text'))),
-    'application_credentialsurl' => array(
-      'field_name' => 'application_credentialsurl',
-      'type' => 'text',
-      'label' => t('Credentials URL'),
-      'widget' => array('type' => 'text_textfield'),
-      'display' => array(
-        'default' => array('label' => t('Credentials URL'), 'type' => 'text'))),
     'application_enabled' => array(
       'field_name' => 'application_enabled',
       'type' => 'text',
@@ -260,5 +250,38 @@ function _application_delete_node_content($type) {
   }
   catch (Exception $e) {
     // quietly swallow exceptions from dropping the nodes.
+  }
+}
+
+/*
+ * Update code to handle upgrade from earlier version
+ */
+function application_update_7400() {
+  foreach (_application_installed_fields() as $field) {
+    $field_name = field_info_field($field['field_name']);
+    if (!$field_name) {
+      field_create_field($field);
+      watchdog('application', 'Field %field_name has been successfully added', array(
+      '%field_name' => $field['field_name']));
+    }
+    else {
+      watchdog('application', 'Field %field_name already exists', array(
+      '%field_name' => $field['field_name']));
+    }
+  }
+
+  foreach (_application_installed_instances() as $fieldinstance) {
+    $instance_name = field_info_field($fieldinstance['field_name']);
+    if (!$instance_name) {
+      $$fieldinstance['entity_type'] = 'node';
+      $fieldinstance['bundle'] = 'application';
+      field_create_instance($instance);
+      watchdog('application', 'Instance %instance_name has been successfully added', array(
+      '%instance_name' => $fieldinstance['instance_name']));
+    }
+    else {
+      watchdog('application', 'Instance %instance_name already exists', array(
+      '%instance_name' => $fieldinstance['instance_name']));
+    }
   }
 }

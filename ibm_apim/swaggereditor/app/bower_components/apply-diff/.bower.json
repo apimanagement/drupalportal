@@ -1,0 +1,32 @@
+{
+  "name": "apply-diff",
+  "main": "index.js",
+  "version": "1.2.5",
+  "homepage": "https://github.com/mohsen1/apply-diff",
+  "authors": [
+    "Mohsen Azimi <me@azimi.me>"
+  ],
+  "description": "Underscore/Lodash plugin to udate an object with properties of another object and make it deeply equal to it.",
+  "keywords": [
+    "underscore",
+    "lodash",
+    "diff"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "_release": "1.2.5",
+  "_resolution": {
+    "type": "version",
+    "tag": "v1.2.5",
+    "commit": "f87d37a846d359ba14381e14ad509a6e2262f29a"
+  },
+  "_source": "git://github.com/mohsen1/apply-diff.git",
+  "_target": "~1.2.5",
+  "_originalSource": "apply-diff"
+}

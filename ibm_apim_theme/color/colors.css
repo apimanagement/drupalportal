@@ -97,7 +97,7 @@ h2#site-slogan {
 }
 
 /* Footer */
-.breadcrumb {
+.pagebreadcrumb {
   color: #010101;
 }
 #page > footer,
@@ -105,14 +105,14 @@ h2#site-slogan {
   background-color: #f1f5f6;
   color: #010101;
 }
-.breadcrumb a,
+.pagebreadcrumb a,
 #page > footer a,
 #page > footer a:visited {
  color: #0061b1;
 }
-.breadcrumb a:hover,
-.breadcrumb a:focus,
-.breadcrumb a:active,
+.pagebreadcrumb a:hover,
+.pagebreadcrumb a:focus,
+.pagebreadcrumb a:active,
 #page > footer a:hover,
 #page > footer a:focus,
 #page > footer a:active {

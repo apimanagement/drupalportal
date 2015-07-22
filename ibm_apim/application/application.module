@@ -151,11 +151,11 @@ function application_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('application_unsubscribeapp', 1, 3),
     'access callback' => 'user_is_logged_in');
-  $items['application/%/migrate/%/%/%'] = array(
+  $items['application/%/migrate/%/%'] = array(
     'title' => 'Migrate',
     'type' => MENU_CALLBACK,
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('application_migrateapp', 1, 3, 4, 5),
+    'page arguments' => array('application_migrateapp', 1, 3, 4),
     'access callback' => 'user_is_logged_in');
   $items['application/%/notifysettings'] = array(
     'title' => 'Edit application notification settings',
@@ -221,25 +221,33 @@ function application_theme($existing, $type, $theme, $path) {
  * Preprocessor for theme('application_node_form').
  */
 function template_preprocess_application_node_form(&$variables) {
-  hide($variables['form']['application_apimhostname']);
-  hide($variables['form']['application_providerid']);
-  hide($variables['form']['application_environmentid']);
-  hide($variables['form']['application_description']);
-  hide($variables['form']['title']);
-  hide($variables['form']['application_apiid']);
-  hide($variables['form']['application_enabled']);
-  hide($variables['form']['application_credentialsurl']);
-  hide($variables['form']['application_imageurl']);
-  hide($variables['form']['application_oauthredirecturi']);
-  hide($variables['form']['application_orgid']);
-  hide($variables['form']['application_public']);
-  hide($variables['form']['application_url']);
-  hide($variables['form']['application_updated']);
-  hide($variables['form']['application_state']);
-
   // Extract the form buttons, and put them in independent variable.
   $variables['buttons'] = $variables['form']['actions'];
   hide($variables['form']['actions']);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function application_form_application_node_form_alter(&$form, &$form_state) {
+  // this function hides all our custom fields from the edit node form as they are all set explicitly
+  $form['application_apimhostname']['#access'] = 0;
+  $form['application_providerid']['#access'] = 0;
+  $form['application_environmentid']['#access'] = 0;
+  $form['application_description']['#access'] = 0;
+  $form['title']['#access'] = 0;
+  $form['application_apiid']['#access'] = 0;
+  $form['application_enabled']['#access'] = 0;
+  // old field name, carry on hiding it, even though new installs wont have it
+  // TODO add migration code to remove it at some point
+  $form['application_credentialsurl']['#access'] = 0;
+  $form['application_imageurl']['#access'] = 0;
+  $form['application_oauthredirecturi']['#access'] = 0;
+  $form['application_orgid']['#access'] = 0;
+  $form['application_public']['#access'] = 0;
+  $form['application_url']['#access'] = 0;
+  $form['application_updated']['#access'] = 0;
+  $form['application_state']['#access'] = 0;
 }
 
 /**
@@ -257,6 +265,7 @@ function application_preprocess_node(&$variables) {
     $variables['isdev'] = $isdev;
     $variables['titlelink'] = '<span class="apimTitle"> <a href="' . url("application/" . $variables['application_apiid'][0]['safe_value']) . '">' . $variables['title'] . '</a> </span>';
     $variables['notificationsettingslink'] = ' <a href="' . url("application/" . $variables['application_apiid'][0]['value'] . "/notifysettings") . '">' . t('Notifications') . '</a> ';
+    $variables['analyticslink'] = ' <a href="' . url("ibm_apim/analytics/app/" . $variables['application_apiid'][0]['value']) . '">' . t('Analytics') . '</a> ';
     if (isset($isdev) && $isdev == TRUE) {
       $variables['editlink'] = ' <a href="' . url("application/" . $variables['application_apiid'][0]['value'] . "/edit") . '">' . t('Edit') . '</a> ';
       $variables['deletelink'] = ' <a href="' . url("application/" . $variables['application_apiid'][0]['value'] . "/delete") . '">' . t('Delete') . '</a> ';
@@ -503,9 +512,6 @@ function _application_createNewApplicationNode($app) {
   $node->application_public[$node->language][] = array(
     'value' => $app['public'],
     'format' => 'plain_text');
-  $node->application_credentialsurl[$node->language][] = array(
-    'value' => $app['credentialsURL'],
-    'format' => 'plain_text');
   $node->application_enabled[$node->language][] = array(
     'value' => $app['enabled'],
     'format' => 'plain_text');
@@ -549,26 +555,27 @@ function _application_createNewApplicationNode($app) {
 function _application_updateExistingApplicationNode($node, $app) {
   $hostvariable = variable_get('ibm_apim_host');
   $apim_session = &_ibm_apim_get_apim_session();
-  $node->title = $app['name'];
-  $node->application_apimhostname[$node->language][0]['value'] = $hostvariable;
-  $node->application_providerid[$node->language][0]['value'] = $apim_session['org'];
-  $node->application_environmentid[$node->language][0]['value'] = $apim_session['env'];
-  $node->application_apiid[$node->language][0]['value'] = $app['id'];
-  // ensure description is at least set to empty string
-  if (!isset($app['description']) || empty($app['description'])) {
-    $app['description'] = '';
+  if (isset($app['updatedAt']) && $app['updatedAt'] != $node->application_updated[$node->language][0]['value']) {
+    $node->title = $app['name'];
+    $node->application_apimhostname[$node->language][0]['value'] = $hostvariable;
+    $node->application_providerid[$node->language][0]['value'] = $apim_session['org'];
+    $node->application_environmentid[$node->language][0]['value'] = $apim_session['env'];
+    $node->application_apiid[$node->language][0]['value'] = $app['id'];
+    // ensure description is at least set to empty string
+    if (!isset($app['description']) || empty($app['description'])) {
+      $app['description'] = '';
+    }
+    $node->application_description[$node->language][0]['value'] = $app['description'];
+    $node->application_orgid[$node->language][0]['value'] = $app['orgID'];
+    $node->application_public[$node->language][0]['value'] = $app['public'];
+    $node->application_enabled[$node->language][0]['value'] = $app['enabled'];
+    $node->application_imageurl[$node->language][0]['value'] = $app['imageURL'];
+    $node->application_oauthredirecturi[$node->language][0]['value'] = $app['oauthRedirectURI'];
+    $node->application_url[$node->language][0]['value'] = $app['url'];
+    $node->application_state[$node->language][0]['value'] = $app['state'];
+    $node->application_updated[$node->language][0]['value'] = $app['updatedAt'];
+    node_save($node);
   }
-  $node->application_description[$node->language][0]['value'] = $app['description'];
-  $node->application_orgid[$node->language][0]['value'] = $app['orgID'];
-  $node->application_public[$node->language][0]['value'] = $app['public'];
-  $node->application_credentialsurl[$node->language][0]['value'] = $app['credentialsURL'];
-  $node->application_enabled[$node->language][0]['value'] = $app['enabled'];
-  $node->application_imageurl[$node->language][0]['value'] = $app['imageURL'];
-  $node->application_oauthredirecturi[$node->language][0]['value'] = $app['oauthRedirectURI'];
-  $node->application_url[$node->language][0]['value'] = $app['url'];
-  $node->application_state[$node->language][0]['value'] = $app['state'];
-  $node->application_updated[$node->language][0]['value'] = $app['updatedAt'];
-  node_save($node);
 }
 
 /**
@@ -709,7 +716,6 @@ function application_details_contents($appId) {
       $returnValue['id'] = $app_data['id'];
       $returnValue['name'] = $app_data['name'];
       $returnValue['description'] = $app_data['description'];
-      $returnValue['credentialsURL'] = $app_data['credentials']['url'];
       $returnValue['credentials'] = $app_data['appCredentials'];
       $returnValue['imageURL'] = $app_data['imageURL'];
       $returnValue['public'] = $app_data['public'];
@@ -735,9 +741,6 @@ function application_details_contents($appId) {
             if (isset($temp_array)) {
               $temp_array['approved'] = $sub_details['approved'];
               $temp_array['subId'] = $sub_details['id'];
-              if (isset($sub_details['supersededBy'])) {
-                $temp_array['supersededBy'] = $sub_details['supersededBy'];
-              }
               $returnValue['subscriptions'][] = $temp_array;
             }
           }
@@ -765,7 +768,7 @@ function application_new_application_clientcreds($form, &$form_state, $appid) {
       '#markup' => '<h1>' . t('Request additional client credentials') . '</h1>');
     $form['description'] = array(
       '#type' => 'textfield',
-      '#title' => 'Description',
+      '#title' => t('Description'),
       '#required' => FALSE);
     $form['appid'] = array('#type' => 'hidden', '#value' => $appid);
 
@@ -826,7 +829,7 @@ function application_update_application_clientcreds($form, &$form_state, $appid,
     $form['title'] = array('#markup' => '<h1>' . t('Update client credentials') . '</h1>');
     $form['description'] = array(
       '#type' => 'textfield',
-      '#title' => 'Description',
+      '#title' => t('Description'),
       '#required' => FALSE,
       '#default_value' => $app_data['description']);
     $form['appid'] = array('#type' => 'hidden', '#value' => $appid);
@@ -1106,10 +1109,19 @@ function _application_upload_application_image_form_submit_handler($form, &$form
     _ibm_apim_curl_set_accept_ssl($ch);
 
     curl_setopt($ch, CURLOPT_FAILONERROR, TRUE);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-      "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env'],
-      "Expect: ",
-      "Authorization: Basic " . $apim_session['auth']));
+    $ibmid = variable_get('ibm_apim_saml_idp', 0);
+    if (isset($apim_session['auth'])) {
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+        "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env'],
+        "Expect: ",
+        "Authorization: Basic " . $apim_session['auth']));
+    }
+    elseif ($ibmid == 1) {
+      curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+        "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env'],
+        "Expect: ",
+        'X-IBM-APIManagement-IBMIDToken: ' . $apim_session['samltoken']));
+    }
     curl_setopt($ch, CURLOPT_URL, $url);
     $response = curl_exec($ch);
 
@@ -1147,7 +1159,7 @@ function _application_verify_application_secret_form($form, &$form_state, $appId
   $form['title'] = array('#markup' => '<h1>' . t('Verify application secret') . '</h1>');
   $form['secret'] = array(
     '#type' => 'textfield',
-    '#title' => 'Secret',
+    '#title' => t('Secret'),
     '#size' => 50,
     '#maxlength' => 50,
     '#required' => TRUE);
@@ -1192,21 +1204,21 @@ function _application_edit_application_form($form, &$form_state, $appId) {
     $form['title'] = array('#markup' => '<h1>' . t('Edit application') . '</h1>');
     $form['name'] = array(
       '#type' => 'textfield',
-      '#title' => 'Application name',
+      '#title' => t('Application name'),
       '#size' => 25,
       '#maxlength' => 50,
       '#required' => TRUE,
       '#default_value' => $app_data['name']);
     $form['description'] = array(
       '#type' => 'textarea',
-      '#title' => 'Description',
+      '#title' => t('Description'),
       '#required' => FALSE,
       '#default_value' => $app_data['description']);
     $form['oauthurl'] = array(
       '#type' => 'textfield',
-      '#title' => 'OAuth redirection URL (Optional)',
+      '#title' => t('OAuth redirection URL (Optional)'),
       '#size' => 50,
-      '#description' => "If you plan to use this application with any OAuth secured APIs, you will need to provide a redirection URL.",
+      '#description' => t("If you plan to use this application with any OAuth secured APIs, you will need to provide a redirection URL."),
       '#maxlength' => 100,
       '#required' => FALSE,
       '#default_value' => $app_data['oauthRedirectURI']);
@@ -1328,13 +1340,13 @@ function _application_add_application_form($form, &$form_state) {
     $form['title'] = array('#markup' => '<h1>' . t('Register application') . '</h1>');
     $form['name'] = array(
       '#type' => 'textfield',
-      '#title' => 'Application name',
+      '#title' => t('Application name'),
       '#size' => 25,
       '#maxlength' => 50,
       '#required' => TRUE);
     $form['description'] = array(
       '#type' => 'textarea',
-      '#title' => 'Description',
+      '#title' => t('Description'),
       '#required' => FALSE);
     $form['developerorg'] = array('#type' => 'hidden', '#value' => $org['id']);
 
@@ -1517,13 +1529,12 @@ function application_unsubscribeapp_submit($form, &$form_state) {
  *
  * @return array
  */
-function application_migrateapp($form, &$form_state, $appid = NULL, $subid = NULL, $planid = null, $version = null) {
+function application_migrateapp($form, &$form_state, $appid = NULL, $subid = NULL, $planurl = null) {
   $isdev = ibm_apim_check_is_developer();
   if (isset($isdev) && $isdev == TRUE) {
     $confirm_form['appid'] = array('#type' => 'value', '#value' => $appid);
     $confirm_form['subid'] = array('#type' => 'value', '#value' => $subid);
-    $confirm_form['planid'] = array('#type' => 'value', '#value' => $planid);
-    $confirm_form['version'] = array('#type' => 'value', '#value' => $version);
+    $confirm_form['planurl'] = array('#type' => 'value', '#value' => $planurl);
 
     return confirm_form($confirm_form, t('Are you sure you want to migrate to the new version of this plan?'), 'application/' . $appid, 'Are you sure you want to migrate to the new version of this plan?', t('Migrate'), t('Cancel'));
   }
@@ -1540,13 +1551,12 @@ function application_migrateapp_submit($form, &$form_state) {
   $apim_session = &_ibm_apim_get_apim_session();
   $appId = $form_state['values']['appid'];
   $subId = $form_state['values']['subid'];
-  $planid = $form_state['values']['planid'];
-  $version = $form_state['values']['version'];
+  $origplanurl = $form_state['values']['planurl'];
+  $planurl = base64_decode($origplanurl);
   $org = ibm_apim_get_current_developer_org();
   $developerOrg = $org['id'];
   $host_pieces = _ibm_apim_parse_apim_host();
   $url = '/v1/portal/orgs/' . $developerOrg . '/apps/' . $appId . '/subscriptions/' . $subId;
-  $planurl = $host_pieces['url'] . '/v1/portal/orgs/' . $developerOrg . '/plans/' . $planid . '/v' . $version;
   $data = array("planURL" => $planurl);
   $result = ibm_apim_put($url, json_encode($data));
   if (isset($result) && $result->code >= 200 && $result->code < 300) {
@@ -1731,7 +1741,7 @@ function _application_update_notification_settings_form($form, &$form_state, $ap
   $form['notify_fieldset']['interval'] = array(
     '#type' => 'radios',
     '#weight' => 7,
-    '#title' => "Select how often to send notifications",
+    '#title' => t('Select how often to send notifications'),
     '#options' => $values,
     '#default_value' => $app_data['interval']);
 
@@ -1833,7 +1843,7 @@ function _application_app_select_options() {
     return NULL;
   }
   $app_array = array();
-  $app_array[''] = 'Select an application';
+  $app_array[''] = t('Select an application');
   foreach ($app_details as $app_detail) {
     $app_array[$app_detail['id']] = $app_detail['name'];
   }

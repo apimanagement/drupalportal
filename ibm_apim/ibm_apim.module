@@ -165,6 +165,10 @@ function ibm_apim_form_alter(&$form, &$form_state, $form_id) {
     case 'user_login' :
       $ibm_apim_saml_idp = variable_get('ibm_apim_saml_idp', 0);
       if ($ibm_apim_saml_idp == 1) {
+        // Add link to forgotten password form for IBMID since the main one will have been removed
+        // but we still need one for admins
+        $form['passwdreset'] = array(
+          '#markup' => '<p>' . l(t("Forgotten your password?"), 'user/password') . '</p>');
       }
       break;
     // when using readonly IDP, for both register user forms disable the confirm password field and
@@ -172,9 +176,10 @@ function ibm_apim_form_alter(&$form, &$form_state, $form_id) {
     case 'user_register_form' :
     case 'ibm_apim_activate_create_account_form' :
       $ibm_apim_readonly_idp = variable_get('ibm_apim_readonly_idp', FALSE);
+      $ibm_apim_saml_idp = variable_get('ibm_apim_saml_idp', 0);
       $emailasuser = variable_get('ibm_apim_email_as_username', 1);
       if ($ibm_apim_readonly_idp == TRUE) {
-        if ($emailasuser == 1) {
+        if ($emailasuser == 1 || $ibm_apim_saml_idp == 1) {
           $form['account']['mail']['#required'] = FALSE;
           unset($form['account']['mail']);
         }
@@ -183,13 +188,16 @@ function ibm_apim_form_alter(&$form, &$form_state, $form_id) {
         }
         $weight = $form['account']['#weight'] + 1;
         unset($form['account']['pass']);
-        $form['account']['pass'] = array(
-          '#type' => 'password',
-          '#title' => t('Password'),
-          '#size' => 60,
-          '#maxlength' => 64,
-          '#required' => TRUE,
-          '#weight' => $weight);
+        // no password field for IBMID
+        if ($ibm_apim_saml_idp != 1) {
+          $form['account']['pass'] = array(
+            '#type' => 'password',
+            '#title' => t('Password'),
+            '#size' => 60,
+            '#maxlength' => 64,
+            '#required' => TRUE,
+            '#weight' => $weight);
+        }
         for ($i = 0; $i < sizeof($form['#validate']); $i++) {
           if ($form['#validate'][$i] == 'user_account_form_validate') {
             $form['#validate'][$i] = 'ibm_apim_user_register_validate';
@@ -574,7 +582,9 @@ function ibm_apim_authenticate_validate($form, &$form_state) {
     // We are not limited by flood control, so try to authenticate.
     $authenticated = ibm_apim_authenticate($name, $pass);
     if ($authenticated) {
-      $account = _ibm_apim_authenticated_login($name, $pass, $authenticated);
+      $result = _ibm_apim_authenticated_login($name, $pass, $authenticated);
+      $account = $result['account'];
+      $orgs = $result['orgs'];
       // Set $form_state['uid'] as a flag for user_login_final_validate().
       $form_state['uid'] = $account->uid;
       // if not a member of any orgs then redirect to the org creation form
@@ -587,6 +597,7 @@ function ibm_apim_authenticate_validate($form, &$form_state) {
 
 // internal function to create an account if needed for new login
 function _ibm_apim_authenticated_login($name, $pass, $authenticated) {
+  $orgs = array();
 
   // this sets up the external user with Drupal by creating a local entry. If they don't exist they are added
   _ibm_apim_external_login_register($name, array('status' => 1, 'pass' => $pass), true);
@@ -644,7 +655,7 @@ function _ibm_apim_authenticated_login($name, $pass, $authenticated) {
 
   user_save($account, $edit);
 
-  return $account;
+  return array('account' => $account, 'orgs' => $orgs);
 }
 
 /**
@@ -765,7 +776,7 @@ function ibm_apim_devel_config_form($form, &$form_state) {
     '#title' => t('Accept Self-Signed SSL Certificates (Developer Mode)'),
     '#default_value' => variable_get('ibm_apim_insecure', FALSE),
     '#weight' => -4,
-    '#description' => t('WARNING: This should only be used for testing and development purporses as it leaves you vulnerable to a man-in-the-middle attack. Check this if the API Manager uses a self-signed SSL certificate.'));
+    '#description' => t('WARNING: This should only be used for testing and development purposes as it leaves you vulnerable to a man-in-the-middle attack. Check this if the API Manager uses a self-signed SSL certificate.'));
 
   // Make it a settings form.
   $form = system_settings_form($form);
@@ -817,6 +828,51 @@ function ibm_apim_config_form($form, &$form_state) {
     '#default_value' => variable_get('ibm_apim_show_versions', 1),
     '#weight' => -12,
     '#description' => t('If unchecked then version numbers will not be displayed for APIs or Plans.'));
+
+  $form['ibm_apim_enable_api_test'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow live testing of APIs'),
+    '#default_value' => variable_get('ibm_apim_enable_api_test', 1),
+    '#weight' => -11,
+    '#description' => t('If unchecked then interactive testing of APIs will be disabled.'));
+
+  $form['ibm_apim_autotag_with_phase'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Automatically tag APIs with their phase'),
+    '#default_value' => variable_get('ibm_apim_autotag_with_phase', 1),
+    '#weight' => -10,
+    '#description' => t('If checked then APIs will be automatically tagged with their "Phase".'));
+
+  $form['ibm_apim_show_cors_warnings'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display CORS warnings for unenforced APIs'),
+    '#default_value' => variable_get('ibm_apim_show_cors_warnings', 1),
+    '#weight' => -10,
+    '#description' => t('If checked then unenforced APIs will have a warning about needing to check CORS (Cross-Origin Response Sharing) has been implemented. Uncheck to suppress the warnings.'));
+  // analytics options
+  $form['analytics'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Analytics'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE);
+  $form['analytics']['ibm_apim_analytics_successrate'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show success rate analytics graph'),
+    '#default_value' => variable_get('ibm_apim_analytics_successrate', 1),
+    '#weight' => -10,
+    '#description' => t('If checked then the API invocation success rate graph and data will be made available.'));
+  $form['analytics']['ibm_apim_analytics_latencies'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show latencies analytics graph'),
+    '#default_value' => variable_get('ibm_apim_analytics_latencies', 1),
+    '#weight' => -10,
+    '#description' => t('If checked then the API invocation latency graph and data will be made available.'));
+  $form['analytics']['ibm_apim_analytics_datausage'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show data usage analytics graph'),
+    '#default_value' => variable_get('ibm_apim_analytics_datausage', 1),
+    '#weight' => -10,
+    '#description' => t('If checked then the API invocation data usage graph and data will be made available.'));
 
   // user registration options
   $form['userreg'] = array(
@@ -1382,43 +1438,66 @@ function _ibm_apim_check_and_get_config() {
       }
 
       // get current saml variable to see if its changed
-      $prev_saml_idp = variable_get('ibm_apim_saml_idp');
+      $prev_saml_idp = variable_get('ibm_apim_saml_idp', 0);
       // IBM ID / SAML
       if (isset($config_data['userRegistry']) && isset($config_data['userRegistry']['type']) && $config_data['userRegistry']['type'] == "saml") {
-        // get apim saml login endpoint
-        $endpoint = _ibm_apim_get_saml_endpoint();
-        variable_set('ibm_apim_saml_endpoint', $endpoint);
-
         variable_set('ibm_apim_saml_idp', 1);
-        // Change Login link
-        $mlid = db_query("SELECT mlid FROM {menu_links} WHERE link_path=:link_path", array(
-          ':link_path' => 'user/login'))->fetchField();
-        $link = menu_link_load($mlid);
+        if (!isset($prev_saml_idp) || (isset($prev_saml_idp) && $prev_saml_idp == 0)) {
+          // Change Login link
+          $mlid = db_query("SELECT mlid FROM {menu_links} WHERE link_path=:link_path", array(
+            ':link_path' => 'user/login'))->fetchField();
+          $link = menu_link_load($mlid);
 
-        // Alter "external" value.
-        $link['external'] = 1;
-        $link['link_path'] = $endpoint;
-        $link['customized'] = 1;
-        menu_link_save($link);
+          $link['link_path'] = 'ibm_apim/saml/login';
+          $link['customized'] = 1;
+          menu_link_save($link);
+          if (module_exists('menu_item_visibility')) {
+            $query = db_insert('menu_links_visibility_role');
+            $query->fields(array('mlid', 'rid'));
+            $query->values(array('mlid' => $mlid, 'rid' => 1));
+            $query->execute();
+          }
+          $item = array(
+            'link_title' => 'Admin Login',
+            'link_path' => 'user/login',
+            'menu_name' => 'login-menu',
+            'language' => 'en',
+            'customized' => 1,
+            'weight' => 2);
+          menu_link_save($item);
 
-        // disable TFA modules
-        module_disable(array('tfa'), TRUE);
+          // change autologout redirection
+          variable_set('autologout_redirect_url', '<front>');
+
+          // disable TFA modules
+          module_disable(array('tfa'), TRUE);
+          menu_cache_clear_all();
+        }
       }
       else {
         if (isset($prev_saml_idp) && $prev_saml_idp == 1) {
-          // get the stored apim saml login endpoint
-          $endpoint = variable_get('ibm_apim_saml_endpoint');
-
           // change login link back to normal
           $mlid = db_query("SELECT mlid FROM {menu_links} WHERE link_path=:link_path", array(
-            ':link_path' => $endpoint))->fetchField();
+            ':link_path' => 'ibm_apim/saml/login'))->fetchField();
           $link = menu_link_load($mlid);
-          // Alter "external" value.
-          $link['external'] = 0;
           $link['link_path'] = 'user/login';
           $link['router_path'] = 'user/login';
           $link['customized'] = 0;
           menu_link_save($link);
+
+          if (module_exists('menu_item_visibility')) {
+            db_delete('menu_links_visibility_role')->condition('mlid', $mlid)->execute();
+          }
+
+          // remove admin login link
+          $admmlid = db_query("SELECT mlid FROM {menu_links} WHERE link_title=:link_title AND menu_name=:menu_name", array(
+            ':link_title' => 'Admin Login',
+            ':menu_name' => 'login-menu'))->fetchField();
+          menu_link_delete($admmlid);
+
+          // change autologout redirection
+          variable_set('autologout_redirect_url', 'user/login');
+          menu_cache_clear_all();
         }
       }
 
@@ -1443,16 +1522,15 @@ function _ibm_apim_check_and_get_config() {
           _ibm_apim_show_default_extra_userfields();
         }
       }
-      if (isset($config_data['userRegistry']) && isset($config_data['userRegistry']['isUsernameEmail']) && $config_data['userRegistry']['isUsernameEmail'] == false) {
+      if (isset($config_data['userRegistry']) && isset($config_data['userRegistry']['usernameIsAlwaysEmail']) && $config_data['userRegistry']['usernameIsAlwaysEmail'] == false) {
         variable_set('ibm_apim_email_as_username', 0);
         variable_set('ibm_apim_username_show', 1);
         variable_set('ibm_apim_username_reqd', 1);
         variable_set('ibm_apim_email_show', 1);
         variable_set('ibm_apim_email_reqd', 1);
-        variable_set('ibm_apim_isUsernameEmail', 0);
       }
       else {
-        variable_set('ibm_apim_isUsernameEmail', 1);
+        variable_set('ibm_apim_email_as_username', 1);
       }
       if (isset($config_data['userRegistry']) && isset($config_data['userRegistry']['inviteViaEmailOnly']) && $config_data['userRegistry']['inviteViaEmailOnly'] == true) {
         variable_set('ibm_apim_inviteViaEmailOnly', 1);
@@ -1519,6 +1597,12 @@ function ibm_apim_menu() {
     'access callback' => 'user_is_logged_in',
     'menu_name' => 'user-menu',
     'weight' => 9);
+  $items['ibm_apim/ibmid/%'] = array(
+    'title' => 'IBM ID Activation',
+    'page callback' => 'ibm_apim_saml_callback',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK);
   $items['ibm_apim/activate/%'] = array(
     'title' => 'User ID Activation',
     'page callback' => 'ibm_apim_activate_id_callback',
@@ -1531,11 +1615,110 @@ function ibm_apim_menu() {
     'page arguments' => array('ibm_apim_forgotpwd_form', 2),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK);
+  $items['ibm_apim/analytics/org'] = array(
+    'title' => 'Organization Analytics',
+    'file' => 'ibm_apim.analytics.inc',
+    'page callback' => 'ibm_apim_analytics_org',
+    'access callback' => 'user_is_logged_in',
+    'type' => MENU_CALLBACK);
+  $items['ibm_apim/analytics/app/%'] = array(
+    'title' => 'Application Analytics',
+    'file' => 'ibm_apim.analytics.inc',
+    'page callback' => 'ibm_apim_analytics_app',
+    'page arguments' => array(3),
+    'access callback' => 'user_is_logged_in',
+    'type' => MENU_CALLBACK);
+  $items['ibm_apim/analytics/%/%/%/%'] = array(
+    'title' => 'Operation Analytics',
+    'file' => 'ibm_apim.analytics.inc',
+    'page callback' => 'ibm_apim_analytics_op',
+    'page arguments' => array(2, 3, 4, 5),
+    'access callback' => 'user_is_logged_in',
+    'type' => MENU_CALLBACK);
+  $items['ibm_apim/downloadanalytics/datausage/org'] = array(
+    'title' => 'Download Organization Analytics Data Usage',
+    'file' => 'ibm_apim.analytics.inc',
+    'page callback' => 'ibm_apim_analytics_get_org_datausage_json',
+    'page arguments' => array(4),
+    'access callback' => 'user_is_logged_in',
+    'type' => MENU_CALLBACK);
+  $items['ibm_apim/downloadanalytics/latency/org'] = array(
+    'title' => 'Download Organization Analytics Latency',
+    'file' => 'ibm_apim.analytics.inc',
+    'page callback' => 'ibm_apim_analytics_get_org_latency_json',
+    'page arguments' => array(4),
+    'access callback' => 'user_is_logged_in',
+    'type' => MENU_CALLBACK);
+  $items['ibm_apim/downloadanalytics/successrate/org'] = array(
+    'title' => 'Download Organization Analytics Success Rate',
+    'file' => 'ibm_apim.analytics.inc',
+    'page callback' => 'ibm_apim_analytics_get_org_successrate_json',
+    'page arguments' => array(4),
+    'access callback' => 'user_is_logged_in',
+    'type' => MENU_CALLBACK);
+  $items['ibm_apim/downloadanalytics/datausage/app/%'] = array(
+    'title' => 'Download Application Analytics Data Usage',
+    'file' => 'ibm_apim.analytics.inc',
+    'page callback' => 'ibm_apim_analytics_get_app_datausage_json',
+    'page arguments' => array(4),
+    'access callback' => 'user_is_logged_in',
+    'type' => MENU_CALLBACK);
+  $items['ibm_apim/downloadanalytics/latency/app/%'] = array(
+    'title' => 'Download Application Analytics Latency',
+    'file' => 'ibm_apim.analytics.inc',
+    'page callback' => 'ibm_apim_analytics_get_app_latency_json',
+    'page arguments' => array(4),
+    'access callback' => 'user_is_logged_in',
+    'type' => MENU_CALLBACK);
+  $items['ibm_apim/downloadanalytics/successrate/app/%'] = array(
+    'title' => 'Download Application Analytics Success Rate',
+    'file' => 'ibm_apim.analytics.inc',
+    'page callback' => 'ibm_apim_analytics_get_app_successrate_json',
+    'page arguments' => array(4),
+    'access callback' => 'user_is_logged_in',
+    'type' => MENU_CALLBACK);
+  $items['ibm_apim/downloadanalytics/datausage/op/%/%'] = array(
+    'title' => 'Download Application Analytics Data Usage',
+    'file' => 'ibm_apim.analytics.inc',
+    'page callback' => 'ibm_apim_analytics_get_op_datausage_json',
+    'page arguments' => array(4, 5),
+    'access callback' => 'user_is_logged_in',
+    'type' => MENU_CALLBACK);
+  $items['ibm_apim/downloadanalytics/latency/op/%/%'] = array(
+    'title' => 'Download Application Analytics Latency',
+    'file' => 'ibm_apim.analytics.inc',
+    'page callback' => 'ibm_apim_analytics_get_op_latency_json',
+    'page arguments' => array(4, 5),
+    'access callback' => 'user_is_logged_in',
+    'type' => MENU_CALLBACK);
+  $items['ibm_apim/downloadanalytics/successrate/op/%/%'] = array(
+    'title' => 'Download Application Analytics Success Rate',
+    'file' => 'ibm_apim.analytics.inc',
+    'page callback' => 'ibm_apim_analytics_get_op_successrate_json',
+    'page arguments' => array(4, 5),
+    'access callback' => 'user_is_logged_in',
+    'type' => MENU_CALLBACK);
   $items['myorg'] = array(
     'title' => 'My organization',
     'page callback' => '_ibm_apim_myorg_page',
     'menu_name' => 'user-menu',
+    'type' => MENU_NORMAL_ITEM,
     'weight' => 8,
+    'access callback' => '_ibm_apim_user_is_org_owner');
+  $items['myorg/manage'] = array(
+    'title' => 'Manage',
+    'page callback' => '_ibm_apim_myorg_page',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'menu_name' => 'user-menu',
+    'weight' => 8,
+    'access callback' => '_ibm_apim_user_is_org_owner');
+  $items['myorg/analytics'] = array(
+    'title' => 'Analytics',
+    'file' => 'ibm_apim.analytics.inc',
+    'page callback' => 'ibm_apim_analytics_org',
+    'type' => MENU_LOCAL_TASK,
+    'menu_name' => 'user-menu',
+    'weight' => 9,
     'access callback' => '_ibm_apim_user_is_org_owner');
   $items['myorg/edit/%'] = array(
     'title' => 'Edit My Organization',
@@ -1549,6 +1732,11 @@ function ibm_apim_menu() {
     'page callback' => '_ibm_apim_myorg_ajax_link_callback',
     'page arguments' => array(1),
     'access arguments' => array('access content'));
+  $items['ibm_apim/saml/login'] = array(
+    'title' => 'IBMID Login',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'ibm_apim_do_saml_login',
+    'access callback' => TRUE);
   if (module_exists('flag_bookmark')) {
     $items['mybookmarks'] = array(
       'title' => 'My bookmarks',
@@ -1713,6 +1901,11 @@ function ibm_apim_register_user($form, &$form_state) {
     }
     _ibm_apim_external_login_register($username, $fields, true);
 
+    if (module_exists('security_questions')) {
+      $account = user_external_load($username);
+      security_questions_user_answers_save($account, $form_state['values']['questions']);
+    }
+
     module_load_include('pages.inc', 'user');
     user_cookie_save(array('ibmapimactivate' => 1));
     user_logout();
@@ -1793,7 +1986,7 @@ function ibm_apim_block_info() {
   $blocks['developer_org_select'] = array(
     'info' => t('Developer Organization Selection'),
     'status' => TRUE,
-    'cache' => DRUPAL_CACHE_PER_USER,
+    'cache' => DRUPAL_NO_CACHE,
     'region' => 'header');
   // This block is to display the registration / activation message
   // has to be a block as can't send messages once the user has been logged out.
@@ -1819,11 +2012,6 @@ function ibm_apim_block_info() {
     'status' => TRUE,
     'cache' => DRUPAL_NO_CACHE,
     'region' => 'header');
-  $blocks['apim_saml_token'] = array(
-    'info' => t('APIM SAML Token'),
-    'status' => TRUE,
-    'cache' => DRUPAL_NO_CACHE,
-    'region' => 'header');
   return $blocks;
 }
 
@@ -1835,9 +2023,11 @@ function ibm_apim_block_view($delta = '') {
   $block = array();
   switch ($delta) {
     case 'developer_org_select' :
-      $block['subject'] = NULL;
-      $markup = ibm_apim_select_developer_menu();
-      $block['content'] = array('#markup' => $markup);
+      if (user_is_logged_in() && $user->uid != 1) {
+        $block['subject'] = NULL;
+        $markup = ibm_apim_select_developer_menu();
+        $block['content'] = array('#markup' => $markup);
+      }
       break;
     case 'api_list' :
       $block['subject'] = t('APIs');
@@ -1948,25 +2138,10 @@ function ibm_apim_block_view($delta = '') {
       }
       break;
     case 'apim_notification_count' :
-      if (user_is_logged_in()) {
+      if (user_is_logged_in() && $user->uid != 1) {
         $block['subject'] = NULL;
         $markup = ibm_apim_notification_count_block();
         $block['content'] = array('#markup' => $markup);
-      }
-      break;
-    case 'apim_saml_token' :
-      $ibm_apim_saml_idp = variable_get('ibm_apim_saml_idp', 0);
-      // only do something if using IBMID and not already logged in
-      if ($ibm_apim_saml_idp == 1 && !user_is_logged_in()) {
-        $apim_session = &_ibm_apim_get_apim_session();
-        // get the SAMLToken from the header
-        $samltoken = drupal_get_http_header('X-IBM-APIManagement-SAML');
-        $account = _ibm_apim_verify_saml_token($samltoken);
-        if (isset($account)) {
-          $apim_session['samltoken'] = $samltoken;
-        }
-        $block['subject'] = NULL;
-        $block['content'] = array('#markup' => '');
       }
       break;
   }
@@ -1979,7 +2154,8 @@ function ibm_apim_block_view($delta = '') {
  *
  * @return true of logged in successfully, false otherwise .
  */
-function _ibm_apim_verify_saml_token($samltoken) {
+function _ibm_apim_verify_saml_token($samltoken = NULL) {
+  $returnVal = null;
   // Make sure we have the session variables set
   _ibm_apim_check_and_get_config();
   $apim_session = &_ibm_apim_get_apim_session();
@@ -1989,25 +2165,25 @@ function _ibm_apim_verify_saml_token($samltoken) {
     'Content-Type: application/json',
     'Accept: application/json',
     "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env'],
-    'X-IBM-APIManagement-SAML: ' . $apim_session['samltoken']);
+    'X-IBM-APIManagement-IBMIDToken: ' . $samltoken);
 
   $result = _ibm_apim_json_http_request($url, 'GET', $headers);
 
   // Must get the session again now as it may have changed when we logged in
   $apim_session = &_ibm_apim_get_apim_session();
-  watchdog('ibm_apim_authenticate', '%user login return code %data', array(
-    '%data' => $result->code,
-    '%user' => $name), WATCHDOG_NOTICE);
+  watchdog('_ibm_apim_verify_saml_token', 'IBMID validation return code %data', array(
+    '%data' => $result->code), WATCHDOG_NOTICE);
   if (isset($result) && ($result->code == 200) && $result->data != '') {
     if (isset($result->data['id'])) {
       $apim_session['memberid'] = $result->data['id'];
     }
+    $apim_session['samltoken'] = $samltoken;
     if (isset($result->data['name'])) {
-      $account = _ibm_apim_authenticated_login($result->data['name'], "!n0r1t5@C", $result->data);
-      return $account;
+      $newresult = _ibm_apim_authenticated_login($result->data['name'], "!n0r1t5@C", $result->data);
+      $returnVal = $newresult;
     }
   }
-  return null;
+  return $returnVal;
 }
 
 /**
@@ -2248,7 +2424,9 @@ function _ibm_apim_json_http_request($url, $verb = 'GET', $headers = NULL, $data
 
   if (!$return_result) {
     if ($result->data != '') {
-      $result->data = _ibm_apim_get_json($result->data);
+      if (empty($headers) || !in_array('Accept: application/vnd.ibm-apim.swagger2+yaml', $headers)) {
+        $result->data = _ibm_apim_get_json($result->data);
+      }
     }
   }
 
@@ -2325,7 +2503,9 @@ function _ibm_apim_call_base($url, $verb, $auth = 'user', $data = NULL, $message
   if ($auth == 'user') {
     $ibm_apim_saml_idp = variable_get('ibm_apim_saml_idp', 0);
     if ($ibm_apim_saml_idp == 1) {
-      $headers[] = 'X-IBM-APIManagement-SAML: ' . $apim_session['samltoken'];
+      if (isset($apim_session['samltoken']) && !empty($apim_session['samltoken'])) {
+        $headers[] = 'X-IBM-APIManagement-IBMIDToken: ' . $apim_session['samltoken'];
+      }
     }
     elseif (isset($apim_session['auth'])) {
       $headers[] = 'Authorization: Basic ' . $apim_session['auth'];
@@ -2406,7 +2586,8 @@ function _ibm_apim_load_developer_orgs() {
   if (isset($apim_session['developer_organizations'])) {
     return $apim_session['developer_organizations'];
   }
-  if (isset($apim_session['auth']) && !isset($apim_session['developer_organizations'])) {
+  $ibmid = variable_get('ibm_apim_saml_idp', 0);
+  if ((isset($apim_session['auth']) || $ibmid == 1) && !isset($apim_session['developer_organizations'])) {
     $apim_session['developer_organizations'] = array();
     $result = ibm_apim_call('/v1/portal/orgs');
     if (isset($result) && isset($result->data) && !isset($result->data['errors'])) {
@@ -2597,9 +2778,30 @@ function _ibm_apim_reset_user_password($email) {
  * Implementation of hook_form_user_pass_alter
  */
 function ibm_apim_form_user_pass_alter(&$form, &$form_state) {
-  // do not send admin password resets to apim
-  global $user;
-  if (!isset($user->uid) || $user->uid != 1) {
+  $secure_pass_form = variable_get('security_questions_password_reset', FALSE);
+  if (module_exists('security_questions') && $secure_pass_form == TRUE) {
+    global $user;
+
+    // We need our own submission handler to make this a multistep form.
+    $form['#submit'] = array('ibm_apim_user_pass_submit');
+
+    // If the user is already logged in but not allowed to bypass, or our submit
+    // handler triggered a rebuild, then we need to issue a challenge.
+    $account = FALSE;
+    if ($user->uid > 0 && !security_questions_bypass_challenge($user)) {
+      $account = $user;
+    }
+    elseif (!empty($form_state['security_questions']['uid'])) {
+      $account = user_load($form_state['security_questions']['uid']);
+    }
+    if ($account) {
+      $form += security_questions_challenge($account);
+      $form['#validate'][] = 'security_questions_user_pass_answer_validate';
+      $form['name']['#type'] = 'value';
+      $form['name']['#value'] = $account->mail;
+    }
+  }
+  else {
     $form['#submit'] = array('ibm_apim_user_pass_submit');
   }
 }
@@ -2608,7 +2810,51 @@ function ibm_apim_form_user_pass_alter(&$form, &$form_state) {
  * Submit handler to reset a user's password
  */
 function ibm_apim_user_pass_submit(&$form, &$form_state) {
-  _ibm_apim_reset_user_password($form_state['values']['name']);
+  $secure_pass_form = variable_get('security_questions_password_reset', FALSE);
+  // do not send admin password resets to apim
+  $account = $form_state['values']['account'];
+  if ($account->uid == 1) {
+    user_pass_submit($form, $form_state);
+  }
+  else
+    if (((module_exists('security_questions') && $secure_pass_form == TRUE) && (security_questions_bypass_challenge($account) || !empty($form_state['security_questions']['passed_challenge']))) || !module_exists('security_questions') || $secure_pass_form == FALSE) {
+      // if the security questions module is active and set for password resets then need to be on the second pass through this code (after submitting the answers) to actually do something since the security questions module will rebuild the form
+      _ibm_apim_reset_user_password($form_state['values']['name']);
+    }
+    else {
+      // Otherwise, store the ID of the user requesting the reset and rebuild.
+      $form_state['security_questions']['uid'] = $account->uid;
+      $form_state['rebuild'] = TRUE;
+    }
+}
+
+/**
+ * Callback to receive the APIm representation of the IBMID SAML token
+ *
+ * @param string $token
+ */
+function ibm_apim_saml_callback($samltoken = NULL) {
+  $ibm_apim_saml_idp = variable_get('ibm_apim_saml_idp', 0);
+  // only do something if using IBMID and not already logged in
+  if ($ibm_apim_saml_idp == 1 && !user_is_logged_in() && isset($samltoken) && !empty($samltoken)) {
+    $apim_session = &_ibm_apim_get_apim_session();
+    $returnVal = _ibm_apim_verify_saml_token($samltoken);
+    $account = $returnVal['account'];
+    $orgs = $returnVal['orgs'];
+    if (isset($account)) {
+      $apim_session['samltoken'] = $samltoken;
+    }
+    if (!isset($orgs) || count($orgs) < 1) {
+      cache_clear_all();
+      drupal_set_message(t('You need to create a developer organization to continue.'));
+      drupal_goto('ibm_apim/org/create');
+    }
+    else {
+      // redirect to home now should be logged in.
+      cache_clear_all();
+      drupal_goto('<front>');
+    }
+  }
 }
 
 /**
@@ -2736,6 +2982,15 @@ function ibm_apim_activate_create_account_form($token = NULL) {
   if ($user->uid) {
     drupal_goto('user/' . $user->uid);
   }
+  // if already a user with this email address error out
+  if (isset($userid) && !empty($userid)) {
+    $found = user_load_by_mail($userid);
+    if (isset($found) && isset($found->uid)) {
+      drupal_set_message(t('A user already exists with this email address. Use those credentials to log in.'), 'error');
+      drupal_goto('user/login');
+    }
+  }
+
   $form = array();
   // Ensure some defaults; if already set they will not be overridden.
   $form_state = form_state_defaults();
@@ -3108,7 +3363,8 @@ function _ibm_apim_swaggerjson_callback($apiid, $apiversion, $type = 'rest') {
         if (isset($api)) {
           $swaggerjson = _ibm_apim_generate_json_per_api($api);
           if (isset($swaggerjson)) {
-            return drupal_json_output($swaggerjson);
+            drupal_add_http_header('Content-Type', 'application/vnd.ibm-apim.swagger2+yaml');
+            print yaml_emit($swaggerjson);
           }
           else {
             return FALSE;
@@ -3124,13 +3380,8 @@ function _ibm_apim_swaggerjson_callback($apiid, $apiversion, $type = 'rest') {
     }
     else {
       // REST API
-      $swaggerjson = ibm_apim_get_api_swagger($apiid, $apiversion);
-      if (isset($swaggerjson)) {
-        return drupal_json_output($swaggerjson);
-      }
-      else {
-        return FALSE;
-      }
+      // this method returns directly
+      ibm_apim_get_api_swagger($apiid, $apiversion);
     }
   }
   else {
@@ -3454,6 +3705,12 @@ function _ibm_apim_edit_myorg_submit_handler($form, &$form_state) {
   $result = ibm_apim_update_org_name($orgid, $name);
   if (isset($result) && ($result->code == 200 && $result->code < 300)) {
     drupal_set_message(t('Organization name updated.'));
+    $apim_session = &_ibm_apim_get_apim_session();
+    unset($apim_session['developer_organizations']);
+    // clear block cache
+    cache_clear_all(NULL, 'cache_block');
+    _ibm_apim_load_developer_orgs();
+    _ibm_apim_set_current_developer_org($orgid);
   }
   $form_state['redirect'] = 'myorg/';
 }
@@ -4149,26 +4406,43 @@ function _ibm_apim_parse_apim_host() {
 }
 
 /**
+ * Callback to handle redirecting to the right SAML endpoint
+ */
+function ibm_apim_do_saml_login() {
+  global $_GET;
+  global $base_url;
+  $endpoint = _ibm_apim_get_saml_endpoint();
+  $currentpath = str_replace($base_url.'/','',$_SERVER['HTTP_REFERER']);
+  if(isset($currentpath) && !empty($currentpath) && strpos($currentpath, "http") === false) {
+    $endpoint .= '?currentpath=' . $currentpath;
+  }
+  drupal_goto($endpoint, array('external' => TRUE));
+}
+
+/**
  * Custom Function to return the SAML login endpoint
  */
 function _ibm_apim_get_saml_endpoint() {
   $endpoint = null;
-  $envname = getenv('environment');
-  if (isset($envname) && !empty($envname)) {
-    $filename = "/etc/ibm/apimConfigFiles/" . $envname . "/configuration.properties";
-    if (file_exists($filename)) {
-      $ini_array = parse_ini_file($filename);
-      $endpoint_host = $ini_array['devportal_lb_dns_name'];
+  $envname = null;
+  $envfile = "/etc/ibm/metadata.env";
+  if (file_exists($envfile)) {
+    $env_array = parse_ini_file($envfile);
+    $envname = trim($env_array['export environment']);
+    $advPortalConfigIni = '/etc/ibm/apimConfigFiles/' . $envname . '/advPortalConfiguration.ini';
+    if (file_exists($advPortalConfigIni)) {
+      $advPortalConfig_array = parse_ini_file($advPortalConfigIni);
+      $endpoint_host = trim($advPortalConfig_array['devportal_lb_dns_name']);
     }
   }
   if (isset($endpoint_host) && !(empty($endpoint_host))) {
-    $endpoint = 'https://' . $endpoint_host . '/saml/login';
+    $endpoint = 'https://' . $endpoint_host . '/saml/signon';
   }
   else {
     // fallback on apim hostname
     $apim_session = &_ibm_apim_get_apim_session();
     $host_pieces = _ibm_apim_parse_apim_host();
-    $endpoint = $host_pieces['url'] . '/saml/login';
+    $endpoint = $host_pieces['url'] . '/saml/signon';
   }
   return $endpoint;
 }
@@ -4200,18 +4474,93 @@ function ibm_apim_get_api_swagger($apiid, $apiversion) {
   $host_pieces = _ibm_apim_parse_apim_host();
   $url = $host_pieces['url'] . '/v1/portal' . $developer_org_url . '/apis/' . $apiid . '/v' . $apiversion;
 
-  $headers = array(
-    'Content-Type: application/vnd.ibm-apim.swagger2+json',
-    'Accept: application/vnd.ibm-apim.swagger2+json',
-    "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env'],
-    'Authorization: Basic ' . $apim_session['auth']);
+  // update the stored swagger for this API
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node')->entityCondition('bundle', 'api')->fieldCondition('api_apiid', 'value', $apiid)->fieldCondition('api_version', 'value', $apiversion);
+  $results = $query->execute();
 
-  $result = _ibm_apim_json_http_request($url, 'GET', $headers);
-
-  if (isset($result) && isset($result->data)) {
-    $returnValue = $result->data;
+  if (isset($results['node'])) {
+    $keys = array_keys($results['node']);
+    $node = node_load($keys[0]);
   }
-  return $returnValue;
+  else {
+    $node = 'dummy';
+  }
+  _ibm_apim_download_proxy($url, $node);
+}
+
+/**
+ * Generic API download proxy, used for documents and wsdls
+ * if node is passed in then it will save the content as the swagger doc for that api
+ */
+function _ibm_apim_download_proxy($url, $node = null) {
+  // Make sure we have the session variables set
+  _ibm_apim_check_and_get_config();
+  $apim_session = &_ibm_apim_get_apim_session();
+  if (empty($url)) {
+    drupal_set_message(t('URL not specified. Specify a valid URL and try again.'), 'error');
+    return;
+  }
+
+  $ch = curl_init($url);
+  $ibmid = variable_get('ibm_apim_saml_idp', 0);
+  $headers = array();
+  if (isset($apim_session['auth'])) {
+    $headers[] = "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env'];
+    $headers[] = "Authorization: Basic " . $apim_session['auth'];
+  }
+  elseif ($ibmid == 1) {
+    $headers[] = "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env'];
+    $headers[] = 'X-IBM-APIManagement-IBMIDToken: ' . $apim_session['samltoken'];
+  }
+  else {
+    $headers[] = "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env'];
+  }
+  if (isset($node)) {
+    $headers[] = 'Accept: application/vnd.ibm-apim.swagger2+yaml';
+    $headers[] = 'Content-Type: application/vnd.ibm-apim.swagger2+yaml';
+  }
+  curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+  curl_setopt($ch, CURLOPT_HEADER, true);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+  // Enable auto-accept of self-signed certificates if this
+  // has been set in the module config by an admin.
+  _ibm_apim_curl_set_accept_ssl($ch);
+
+  list($header, $contents) = preg_split('/([\r\n][\r\n])\\1/', curl_exec($ch), 2);
+  $status = curl_getinfo($ch);
+  curl_close($ch);
+
+  // Split header text into an array.
+  $header_text = preg_split('/[\r\n]+/', $header);
+
+  // Propagate headers to response.
+  foreach ($header_text as $header) {
+    if (preg_match('/^(?:Content-Length|Location|Content-Type|Content-Language|Set-Cookie):/i', $header)) {
+      header($header);
+    }
+  }
+  // for YAML download force the filename, otherwise will default to version number
+  if (isset($node)) {
+    header('Content-Disposition: attachment; filename="apidownload.yaml"');
+  }
+  else
+    if (preg_match('/^(?:Content-Disposition):/i', $header)) {
+      header($header);
+    }
+
+  if (isset($node) && $node != 'dummy' && isset($contents)) {
+    $data = serialize(json_decode($contents));
+    if ($node->api_resources[$node->language][0]['value'] != $data) {
+      $node->api_resources[$node->language][0]['value'] = $data;
+      node_save($node);
+    }
+  }
+
+  print $contents;
 }
 
 /**
@@ -4254,19 +4603,6 @@ function _ibm_apim_generate_json_per_api($api) {
       }
       if (isset($gateway_url['path']) && !empty($gateway_url['path'])) {
         $basePath = $gateway_url['path'];
-      }
-    }
-    else {
-      $host_pieces = _ibm_apim_parse_apim_host();
-      $host = $host_pieces['host'];
-      if (isset($host_pieces['port']) && !empty($host_pieces['port'])) {
-        $port = ':' . $host_pieces['port'];
-      }
-      if (isset($host_pieces['scheme']) && !empty($host_pieces['scheme'])) {
-        $protocol = $host_pieces['scheme'];
-      }
-      if (isset($host_pieces['path']) && !empty($host_pieces['path'])) {
-        $basePath = $host_pieces['path'];
       }
     }
 
@@ -4402,7 +4738,6 @@ function _ibm_apim_generate_json_per_api($api) {
 
       // hardcode all resources to be part of same tag for now
       $resource_array[$resource_path][$resource_verb]['tags'] = array('resources');
-      array_push($output['tags'], array('name' => 'resources', 'description' => ''));
       // $trimmedpath = ltrim($path, '\/');
       // $patharray = explode("/", ltrim($path, '\/'));
       // $resource_array[$resource_path][$resource_verb]['tags'] = array($patharray[0]);
@@ -4471,7 +4806,6 @@ function _ibm_apim_generate_json_per_api($api) {
         $resource_array[$resource_path][$resource_verb]['parameters'][] = $body_array;
 
         $newtype = array();
-        $newtype['type'] = 'Object';
         $newtype['properties'] = array();
 
         if ($resource_array[$resource_path][$resource_verb]['consumes'] == array("application/xml")) {
@@ -4499,7 +4833,6 @@ function _ibm_apim_generate_json_per_api($api) {
           '$ref' => '#/definitions/response' . $bodyindex);
 
         $newtype = array();
-        $newtype['type'] = 'Object';
         $newtype['properties'] = array();
         if ($resource_array[$resource_path][$resource_verb]['produces'] == array("application/xml")) {
           $xml = simplexml_load_string($resource['responseBody'], "SimpleXMLElement", LIBXML_NOERROR | LIBXML_ERR_NONE);
@@ -4750,6 +5083,16 @@ function _ibm_apim_external_login_register($name, $edit = array(), $login = fals
     $form_state['uid'] = $account->uid;
     user_login_submit(array(), $form_state);
   }
+}
+
+/**
+* Implements hook_cron().
+*/
+function ibm_apim_cron() {
+  // Clear the cache of the queries used to build up the forum
+  // blocks on the home page otherwise they only change when
+  // the ALL cache is cleared completely
+  cache_clear_all('forum_block_view:', 'cache', TRUE);
 }
 
 ?>

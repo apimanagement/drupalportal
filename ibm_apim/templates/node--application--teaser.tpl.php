@@ -57,7 +57,7 @@
     } ?></div>
 
 					   <div class="apimSummaryDescription">
-					     <p class="fade" title="<?php print $application_description[0]['safe_value']; ?>"><?php print $application_description[0]['safe_value']; ?></p>
+					     <p class="apimFade" title="<?php print $application_description[0]['safe_value']; ?>"><?php print $application_description[0]['safe_value']; ?></p>
 					   </div>
 					</div>
 				</div>

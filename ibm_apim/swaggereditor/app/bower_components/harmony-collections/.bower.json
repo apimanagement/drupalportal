@@ -1,0 +1,13 @@
+{
+  "name": "harmony-collections",
+  "homepage": "https://github.com/Benvie/harmony-collections",
+  "_release": "0adbd738fc",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "0adbd738fccecd88cdd45b68077a718bcf7f3e3b"
+  },
+  "_source": "git://github.com/Benvie/harmony-collections.git",
+  "_target": "*",
+  "_originalSource": "Benvie/harmony-collections"
+}

@@ -1,0 +1,41 @@
+{
+  "name": "json-schema-view",
+  "repositiory": "mohsen1/json-schema-view",
+  "version": "0.4.2",
+  "authors": [
+    "Mohsen Azimi <msn.azi@gmail.com>"
+  ],
+  "description": "",
+  "main": [
+    "dist/json-schema-view.js",
+    "dist/json-schema-view.css"
+  ],
+  "license": "MIT",
+  "private": false,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "angular": "~1.2.26",
+    "jquery": "~2.1.1",
+    "angular-sanitize": "~1.2.26",
+    "angular-mocks": "~1.2.26",
+    "json-formatter": "~0.2.2",
+    "bootstrap": "~3.2.0"
+  },
+  "homepage": "https://github.com/mohsen1/json-schema-view",
+  "_release": "0.4.2",
+  "_resolution": {
+    "type": "version",
+    "tag": "v0.4.2",
+    "commit": "45b272ce410f2f301464f17d1154d22a122a2c80"
+  },
+  "_source": "git://github.com/mohsen1/json-schema-view.git",
+  "_target": "0.4.2",
+  "_originalSource": "json-schema-view"
+}

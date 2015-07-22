@@ -158,23 +158,29 @@ function plan_theme($existing, $type, $theme, $path) {
  * Preprocessor for theme('plan_node_form').
  */
 function template_preprocess_plan_node_form(&$variables) {
-  hide($variables['form']['plan_apimhostname']);
-  hide($variables['form']['plan_providerid']);
-  hide($variables['form']['plan_environmentid']);
-  hide($variables['form']['plan_description']);
-  hide($variables['form']['plan_version']);
-  hide($variables['form']['title']);
-  hide($variables['form']['plan_apiid']);
-  hide($variables['form']['plan_displayname']);
-  hide($variables['form']['plan_requiresapproval']);
-  hide($variables['form']['plan_url']);
-  hide($variables['form']['plan_updated']);
-  hide($variables['form']['plan_apis']);
-  hide($variables['form']['plan_subscribable']);
-
   // Extract the form buttons, and put them in independent variable.
   $variables['buttons'] = $variables['form']['actions'];
   hide($variables['form']['actions']);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function plan_form_plan_node_form_alter(&$form, &$form_state) {
+  // this function hides all our custom fields from the edit node form as they are all set explicitly
+  $form['plan_apimhostname']['#access'] = 0;
+  $form['plan_providerid']['#access'] = 0;
+  $form['plan_environmentid']['#access'] = 0;
+  $form['plan_description']['#access'] = 0;
+  $form['plan_version']['#access'] = 0;
+  $form['title']['#access'] = 0;
+  $form['plan_apiid']['#access'] = 0;
+  $form['plan_displayname']['#access'] = 0;
+  $form['plan_requiresapproval']['#access'] = 0;
+  $form['plan_url']['#access'] = 0;
+  $form['plan_updated']['#access'] = 0;
+  $form['plan_apis']['#access'] = 0;
+  $form['plan_subscribable']['#access'] = 0;
 }
 
 /**
@@ -309,6 +315,16 @@ function plan_subscribeapp_modal_form_submit($form, &$form_state) {
   $url = '/v1/portal/' . $developer_org_url . '/apps/' . $appId . '/subscriptions';
   $planurl = $host . '/v1/portal/' . $developer_org_url . '/plans/' . $planId . '/v' . $planVersion;
   $data = array("planURL" => $planurl);
+  // retrieve the plan node to find out if needs approval
+  $requiresapproval = false;
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node')->entityCondition('bundle', 'plan')->fieldCondition('plan_apiid', 'value', $planId)->fieldCondition('plan_version', 'value', $planVersion);
+  $queryresults = $query->execute();
+  if (isset($queryresults['node'])) {
+    $keys = array_keys($queryresults['node']);
+    $node = node_load($keys[0]);
+    $requiresapproval = $node->plan_requiresapproval[$node->language][0]['value'];
+  }
 
   $result = ibm_apim_post($url, json_encode($data));
   // dismiss the popup
@@ -316,7 +332,12 @@ function plan_subscribeapp_modal_form_submit($form, &$form_state) {
   if (isset($result) && (!isset($result->data) || (isset($result->data) && !isset($result->data['errors'])))) {
     // only print success message if it actually was successful
     // error messages will be automatically displayed if there are any
-    drupal_set_message(t("Successfully subscribed to this plan."));
+    if (isset($requiresapproval) && ($requiresapproval == true || $requiresapproval == 1)) {
+      drupal_set_message(t("Subscription request for this plan has been submitted for approval."));
+    }
+    else {
+      drupal_set_message(t("Successfully subscribed to this plan."));
+    }
   }
   // redirect to the plan page
   drupal_goto("plan/" . $planId . "/" . $planVersion, array());
@@ -494,23 +515,25 @@ function _plan_createNewPlanNode($plan) {
 function _plan_updateExistingPlanNode($node, $plan) {
   $hostvariable = variable_get('ibm_apim_host');
   $apim_session = &_ibm_apim_get_apim_session();
-  $node->title = $plan['name'];
-  $node->plan_apimhostname[$node->language][0]['value'] = $hostvariable;
-  $node->plan_providerid[$node->language][0]['value'] = $apim_session['org'];
-  $node->plan_environmentid[$node->language][0]['value'] = $apim_session['env'];
-  $node->plan_apiid[$node->language][0]['value'] = $plan['id'];
-  $node->plan_version[$node->language][0]['value'] = $plan['version'];
-  // ensure description is at least set to empty string
-  if (!isset($plan['description']) || empty($plan['description'])) {
-    $plan['description'] = '';
+  if (isset($plan['updatedAt']) && $plan['updatedAt'] != $node->plan_updated[$node->language][0]['value']) {
+    $node->title = $plan['name'];
+    $node->plan_apimhostname[$node->language][0]['value'] = $hostvariable;
+    $node->plan_providerid[$node->language][0]['value'] = $apim_session['org'];
+    $node->plan_environmentid[$node->language][0]['value'] = $apim_session['env'];
+    $node->plan_apiid[$node->language][0]['value'] = $plan['id'];
+    $node->plan_version[$node->language][0]['value'] = $plan['version'];
+    // ensure description is at least set to empty string
+    if (!isset($plan['description']) || empty($plan['description'])) {
+      $plan['description'] = '';
+    }
+    $node->plan_description[$node->language][0]['value'] = $plan['description'];
+    $node->plan_displayname[$node->language][0]['value'] = $plan['displayName'];
+    $node->plan_requiresapproval[$node->language][0]['value'] = $plan['requiresApproval'];
+    $node->plan_subscribable[$node->language][0]['value'] = isset($plan['subscribable']) ? $plan['subscribable'] : TRUE;
+    $node->plan_url[$node->language][0]['value'] = $plan['url'];
+    $node->plan_updated[$node->language][0]['value'] = $plan['updatedAt'];
+    node_save($node);
   }
-  $node->plan_description[$node->language][0]['value'] = $plan['description'];
-  $node->plan_displayname[$node->language][0]['value'] = $plan['displayName'];
-  $node->plan_requiresapproval[$node->language][0]['value'] = $plan['requiresApproval'];
-  $node->plan_subscribable[$node->language][0]['value'] = isset($plan['subscribable']) ? $plan['subscribable'] : TRUE;
-  $node->plan_url[$node->language][0]['value'] = $plan['url'];
-  $node->plan_updated[$node->language][0]['value'] = $plan['updatedAt'];
-  node_save($node);
 }
 
 /**

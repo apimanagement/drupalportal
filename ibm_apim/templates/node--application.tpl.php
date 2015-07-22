@@ -36,7 +36,7 @@ drupal_add_js('jQuery(document).ready(function(){
         });
       });', 'inline');
 ?>
-<div class="breadcrumb"><?php print l("< " .t('Back to Apps'), 'application');?></div>
+<div class="pagebreadcrumb"><?php print l("< " .t('Back to Apps'), 'application');?></div>
 <article id="node-<?php print $node->nid; ?>"
 	class="<?php print $classes; ?> clearfix" <?php print $attributes; ?>>
 
@@ -83,7 +83,7 @@ print '<span class="apimImageActions">'.$uploadimagelink;
 		<div class="apimTitleContainer">
 			<p class="apimTitle">
 				<span><?php print $title; ?></span>
-				<?php print '<span class="apimAppActions">' . $notificationsettingslink;
+				<?php print '<span class="apimAppActions">' . $analyticslink . ' | ' . $notificationsettingslink;
 				if (isset($isdev) && $isdev == TRUE) {
 				  print ' | '. $editlink . ' | ' . $deletelink;
 				}
@@ -181,8 +181,8 @@ print '<span class="apimImageActions">'.$uploadimagelink;
         $versiontext = ' (v' . $sub['version'] . ')';
       }
       print "<div class='appPlanName'>" . check_plain($sub['name']) . $versiontext . $pendingapp . " <span class='planUnsubscribe'>" . $unsubscribelink . "</span></div>";
-      if (isset($sub['supersededBy']) && isset($sub['supersededBy']['planId']) && isset($sub['supersededBy']['version']) && isset($isdev) && $isdev == TRUE) {
-        print "<div class='migratePlanContainer'><div class='migrateButton'>" . l(t('Migrate'),'application/'.$application_apiid[0]['value'].'/migrate/' . $sub['id'] .'/'.$sub['supersededBy']['planId'].'/v'.$sub['supersededBy']['version']) . "</div><div class='migratePlanText'>" . t('A new version of this plan has been published.') . "</div></div>";
+      if (isset($sub['supersededBy']) && !empty($sub['supersededBy']) && isset($isdev) && $isdev == TRUE) {
+        print "<div class='migratePlanContainer'><div class='migrateButton'>" . l(t('Migrate'),'application/'.$application_apiid[0]['value'].'/migrate/' . $sub['id'] .'/'.base64_encode($sub['supersededBy'])) . "</div><div class='migratePlanText'>" . t('A new version of this plan has been published.') . "</div></div>";
       }
       print "<div id='accordion'>";
       foreach ($sub['apis'] as $api) {
@@ -200,6 +200,7 @@ print '<span class="apimImageActions">'.$uploadimagelink;
 			<div class='column resourceName'>" . t('Name') . "</div>
 			<div class='column resourceDesc'>" . t('Description') . "</div>
 			<div class='column resourceRateLimit'>" . t('Rate Limit') . "</div>
+		    <div class='column resourceAnalytics'>" . t('Analytics') . "</div>
 		</div>
 	 <div class='resourceView resourcePlanView'>";
         foreach ($api['resources'] as $resource) {
@@ -214,8 +215,13 @@ print '<span class="apimImageActions">'.$uploadimagelink;
 		 <div class='displayInlineTop resourceName boundedText' title='" . check_plain($resource['name']) . "'>" . check_plain($resource['name']) . "</div>
 		 <div class='displayInlineTop resourceDesc boundedText' title='" . check_plain($resource['description']) . "'>" . check_plain($resource['description']) . "</div>
 		 <div class='displayInlineTop boundedText tableLabel'>" . t('Rate Limit:') . "</div>
-		 <div class='displayInlineTop resourceRateLimit'>" . $ratelimitstr . "</div>
-	   </div>";
+		 <div class='displayInlineTop resourceRateLimit'>" . $ratelimitstr . "</div>";
+          if (isset($sub['approved']) && $sub['approved'] == false) {
+		    print "<div class='displayInlineTop resourceAnalytics'>&nbsp;</div>";
+          } else {
+            print "<div class='displayInlineTop resourceAnalytics'><a href='" . url('ibm_apim/analytics/' . $variables['application_apiid'][0]['safe_value'] . '/' . base64_encode($resource['path']) . '/' . strtolower(check_plain($resource['verb'])). '/' . strtolower(check_plain($resource['id']))) . "'><span class='analyticsIcon'></span></a></div>";
+          }
+	   print "</div>";
         }
         print "</div></div></div>";
       }

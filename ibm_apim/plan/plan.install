@@ -42,10 +42,7 @@ function _plan_installed_fields() {
       'field_name' => 'plan_environmentid',
       'label' => t('Environment ID'),
       'type' => 'text'),
-    'plan_apiid' => array(
-      'field_name' => 'plan_apiid',
-      'label' => t('ID'),
-      'type' => 'text'),
+    'plan_apiid' => array('field_name' => 'plan_apiid', 'label' => t('ID'), 'type' => 'text'),
     'plan_version' => array(
       'field_name' => 'plan_version',
       'label' => t('Version'),
@@ -66,10 +63,7 @@ function _plan_installed_fields() {
       'field_name' => 'plan_subscribable',
       'label' => t('Subscribable'),
       'type' => 'text'),
-    'plan_apis' => array(
-      'field_name' => 'plan_apis',
-      'label' => t('APIs'),
-      'type' => 'text_long'),
+    'plan_apis' => array('field_name' => 'plan_apis', 'label' => t('APIs'), 'type' => 'text_long'),
     'plan_url' => array('field_name' => 'plan_url', 'label' => t('URL'), 'type' => 'text'),
     'plan_updated' => array(
       'field_name' => 'plan_updated',
@@ -141,15 +135,13 @@ function _plan_installed_instances() {
       'type' => 'text',
       'label' => t('Requires Approval'),
       'widget' => array('type' => 'text_textfield'),
-      'display' => array(
-        'default' => array('label' => t('Requires Approval'), 'type' => 'text'))),
+      'display' => array('default' => array('label' => t('Requires Approval'), 'type' => 'text'))),
     'plan_subscribable' => array(
       'field_name' => 'plan_subscribable',
       'type' => 'text',
       'label' => t('Subscribable'),
       'widget' => array('type' => 'text_textfield'),
-      'display' => array(
-        'default' => array('label' => t('Subscribable'), 'type' => 'text'))),
+      'display' => array('default' => array('label' => t('Subscribable'), 'type' => 'text'))),
     'plan_apis' => array(
       'field_name' => 'plan_apis',
       'type' => 'text_long',
@@ -208,5 +200,38 @@ function _plan_delete_node_content($type) {
   }
   catch (Exception $e) {
     // quietly swallow exceptions from dropping the nodes.
+  }
+}
+
+/*
+ * Update code to handle upgrade from earlier version
+ */
+function plan_update_7400() {
+  foreach (_plan_installed_fields() as $field) {
+    $field_name = field_info_field($field['field_name']);
+    if (!$field_name) {
+      field_create_field($field);
+      watchdog('plan', 'Field %field_name has been successfully added', array(
+        '%field_name' => $field['field_name']));
+    }
+    else {
+      watchdog('plan', 'Field %field_name already exists', array(
+        '%field_name' => $field['field_name']));
+    }
+  }
+
+  foreach (_plan_installed_instances() as $fieldinstance) {
+    $instance_name = field_info_field($fieldinstance['field_name']);
+    if (!$instance_name) {
+      $$fieldinstance['entity_type'] = 'node';
+      $fieldinstance['bundle'] = 'plan';
+      field_create_instance($instance);
+      watchdog('plan', 'Instance %instance_name has been successfully added', array(
+        '%instance_name' => $fieldinstance['instance_name']));
+    }
+    else {
+      watchdog('plan', 'Instance %instance_name already exists', array(
+        '%instance_name' => $fieldinstance['instance_name']));
+    }
   }
 }

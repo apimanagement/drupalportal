@@ -75,28 +75,35 @@ function api_theme($existing, $type, $theme, $path) {
  * Preprocessor for theme('api_node_form').
  */
 function template_preprocess_api_node_form(&$variables) {
-  hide($variables['form']['api_apimhostname']);
-  hide($variables['form']['api_providerid']);
-  hide($variables['form']['api_environmentid']);
-  hide($variables['form']['api_description']);
-  hide($variables['form']['api_version']);
-  hide($variables['form']['title']);
-  hide($variables['form']['api_apiid']);
-  hide($variables['form']['api_context']);
-  hide($variables['form']['api_protocol']);
-  hide($variables['form']['api_authentication']);
-  hide($variables['form']['api_authorization']);
-  hide($variables['form']['api_authorizationtokenurl']);
-  hide($variables['form']['api_authorizationurl']);
-  hide($variables['form']['api_url']);
-  hide($variables['form']['api_updated']);
-  hide($variables['form']['api_oauthconfig']);
-  hide($variables['form']['api_soapversion']);
-  hide($variables['form']['api_resources']);
-
   // Extract the form buttons, and put them in independent variable.
   $variables['buttons'] = $variables['form']['actions'];
   hide($variables['form']['actions']);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function api_form_api_node_form_alter(&$form, &$form_state) {
+  // this function hides all our custom fields from the edit node form as they are all set explicitly
+  $form['api_apimhostname']['#access'] = 0;
+  $form['api_providerid']['#access'] = 0;
+  $form['api_environmentid']['#access'] = 0;
+  $form['api_description']['#access'] = 0;
+  $form['api_version']['#access'] = 0;
+  $form['title']['#access'] = 0;
+  $form['api_apiid']['#access'] = 0;
+  $form['api_context']['#access'] = 0;
+  $form['api_protocol']['#access'] = 0;
+  $form['api_authentication']['#access'] = 0;
+  $form['api_authorization']['#access'] = 0;
+  $form['api_authorizationtokenurl']['#access'] = 0;
+  $form['api_authorizationurl']['#access'] = 0;
+  $form['api_url']['#access'] = 0;
+  $form['api_updated']['#access'] = 0;
+  $form['api_oauthconfig']['#access'] = 0;
+  $form['api_soapversion']['#access'] = 0;
+  $form['api_resources']['#access'] = 0;
+  $form['api_ibmconfiguration']['#access'] = 0;
 }
 
 /**
@@ -186,6 +193,7 @@ function api_preprocess_node(&$variables) {
     }
     $variables['titlelink'] = '<span class="apimTitle"> <a href="' . url('api/' . $variables['api_apiid'][0]['safe_value'] . '/' . $variables['api_version'][0]['safe_value']) . '">' . $variables['title'] . '</a> ' . $versiontext . '</span>';
     if ($variables['view_mode'] == 'full') {
+      $variables['allow_api_testing'] = variable_get('ibm_apim_enable_api_test', 1);
       $plans = _api_get_plans_for_api($variables['api_apiid'][0]['value'], $variables['api_version'][0]['value']);
       $variables['plans'] = $plans;
       if (module_exists('forum')) {
@@ -367,6 +375,19 @@ function api_collection_callback($apiid = NULL, $apiversion = NULL) {
     }
     else {
       drupal_set_message(t('The specified API could not be found.'), 'error');
+      // user has asked for a node which no longer exists in apim
+      // remove it from our database too
+      // there is a chance that this is simply due to no longer have access to it
+      // in which case it will likely get recreated by someone accessing the portal who does have access
+      // best we can do until webhooks come along
+      // TODO remove once webhooks API available
+      $query = new EntityFieldQuery();
+      $query->entityCondition('entity_type', 'node')->entityCondition('bundle', 'api')->fieldCondition('api_apiid', 'value', $apiid)->fieldCondition('api_version', 'value', $apiversion);
+      $results = $query->execute();
+      if (isset($results['node'])) {
+        $keys = array_keys($results['node']);
+        node_delete($keys[0]);
+      }
     }
   }
   return $build;
@@ -435,8 +456,18 @@ function _api_createNewAPINode($api) {
   $node->api_updated[$node->language][] = array(
     'value' => $api['updatedAt'],
     'format' => 'plain_text');
+  $node->api_ibmconfiguration[$node->language][] = array(
+    'value' => serialize($api['x-ibm-configuration']),
+    'format' => 'plain_text');
   $node = node_submit($node); // Prepare node for saving
   node_save($node);
+
+  $phase_tagging = variable_get('ibm_apim_autotag_with_phase', 1);
+  if ($phase_tagging == 1) {
+    if (isset($api['x-ibm-configuration']['phase'])) {
+      _api_phase_tag($node, $api['x-ibm-configuration']['phase']);
+    }
+  }
 
   $autocreate_forum = variable_get('ibm_apim_autocreate_apiforum', 1);
   if ($autocreate_forum == 1) {
@@ -452,27 +483,94 @@ function _api_createNewAPINode($api) {
 function _api_updateExistingAPINode($node, $api) {
   $hostvariable = variable_get('ibm_apim_host');
   $apim_session = &_ibm_apim_get_apim_session();
-  $node->title = $api['name'];
-  $node->api_apimhostname[$node->language][0]['value'] = $hostvariable;
-  $node->api_providerid[$node->language][0]['value'] = $apim_session['org'];
-  $node->api_environmentid[$node->language][0]['value'] = $apim_session['env'];
-  $node->api_apiid[$node->language][0]['value'] = $api['id'];
-  $node->api_version[$node->language][0]['value'] = $api['version'];
-  // ensure description is at least set to empty string
-  if (!isset($api['description']) || empty($api['description'])) {
-    $api['description'] = '';
+  if (isset($api['updatedAt']) && $api['updatedAt'] != $node->api_updated[$node->language][0]['value']) {
+    $node->title = $api['name'];
+    $node->api_apimhostname[$node->language][0]['value'] = $hostvariable;
+    $node->api_providerid[$node->language][0]['value'] = $apim_session['org'];
+    $node->api_environmentid[$node->language][0]['value'] = $apim_session['env'];
+    $node->api_apiid[$node->language][0]['value'] = $api['id'];
+    $node->api_version[$node->language][0]['value'] = $api['version'];
+    // ensure description is at least set to empty string
+    if (!isset($api['description']) || empty($api['description'])) {
+      $api['description'] = '';
+    }
+    $node->api_description[$node->language][0]['value'] = $api['description'];
+    $node->api_context[$node->language][0]['value'] = $api['context'];
+    $node->api_protocol[$node->language][0]['value'] = $api['protocol'];
+    $node->api_authorization[$node->language][0]['value'] = $api['authorization'];
+    $node->api_authentication[$node->language][0]['value'] = $api['authentication'];
+    $node->api_authorizationTokenURL[$node->language][0]['value'] = $api['authorizationTokenURL'];
+    $node->api_authorizationurl[$node->language][0]['value'] = $api['authorizationURL'];
+    $node->api_oauthconfig[$node->language][0]['value'] = serialize($api['oauthConfig']);
+    $node->api_url[$node->language][0]['value'] = $api['url'];
+    $node->api_updated[$node->language][0]['value'] = $api['updatedAt'];
+    $node->api_ibmconfiguration[$node->language][0]['value'] = serialize($api['x-ibm-configuration']);
+    node_save($node);
+    $phase_tagging = variable_get('ibm_apim_autotag_with_phase', 1);
+    if ($phase_tagging == 1) {
+      if (isset($api['x-ibm-configuration']['phase'])) {
+        _api_phase_tag($node, $api['x-ibm-configuration']['phase']);
+      }
+    }
   }
-  $node->api_description[$node->language][0]['value'] = $api['description'];
-  $node->api_context[$node->language][0]['value'] = $api['context'];
-  $node->api_protocol[$node->language][0]['value'] = $api['protocol'];
-  $node->api_authorization[$node->language][0]['value'] = $api['authorization'];
-  $node->api_authentication[$node->language][0]['value'] = $api['authentication'];
-  $node->api_authorizationTokenURL[$node->language][0]['value'] = $api['authorizationTokenURL'];
-  $node->api_authorizationurl[$node->language][0]['value'] = $api['authorizationURL'];
-  $node->api_oauthconfig[$node->language][0]['value'] = serialize($api['oauthConfig']);
-  $node->api_url[$node->language][0]['value'] = $api['url'];
-  $node->api_updated[$node->language][0]['value'] = $api['updatedAt'];
-  node_save($node);
+}
+
+/*
+ * Tag the API with appropriate tag for phase
+ */
+function _api_phase_tag($node, $origphase) {
+  if (isset($node) && isset($origphase)) {
+    $phase = ucfirst($origphase);
+    $vocabulary = 'tags';
+    $phase_parentname = 'Phase';
+    $vobj = taxonomy_vocabulary_machine_name_load($vocabulary);
+    $phase_parenttag = taxonomy_get_term_by_name($phase_parentname, $vocabulary);
+    // get the 'Phase' tag container tid if exists, if not create it.
+    if (!empty($phase_parenttag)) {
+      $phase_parentterms = array_values($phase_parenttag);
+      $phaseparenttid = $phase_parentterms[0]->tid;
+    }
+    else {
+      $phaseparentterm = new stdClass();
+      $phaseparentterm->name = $phase_parentname;
+      $phaseparentterm->vid = $vobj->vid;
+      $phaseparentterm->parent = 0;
+      taxonomy_term_save($phaseparentterm);
+      $phaseparenttid = $phaseparentterm->tid;
+    }
+    // create tag for this phase if it doesnt already exist
+    $phase_tag = taxonomy_get_term_by_name($phase, $vocabulary);
+    if (!empty($phase_tag)) {
+      $phase_terms = array_values($phase_tag);
+      $phasetid = $phase_terms[0]->tid;
+    }
+    else {
+      $phaseterm = new stdClass();
+      $phaseterm->name = $phase;
+      $phaseterm->vid = $vobj->vid;
+      $phaseterm->parent = $phaseparenttid;
+      taxonomy_term_save($phaseterm);
+      $phasetid = $phaseterm->tid;
+    }
+    // remove any existing other phase tags and then add the new one
+    // have to ensure we preserve other tags the user might have added
+    $newtags = array();
+    if (isset($node->field_apitags[$node->language])) {
+      foreach ($node->field_apitags[$node->language] as $existingtagarray) {
+        $existingtag = $taxonomy_term_load($existingtagarray->tid);
+        if (!isset($existingtag->parent) || $existingtag->parent != $phaseparenttid) {
+          $newtags[] = array('tid' => $existingtag->tid);
+        }
+      }
+    }
+
+    // add the tag to the node
+    if (isset($phasetid)) {
+      $newtags[] = array('tid' => $phasetid);
+      $node->field_apitags[$node->language] = $newtags;
+      node_save($node);
+    }
+  }
 }
 
 /*
@@ -826,10 +924,7 @@ function _api_get_plans_for_api($apiid, $apiversion) {
  */
 function _api_swagger_proxy_callback($apiid, $apiversion) {
   if (isset($apiid) && isset($apiversion)) {
-    $swaggerjson = ibm_apim_get_api_swagger($apiid, $apiversion);
-    if (isset($swaggerjson)) {
-      return drupal_json_output($swaggerjson);
-    }
+    ibm_apim_get_api_swagger($apiid, $apiversion);
   }
 }
 
@@ -838,7 +933,7 @@ function _api_swagger_proxy_callback($apiid, $apiversion) {
  */
 function _api_document_proxy_callback($encodedurl) {
   $url = base64_decode($encodedurl);
-  _api_download_proxy($url);
+  _ibm_apim_download_proxy($url);
 }
 
 /**
@@ -854,55 +949,7 @@ function _api_wsdl_proxy_callback($apiid, $apiversion) {
     return;
   }
   $url = $host_pieces['url'] . '/v1/portal/apis/' . $apiid . '/' . $apiversion . '/wsdl';
-  _api_download_proxy($url);
-}
-
-/**
- * Generic API download proxy, used for documents and wsdls
- */
-function _api_download_proxy($url) {
-  // Make sure we have the session variables set
-  _ibm_apim_check_and_get_config();
-  $apim_session = &_ibm_apim_get_apim_session();
-  if (empty($url)) {
-    drupal_set_message(t('URL not specified. Specify a valid URL and try again.'), 'error');
-    return;
-  }
-
-  $ch = curl_init($url);
-  if (isset($apim_session['auth'])) {
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-      "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env'],
-      "Authorization: Basic " . $apim_session['auth']));
-  }
-  else {
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-      "X-IBM-APIManagement-Context: " . $apim_session['org'] . '.' . $apim_session['env']));
-  }
-
-  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-  curl_setopt($ch, CURLOPT_HEADER, true);
-  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-  // Enable auto-accept of self-signed certificates if this
-  // has been set in the module config by an admin.
-  _ibm_apim_curl_set_accept_ssl($ch);
-
-  list($header, $contents) = preg_split('/([\r\n][\r\n])\\1/', curl_exec($ch), 2);
-  $status = curl_getinfo($ch);
-  curl_close($ch);
-
-  // Split header text into an array.
-  $header_text = preg_split('/[\r\n]+/', $header);
-
-  // Propagate headers to response.
-  foreach ($header_text as $header) {
-    if (preg_match('/^(?:Content-Disposition|Content-Length|Content-Type|Content-Language|Set-Cookie):/i', $header)) {
-      header($header);
-    }
-  }
-
-  print $contents;
+  _ibm_apim_download_proxy($url);
 }
 
 function _api_path_param_to_arg($arg) {

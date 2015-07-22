@@ -23,6 +23,9 @@ thead th:last-child,
 tr td:last-child {
   border-right: solid 1px #e4e2e0;
 }
+.all-tags tr td:last-child {
+  border-right: 0;
+}
 table .form-item,
 table p {
   margin: 0;

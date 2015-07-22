@@ -85,7 +85,7 @@ drupal_add_js('jQuery(document).ready(function(){
 		   if ((isset($isdev) && $isdev == TRUE) && (!isset($details['subscribable']) || $details['subscribable'] != false)) {
 		      print '<button type="button" id="planSignupButton"
 		         data-href="?q=plan/subscribe/' . $plan_apiid[0]['safe_value'] . '/' . $plan_version[0]['safe_value']. '"
-		         data-title="Select an application" data-name="content"
+		         data-title="'.t('Select an application').'" data-name="content"
 		         data-rel="width:500;resizable:false;position:[center,60]"
 		         class="simple-dialog my-link-class">'. t('Subscribe').'</button>';
 		   }

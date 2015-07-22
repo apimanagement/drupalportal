@@ -26,30 +26,196 @@ drupal_add_js('jQuery(document).ready(function(){
     });
   });', 'inline');
 
-// Add Standard .css includes from Swagger-UI Distribution
-drupal_add_css(drupal_get_path('module', 'ibm_apim') . '/swaggerui/css/screen.css');
+// Add Standard .css includes from Swagger-Editor Distribution
+drupal_add_css(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/styles/main.css');
+drupal_add_css(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/styles/branding.css');
 
-// Add Standard .js includes from Swagger-UI Distribution
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggerui/lib/jquery.slideto.min.js', array(
-  'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggerui/lib/jquery.wiggle.min.js', array(
-  'weight' => 3));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggerui/lib/jquery.ba-bbq.min.js', array(
-  'weight' => 4));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggerui/lib/handlebars-2.0.0.js', array(
-  'weight' => 5));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggerui/lib/underscore-min.js', array(
-  'weight' => 6));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggerui/lib/backbone-min.js', array(
-  'weight' => 7));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggerui/swagger-ui.js', array(
-  'weight' => 10));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggerui/lib/highlight.7.3.pack.js', array(
-  'weight' => 11));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggerui/lib/marked.js', array(
+// pull in angularJS
+if (module_exists('libraries') && libraries_get_path('angular')) {
+  $angularpath = libraries_get_path('angular');
+  drupal_add_js($angularpath . '/angular.js', array('weight' => 1));
+  drupal_add_js($angularpath . '/angular-cookies.js', array('weight' => 2));
+  drupal_add_js($angularpath . '/angular-resource.js', array('weight' => 2));
+  drupal_add_js($angularpath . '/angular-sanitize.js', array('weight' => 2));
+}
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/ace-builds/src-noconflict/ace.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/ace-builds/src-noconflict/mode-yaml.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/ace-builds/src-noconflict/ext-language_tools.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/yaml-js/yaml.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/js-yaml/dist/js-yaml.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/bootstrap/dist/js/bootstrap.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/lodash/lodash.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/es5-shim/es5-shim.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/json3/lib/json3.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/angular-bootstrap/ui-bootstrap-tpls.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/marked/lib/marked.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/angular-marked/angular-marked.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/ngstorage/ngStorage.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/angular-ui-ace/ui-ace.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/angular-ui-router/release/angular-ui-router.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/json-formatter/dist/json-formatter.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/angular-ui-layout/ui-layout.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/json-schema-view/dist/json-schema-view.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/objectpath/lib/ObjectPath.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/swagger-converter/browser.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/ng-file-upload/ng-file-upload.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/apply-diff/index.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/async/lib/async.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/spark-md5/spark-md5.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/traverse/traverse.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/lodash-compat/lodash.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/path-loader/browser/path-loader.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/z-schema/dist/ZSchema-browser.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/visionmedia-debug/dist/debug.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/json-refs/browser/json-refs.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/swagger-tools/browser/swagger-tools.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/angular-schema-form/dist/schema-form.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/angular-schema-form/dist/bootstrap-decorator.min.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/json-editor/dist/jsoneditor.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/schema-form/dist/schema-form.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/harmony-collections/harmony-collections.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/raf/index.js', array(
+'weight' => 2));
+
+// Add standard .js files from Swagger Editor
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/app.js', array(
+'weight' => 3));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/bootstrap.js', array(
+'weight' => 3));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/ace/themes/theme-atom_dark.js', array(
+'weight' => 4));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/ace/snippets/swagger.snippet.js', array(
+'weight' => 5));
+//drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/config/app.config.js', array('weight' => 7));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/controllers/main.js', array(
+'weight' => 8));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/controllers/header.js', array(
+'weight' => 9));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/controllers/import-file.js', array(
+'weight' => 10));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/controllers/editor.js', array(
+'weight' => 11));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/controllers/preview.js', array(
 'weight' => 12));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggerui/lib/swagger-oauth.js', array(
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/controllers/general-modal.js', array(
 'weight' => 13));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/controllers/importurl.js', array(
+'weight' => 14));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/controllers/paste-json.js', array(
+'weight' => 15));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/controllers/errorpresenter.js', array(
+'weight' => 16));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/controllers/openexamples.js', array(
+'weight' => 17));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/controllers/preferences.js', array(
+'weight' => 17));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/controllers/modal.js', array(
+'weight' => 18));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/controllers/security.js', array(
+'weight' => 19));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/directives/on-file-change.js', array(
+'weight' => 20));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/directives/path.js', array(
+'weight' => 21));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/directives/operation.js', array(
+'weight' => 22));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/directives/schemamodel.js', array(
+'weight' => 23));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/directives/stop-event.js', array(
+'weight' => 24));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/directives/auto-focus.js', array(
+'weight' => 24));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/directives/scroll-into-view-when.js', array(
+'weight' => 25));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/directives/collapsewhen.js', array(
+'weight' => 26));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/directives/track-event.js', array(
+'weight' => 27));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/enums/defaults.js', array(
+'weight' => 28));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/enums/strings.js', array(
+'weight' => 29));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/filters/formdata.js', array(
+'weight' => 30));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/directives/tryoperation.js', array(
+'weight' => 31));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/sorter.js', array(
+'weight' => 32));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/tag-manager.js', array(
+'weight' => 33));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/autocomplete.js', array(
+'weight' => 34));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/fileloader.js', array(
+'weight' => 35));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/editor.js', array(
+'weight' => 36));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/builder.js', array(
+'weight' => 37));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/ast-manager.js', array(
+'weight' => 38));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/backend-health-check.js', array(
+'weight' => 39));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/codegen.js', array(
+'weight' => 40));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/focused-path.js', array(
+'weight' => 41));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/storage.js', array(
+'weight' => 42));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/local-storage.js', array(
+'weight' => 43));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/backend.js', array(
+'weight' => 44));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/keyword-map.js', array(
+'weight' => 45));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/preferences.js', array(
+'weight' => 46));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/auth-manager.js', array(
+'weight' => 47));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/analytics.js', array(
+'weight' => 48));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/external-hooks.js', array(
+'weight' => 48));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/router.js', array(
+'weight' => 49));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/plugins/jquery.scroll-into-view.js', array(
+'weight' => 50));
+
 $apim_session = &_ibm_apim_get_apim_session();
 $protocol_lower = strtolower($api_protocol[0]['value']);
 if (isset($protocol_lower) && $protocol_lower == 'soap') {
@@ -60,17 +226,24 @@ if (isset($protocol_lower) && $protocol_lower == 'soap') {
 $ibm_apim_js_settings = array(
   'url' => $GLOBALS['base_url'] . '/?q=ibm_apim/swaggerjson/' . $content['api_apiid'][0]['#markup'] . '/' . $content['api_version'][0]['#markup'] . '/' . $protocol,
   'authtype' => $api_authentication[0]['value'],
-  'context_header' => $apim_session['org'] . '.' . $apim_session['env']);
+  'context_header' => $apim_session['org'] . '.' . $apim_session['env'],
+  'apps' => $apps);
 if (isset($apim_session['auth'])) {
   $ibm_apim_js_settings['basic_auth'] = 'Basic ' . $apim_session['auth'];
 }
+if (isset($variables['oauthconfig'])) {
+  $variables['oauthconfig']['defaultscope'] = check_plain($content['api_context'][0]['#markup']);
+  $ibm_apim_js_settings['oauthconfig'] = $variables['oauthconfig'];
+}
+$ibm_apim_show_cors_warnings = variable_get('ibm_apim_show_cors_warnings', 1);
+$ibm_apim_js_settings['show_cors_warnings'] = $ibm_apim_show_cors_warnings;
 
 drupal_add_js(array('ibm_apim' => $ibm_apim_js_settings), 'setting');
 
 drupal_add_css(drupal_get_path('module', 'ibm_apim') . '/css/ie-9.css', array('weight' => 115, 'browsers' => array('IE' => 'lte IE 9', '!IE' => FALSE)));
 
 ?>
-<div class="breadcrumb"><?php print l("< " .t('Back to APIs'), 'api');?></div>
+<div class="pagebreadcrumb"><?php print l("< " .t('Back to APIs'), 'api');?></div>
 <article id="node-<?php print $node->nid; ?>"
 	class="<?php print $classes; ?> clearfix" <?php print $attributes; ?>>
 
@@ -114,6 +287,7 @@ drupal_add_css(drupal_get_path('module', 'ibm_apim') . '/css/ie-9.css', array('w
 	<div class="planSelector">
     <?php
   if (module_exists('plan') && module_exists('application')) {
+    // Use this plan selector button / dropdown
     if (user_is_logged_in()) {
       $isdev = ibm_apim_check_is_developer();
       if (isset($isdev) && $isdev == TRUE) {
@@ -170,7 +344,7 @@ drupal_add_css(drupal_get_path('module', 'ibm_apim') . '/css/ie-9.css', array('w
 		</div>
 
   <?php
-  // API Documentation
+  // API Documentation attachments
   $docs = api_documents_contents($content['api_apiid'][0]['#markup'], $content['api_version'][0]['#markup']);
   if (isset($docs) && count($docs) > 0) {
     print '<div class="section" class="clearBoth">';
@@ -202,6 +376,7 @@ drupal_add_css(drupal_get_path('module', 'ibm_apim') . '/css/ie-9.css', array('w
     print '</div></div>';
   }
 
+  // WSDL/Swagger download link
   if ($protocol == "soap") {
     print '<div class="section">';
     print '<label class="sectionHeader">'. t('WSDL').'</label>';
@@ -219,23 +394,21 @@ drupal_add_css(drupal_get_path('module', 'ibm_apim') . '/css/ie-9.css', array('w
   }
   ?>
 
-
-    <div class="section">
-			<label class="sectionHeader"><?php print t('Identify your application using')?></label>
+<?php if ($protocol == "soap") {
+   // only need old authentication information for SOAP APIs, its included in the swagger editor content for REST
+   print '<div class="section">
+			<label class="sectionHeader">'. t('Identify your application using').'</label>
 			<span class="highlightText"
-				id="api_identify"><?php print ibm_apim_get_ident_label($api_authorization[0]['value']) ?></span>
+				id="api_identify">'. ibm_apim_get_ident_label($api_authorization[0]['value']) .'</span>
 			<span class="explanationText">&nbsp;-&nbsp;&nbsp;&nbsp;</span><span
-				class="explanationText">
-  <?php print ibm_apim_get_ident_explanation($api_authorization[0]['value']); ?>
-  </span>
+				class="explanationText">'. ibm_apim_get_ident_explanation($api_authorization[0]['value']) .'</span>
 		</div>
 
 		<div class="section">
-			<label class="sectionHeader"><?php print t('Authenticate using')?></label>
-			<span class="highlightText" id="api_auth"><?php print ibm_apim_get_auth_label($api_authentication[0]['value']) ?></span>
+			<label class="sectionHeader">'. t('Authenticate using').'</label>
+			<span class="highlightText" id="api_auth">'. ibm_apim_get_auth_label($api_authentication[0]['value']) .'</span>
 			<span class="explanationText">&nbsp;-&nbsp;&nbsp;&nbsp;</span><span
-				class="explanationText">
-  <?php
+				class="explanationText">';
 
   switch ($api_authentication[0]['value']) {
     case 'basic' :
@@ -276,12 +449,25 @@ drupal_add_css(drupal_get_path('module', 'ibm_apim') . '/css/ie-9.css', array('w
       print '</div>';
       break;
   }
-  ?>
 
+  print "</div>";
+}
 
-		</div></div>
- </div>
- <?php
+ print "</div></div>";
+
+ // API Operations from Swagger Editor
+$swagger_classes = $protocol;
+if ($allow_api_testing == 0) {
+  $swagger_classes .= ' disableapitest';
+}
+print "<div class='swagger-section " . $swagger_classes . "'>";
+
+       print"<div id='message-bar' class='swagger-ui-wrap' style='display: none;'>&nbsp;</div>
+			<div id='swagger-ui-container' class='swagger-ui-wrap'></div>
+            <div class='swagger-ops-title apimTitle'>".t('API Operations')."</div>
+			<div class='total-wrapper' ui-view></div>
+		</div>";
+ // Plan selection
  if (module_exists('plan')) {
 	print "<div class='apiPlanSummary clearBoth portal section apimMainContent'>";
 	print "<span class='apimTitle'>". t('Subscribe to Plan') . "</span>";
@@ -329,89 +515,8 @@ drupal_add_css(drupal_get_path('module', 'ibm_apim') . '/css/ie-9.css', array('w
 
   }
 
-  drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggerui/lib/call_swagger.js', array(
-    'weight' => 20));
+	print	"<div ". $content_attributes ." >";
 
-if ($protocol == "soap") {
-  print "<div class='swagger-section soap'>";
-} else {
-  print "<div class='swagger-section rest'>";
-}
-?>
-			<div id="header">
-				<div class="swagger-ui-wrap">
-					<form id="api_selector">
-     <?php
-     if($api_authentication[0]['value'] == 'basic' || $api_authentication[0]['value'] == 'oauth') {
-       print '<div class="basicauthwrapper"><div class="access"><span class="api-ic ic-off" title="'.t('Click to authenticate').'"></span></div>';
-       print '<div class="auth"><span class="api-ic ic-error"></span><div id="api_information_panel" style="top: 526px; left: 776px; display: none;"></div></div></div>';
-     }
-     switch ($api_authorization[0]['value']) {
-       case 'clientID' :
-         if (!empty($apps)) {
-           print '<div class="input clientIDSelector"><label for="input_clientKey">'.t("Client ID:").'</label> <select id="input_clientKey">';
-           print '<option selected disabled>'. t('Select an application').'</option>';
-           foreach ($apps as $app) {
-             foreach ($app['appCredentials'] as $cred) {
-               if (isset($cred['description']) && $cred['description'] != null) {
-                 $origstring = check_plain($cred['description']);
-                 $truncated = (strlen($origstring) > 13) ? substr($origstring,0,10).'...' : $origstring;
-                 $descr = " - " . $truncated;
-               } else {
-                 $descr = '';
-               }
-             print '<option value="' . check_plain($cred['clientID']) . '">'. check_plain($app['name']) . $descr . '</option>';
-             }
-           }
-           print '</select></div>';
-         } else {
-           $ibm_apim_show_register_app = variable_get('ibm_apim_show_register_app', 1);
-           if ($ibm_apim_show_register_app == 1) {
-             print '<div class="registerAppLink">' . l(t('Register a new application'), 'application/new') . '</div>';
-           }
-           print '<div class="input clientIDSelector"><label for="input_clientKey">'.t("Client ID:").'</label> <select disabled id="input_clientKey" title="' . t("Register an App to specify a Client ID") . '"><option selected disabled>'. t('Register an App to specify a Client ID').'</option></select></div>';
-         }
-         break;
-       case 'clientIDAndSecret' :
-         if (!empty($apps)) {
-           print '<div class="input clientIDSelector"><label for="input_clientKey">'.t("Client ID:").'</label> <select id="input_clientKey">';
-           print '<option selected disabled>'. t('Select an application').'</option>';
-           foreach ($apps as $app) {
-             print '<option value="' . check_plain($app['clientID']) . '">'. check_plain($app['name']).'</option>';
-           }
-           print '</select></div>';
-           print '<div class="input clientSecretSelector"><label for="input_secretKey">'. t("Client Secret:").'</label>
-                <input type="text" name="secretKey" id="input_secretKey" placeholder="clientSecret"/></div>';
-         } else {
-           $ibm_apim_show_register_app = variable_get('ibm_apim_show_register_app', 1);
-           if ($ibm_apim_show_register_app == 1) {
-             print '<div class="registerAppLink">' . l(t('Register a new application'), 'application/new') . '</div>';
-           }
-           print '<div class="input clientIDSelector"><label for="input_clientKey">'.t("Client ID:").'</label> <select disabled id="input_clientKey" title="' . t("Register an App to specify a Client ID") . '"><option selected disabled>'. t('Register an App to specify a Client ID').'</option></select></div>';
-           print '<div class="input clientSecretSelector"><label for="input_secretKey">'. t("Client Secret:").'</label>
-                <input type="text" disabled name="secretKey" id="input_secretKey" placeholder="Register an app to specify a clientSecret"/></div>';
-         }
-
-         break;
-       case 'none' :
-         break;
-     }
-
-
-     ?>
-
-					</form>
-					<div class="swaggerHeader">
-						<span class="swaggerTitle"><?php print t("API Resources"); ?></span>
-    <?php print t("Client Identification"); ?></div>
-				</div>
-			</div>
-			<div id="message-bar" class="swagger-ui-wrap" style="display: none;">&nbsp;</div>
-			<div id="swagger-ui-container" class="swagger-ui-wrap"></div>
-		</div>
-
-		<div <?php print $content_attributes; ?>>
-  <?php
   hide($content['comments']);
   hide($content['links']);
   // print render($content);

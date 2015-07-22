@@ -1,0 +1,25 @@
+{
+  "name": "yaml-js",
+  "version": "0.1.1",
+  "description": "Pure Javascript YAML loader and dumper, ported from PyYAML",
+  "main": "yaml.js",
+  "ignore": [
+    "**/*",
+    "!yaml.*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/connec/yaml-js.git"
+  },
+  "license": "WTFPL",
+  "homepage": "https://github.com/connec/yaml-js",
+  "_release": "0.1.1",
+  "_resolution": {
+    "type": "version",
+    "tag": "0.1.1",
+    "commit": "3a64b33e9a8c2da861cd90956e4e15341f28e2e4"
+  },
+  "_source": "git://github.com/connec/yaml-js.git",
+  "_target": "0.1.1",
+  "_originalSource": "yaml-js"
+}

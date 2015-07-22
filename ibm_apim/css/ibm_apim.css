@@ -122,8 +122,14 @@ h3.apimSummaryTitle {
   background-repeat: no-repeat;
   float: left;
   margin-right: 10px;
-  width: 100px;
-  height: 100px;
+  min-width: 100px;
+  min-height: 100px;
+}
+.apimIcon .field {
+  padding: 0;
+}
+.apimIcon .field .field-type-image figure {
+  padding: 0;
 }
 .apimTeaser .apimIcon {
   width: 70px;
@@ -143,7 +149,7 @@ h3.apimSummaryTitle {
 .apimAPIImage {
   display: inline-block;
   margin-right: 20px;
-  width: 120px;
+  width: 140px;
   vertical-align: top;
 }
 .apimTopSection .apimAPIImage {
@@ -278,6 +284,34 @@ div.credentialTitle .addCredentials {
 }
 
 /* Override some Swagger UI styles */
+.portal .swagger-section .swagger-ui-wrap {
+  line-height: 1;
+  margin-left: auto;
+  margin-right: auto;
+}
+.portal .swagger-section .tags {
+  display: block;
+  text-align: right;
+  border: 0;
+}
+.portal .swagger-section table,
+.portal .swagger-section tbody {
+  border: 0;
+  border-style: none;
+}
+.portal .swagger-section #header form#api_selector {
+  display: block;
+  clear: none;
+  float: right;
+}
+
+.portal .swagger-section #header form#api_selector .input {
+  display: block;
+  clear: none;
+  float: left;
+  margin: 0 10px 0 0;
+}
+
 .portal .swagger-section textarea {
   font-family: monospace;
 }
@@ -451,10 +485,9 @@ div.credentialTitle .addCredentials {
 }
 
 .portal .swagger-section #header {
-  height: 2.5em;
   border-left: 0;
   border-right: 0;
-  border-bottom: 1px solid;
+  border-bottom: 0;
   padding: 30px 0;  
 }
 .portal .swagger-section #header h2{
@@ -491,8 +524,11 @@ div.credentialTitle .addCredentials {
   display: inline;
 }
 
-/* disable the try it now buttons for soap */
-.swagger-section.soap .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation div.content div.sandbox_header {
+/* disable the try it now buttons for soap and when disableapitest set */
+.swagger-section.soap .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation div.content div.sandbox_header,
+.swagger-section.soap section.try-operation,
+.swagger-section.disableapitest .swagger-ui-wrap ul#resources li.resource ul.endpoints li.endpoint ul.operations li.operation div.content div.sandbox_header,
+.swagger-section.disableapitest section.try-operation {
   display: none;
 }
 
@@ -607,7 +643,7 @@ div.credentialTitle .addCredentials {
   vertical-align: top;
 }
 .portal .portalApi .resourcePathShort {
-  width: 300px;
+  width: 250px;
   margin-right: 10px;
   line-height: 21px;
 }
@@ -644,8 +680,23 @@ div.credentialTitle .addCredentials {
   line-height: 21px;
 }
 .portal .portalApi .resourceRateLimit {
-  width: 150px;
+  width: 130px;
   line-height: 21px;
+}
+.portal .portalApi .resourceAnalytics {
+  width: 80px;
+  line-height: 21px;
+}
+.portal .portalApi .resourceAnalytics .analyticsIcon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url(../images/charts_16_over.png);
+}
+.portal .portalApi .resourceAnalytics:hover .analyticsIcon {
+  background-image: url(../images/charts_16_on.png);
 }
 .node-plan .portalApi .resourceRateLimit {
   width: 180px;
@@ -985,8 +1036,12 @@ div.appSecret {
   margin-bottom: 10px;
 }
 
+body.page-myorg .columns-inner #breadcrumb {
+  display: none;
+}
+
 .myorgAddUserLink {
-  float:right;
+  float: right;
 }
 .myorgEditLink {
   float: left;
@@ -1011,6 +1066,7 @@ span.dropit-icon.ui-icon-triangle-1-s {
 }
 .apimTitleContainer .apimTitle span,
 .apimMainContent span.apimTitle,
+.swagger-ops-title.apimTitle,
 .planName.planName,
 .includedAPIsTitle,
 .swaggerHeader span.swaggerTitle  {
@@ -1066,7 +1122,7 @@ div.credentialInfo {
   padding-right: 20px;
 }
 .portalApi.animateMaxHeight {
-  max-height: 500px; 
+  max-height: 800px; 
   overflow-y: auto; 
   overflow-x: hidden; 
   border-top-width: 1px; 
@@ -1139,7 +1195,7 @@ div.password-indicator div[style="width: 10%;"] {
   background: none;
 }
 .portal .apiPlanSummary.section.apimMainContent {
-  padding: 30px 0;
+  padding: 20px 0;
 }
 .apiPlanSummary .resourceInfoLine {
   display: inline-block;
@@ -1200,12 +1256,12 @@ span.flag-wrapper.flag-bookmarks {
   display: inline;
 }
 
-.fade {
+.apimFade {
   position: relative;
   overflow: hidden;
   height: 3.6em; /* exactly three lines */
 }
-.fade:after {
+.apimFade:after {
   content: "";
   text-align: right;
   position: absolute;
@@ -1214,4 +1270,98 @@ span.flag-wrapper.flag-bookmarks {
   width: 15%;
   height: 1.2em;
   background: linear-gradient(to right, rgba(255, 255, 255, 0), #FFF 70%);
+}
+
+/* d3 */
+.linepath {
+    fill:none;
+    stroke:white;
+    stroke-width:2px;
+}
+
+.axis path, .axis line {
+    fill: none;
+    stroke: #777;
+    shape-rendering: crispEdges;
+}
+
+.tick {
+    stroke-dasharray: 1, 2;
+}
+
+.bar {
+    fill: FireBrick;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+
+.path_avg {
+    stroke: steelblue;
+}
+.path_max {
+    stroke: red;
+}
+.path_min {
+    stroke: green;
+}
+.path_success {
+    stroke: #2ca02c;
+}
+.path_failure {
+    stroke: #d62728;
+}
+.path_total {
+    stroke: #9467bd;
+}
+.fill_avg {
+    fill: steelblue;
+}
+.fill_max {
+    fill: red;
+}
+.fill_min {
+    fill: green;
+}
+.fill_success {
+    fill: #2ca02c;
+}
+.fill_failure {
+    fill: #d62728;
+}
+.fill_total {
+    fill: #9467bd;
+}
+.circle-outer.path_avg {
+  fill: steelblue;
+  stroke: none;
+}
+.circle-outer.path_max {
+  fill: red;
+  stroke: none;
+}
+.circle-outer.path_min {
+  fill: green;
+  stroke: none;
+}
+.circle-outer.path_success {
+  fill: #2ca02c;
+  stroke: none;
+}
+.circle-outer.path_failure {
+  fill: #d62728;
+  stroke: none;
+}
+.circle-outer.path_total {
+  fill: #9467bd;
+  stroke: none;
 }
