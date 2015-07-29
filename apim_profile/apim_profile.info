@@ -49,6 +49,7 @@ dependencies[] = bean
 dependencies[] = block_class
 dependencies[] = block_class_styles
 dependencies[] = ctools
+dependencies[] = page_manager
 dependencies[] = entity
 dependencies[] = faq
 dependencies[] = fivestar
