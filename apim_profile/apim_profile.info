@@ -100,6 +100,7 @@ dependencies[] = ultimate_cron
 
 ;Enable our modules
 dependencies[] = ibm_apim
+dependencies[] = plan
 dependencies[] = bannerblock
 dependencies[] = forum_approval
 
