@@ -23,13 +23,13 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
   $scope.locationHost = window.location.host;
 
   configureSchemaForm();
-
+  
   // Deeply watch specs for updates to regenerate the from
   $scope.$watch('specs', function () {
     $scope.requestModel = makeRequestModel();
     $scope.requestSchema = makeRequestSchema();
   }, true);
-
+  
   /*
    * configure SchemaForm directive based on request schema
   */
@@ -205,7 +205,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
 
     // if there is security options add the security property
     if (securityOptions.length) {
-      model.security = [securityOptions[0]];
+      model.security = securityOptions;
     }
 
     // Add Content-Type header only if this operation has a body parameter
@@ -230,7 +230,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
         // if default value is provided use it
         if (angular.isDefined(paramSchema.default)) {
           model.parameters[paramSchema.name] = paramSchema.default;
-
+          
         // if there is no default value but there is minimum or maximum use them
         } else if (angular.isDefined(paramSchema.minimum)) {
           model.parameters[paramSchema.name] = paramSchema.minimum;
@@ -336,20 +336,20 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
 
     // operation level securities
     if (Array.isArray($scope.operation.security)) {
-      securityOptions = securityOptions.concat(
-        $scope.operation.security.map(function (security) {
-          return Object.keys(security)[0];
-        })
-      );
+      $scope.operation.security.map(function(security) {
+         Object.keys(security).forEach(function(key){
+           securityOptions = securityOptions.concat(key);
+         });
+      });
     }
 
     // root level securities
     if (Array.isArray($scope.specs.security)) {
-      securityOptions = securityOptions.concat(
-        $scope.specs.security.map(function (security) {
-          return Object.keys(security)[0];
-        })
-      );
+      $scope.specs.security.map(function(security) {
+         Object.keys(security).forEach(function(key){
+           securityOptions = securityOptions.concat(key);
+         });
+      });
     }
 
     return _.unique(securityOptions).filter(function (security) {
@@ -515,7 +515,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
 
     // generate the query string portion of the URL based on query parameters
     queryParamsStr = window.decodeURIComponent(
-      $.param(queryParams, isCollectionQueryParam));
+      jQuery.param(queryParams, isCollectionQueryParam));
 
     // fill in path parameter values inside the path
     pathStr = $scope.path.pathName.replace(pathParamRegex,
@@ -728,7 +728,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
 
     // if encoding is x-www-form-urlencoded use jQuery.param method to stringify
     } else if (/urlencode/.test(contentType)) {
-      return $.param(bodyModel);
+      return jQuery.param(bodyModel);
     }
 
     return null;
@@ -776,7 +776,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
     var omitHeaders = ['Host', 'Accept-Encoding', 'Connection', 'Origin',
       'Referer', 'User-Agent', 'Cache-Control', 'Content-Length'];
 
-    $.ajax({
+    jQuery.ajax({
       url: $scope.generateUrl(),
       type: $scope.operation.operationName,
       headers: _.omit($scope.getHeaders(), omitHeaders),
@@ -789,6 +789,9 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
       $scope.textStatus = textStatus;
       $scope.error = errorThrown;
       $scope.xhr = jqXHR;
+      if (jqXHR.status == 0) {
+        $scope.error = "No response. This is a cross-origin call. Make sure the server accepts requests from this portal. Or if using self-signed SSL certificates then click on the URL above to accept the certificate before trying again."
+      }
 
       $scope.$digest();
     })
@@ -855,8 +858,12 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
   */
   $scope.isType = function (headers, type) {
     var regex = new RegExp(type);
-
-    return headers['Content-Type'] && regex.test(headers['Content-Type']);
+    /* APIM to handle headers not being set */
+    if (headers && headers['Content-Type']) {
+      return headers['Content-Type'] && regex.test(headers['Content-Type']);
+    } else {
+      return false;
+    }
   };
 
   /*
@@ -865,6 +872,11 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
    * @returns {boolean}
   */
   $scope.isCrossOrigin = function () {
-    return $scope.specs.host && $scope.specs.host !== $scope.locationHost;
+    Drupal.settings.ibm_apim.show_cors_warnings;
+    if (Drupal.settings.ibm_apim.show_cors_warnings && Drupal.settings.ibm_apim.show_cors_warnings == 1 && $scope.specs['x-ibm-configuration'] && $scope.specs['x-ibm-configuration'].enforced == false) {
+      return $scope.specs.host;
+    } else {
+      return false;
+    }
   };
 });

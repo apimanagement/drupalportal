@@ -1,7 +1,6 @@
 <li class='{{operation.operationName | lowercase}} operation' scroll-into-view-when="isInFocus(['paths', path.pathName, operation.operationName])">
   <header ng-click="toggle(['paths', path.pathName, operation.operationName])">
-    <a class="focus-editor" ng-click="focusEdit($event, ['paths', path.pathName, operation.operationName])"
-      tooltip-placement="left" tooltip="Jump to YAML" tooltip-trigger="mouseenter"></a>
+    <a class="focus-editor" ng-click="focusEdit($event, ['paths', path.pathName, operation.operationName])"></a>
     <div class='http-method' class="toggleOperation">{{operation.operationName | uppercase}} {{path.pathName}}</div>
     <div class="deprecated" ng-if="operation.deprecated">Deprecated</div>
   </header>
@@ -35,9 +34,7 @@
           <tbody>
             <tr ng-repeat="parameter in getParameters() track by $index">
               <td >
-                <a ng-click="focusEdit($event, ['paths', path.pathName, operation.operationName, 'parameters', $index], -1)" tooltip-placement="top" tooltip="Jump to YAML" tooltip-trigger="mouseenter">
-                  <span class="mono">{{parameter.name}}</span>
-                </a>
+                <span class="mono">{{parameter.name}}</span>
               </td>
               <td>{{parameter.in}}</td>
               <td marked="parameter.description"></td>
@@ -66,9 +63,7 @@
           <tbody>
             <tr ng-repeat="response in operation.responses track by $index">
               <td>
-                <a ng-click="focusEdit($event, ['paths', path.pathName, operation.operationName, 'responses', response.responseCode])" tooltip-placement="top" tooltip="Jump to YAML" tooltip-trigger="mouseenter">
-                  <span class="resp-code {{responseCodeClassFor(response.responseCode)}}">{{response.responseCode}}</span>
-                </a>
+                <span class="resp-code {{responseCodeClassFor(response.responseCode)}}">{{response.responseCode}}</span>
               </td>
               <td marked="response.description"></td>
               <td ng-if="hasAResponseWithHeaders(operation.responses)">
@@ -136,6 +131,6 @@
         ng-click="toggleTry()"
         ng-if="isTryOpen"
       >Close</button>
-      <div ng-include="'templates/try-operation.html'" ng-if="isTryOpen"></div>
+      <div ng-include="'../sites/all/modules/ibm_apim/swaggereditor/app/templates/try-operation.html'" ng-if="isTryOpen"></div>
     </section>
 </li>

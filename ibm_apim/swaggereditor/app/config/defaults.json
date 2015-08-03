@@ -10,8 +10,8 @@
       "id": "UA-51231036-1"
     }
   },
-  "disableCodeGen": false,
-  "examplesFolder": "spec-files/",
+  "disableCodeGen": true,
+  "examplesFolder": "../sites/all/modules/ibm_apim/swaggereditor/app/spec-files/",
   "editorOptions": {
     "theme": "ace/theme/atom_dark"
   },
@@ -32,11 +32,11 @@
   "keyPressDebounceTime": 200,
   "backendEndpoint": "/editor/spec",
   "backendHealthCheckTimeout": 5000,
-  "useYamlBackend": false,
-  "disableFileMenu": false,
+  "useYamlBackend": true,
+  "disableFileMenu": true,
   "headerBranding": false,
-  "disableNewUserIntro": false,
+  "disableNewUserIntro": true,
   "enableTryIt": true,
   "brandingCssClass": "",
-  "importProxyUrl": "https://cors-it.herokuapp.com/?url="
+  "importProxyUrl": ""
 }

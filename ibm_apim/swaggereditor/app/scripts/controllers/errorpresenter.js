@@ -44,6 +44,10 @@ SwaggerEditor.controller('ErrorPresenterCtrl', function ErrorPresenterCtrl(
     if (error.emptyDocsError) {
       return 'Empty Document Error';
     }
+    
+    if (error.loadingWarning) {
+      return 'Loading...';
+    }
 
     return 'Unknown Error';
   };
@@ -56,6 +60,10 @@ SwaggerEditor.controller('ErrorPresenterCtrl', function ErrorPresenterCtrl(
 
     if (error.emptyDocsError) {
       return error.emptyDocsError.message;
+    }
+    
+    if (error.loadingWarning) {
+      return error.loadingWarning;
     }
 
     if (error.yamlError) {

@@ -2,6 +2,14 @@
   <h3 class="modal-title">OAuth 2.0 Authentication</h3>
 </div>
 <div class="modal-body">
+<p>
+  <span ng-if="oauthconfig.authorizationEndpointURL"><span class="oauthAttributeTitle">Authorization endpoint URL:</span> {{oauthconfig.authorizationEndpointURL}}<br/></span>
+  <span ng-if="oauthconfig.tokenEndpointURL"><span class="oauthAttributeTitle">Token endpoint URL:</span> {{oauthconfig.tokenEndpointURL}}<br/></span>
+  <span ng-if="oauthconfig.defaultscope"><span class="oauthAttributeTitle">Default scope:</span> {{oauthconfig.defaultscope}}<br/></span>
+  <span ng-if="oauthconfig.grantType"><span class="oauthAttributeTitle">Flows:</span> {{oauthconfig.grantType.join(', ')}}<br/></span>
+  <span ng-if="oauthconfig.refreshTokensEnabled"><span class="oauthAttributeTitle">Token refresh:</span> enabled<br/></span>
+  <span ng-if="!oauthconfig.refreshTokensEnabled"><span class="oauthAttributeTitle">Token refresh:</span> disabled<br/></span>
+  <span ng-if="oauthconfig.tokenRevocationURL"><span class="oauthAttributeTitle">Token revocation URL:</span> {{oauthconfig.tokenRevocationURL}}</span></p>
   <p>Please follow OAuth flow, copy access token from OAuth and paste it here.</p>
   <form role="form" class="form-horizontal" ng-submit="authenticate(accessToken)">
     <div class="form-group">
@@ -15,5 +23,5 @@
 <div class="modal-footer">
   <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
   <button class="btn btn-primary" ng-click="authenticate(accessToken)"
-    ng-disabled="!accessToken">Authenticate</button>
+    ng-disabled="!accessToken">Save credentials</button>
 </div>

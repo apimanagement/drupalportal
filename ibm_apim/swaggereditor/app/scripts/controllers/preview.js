@@ -21,7 +21,7 @@ SwaggerEditor.controller('PreviewCtrl', function PreviewCtrl(Storage, Builder,
     ASTManager.refresh(latest);
 
     // If backend is not healthy don't update
-    if (!BackendHealthCheck.isHealthy()) {
+    if (!BackendHealthCheck.isHealthy() && $rootScope.mode !== 'edit') {
       return;
     }
 
@@ -56,6 +56,11 @@ SwaggerEditor.controller('PreviewCtrl', function PreviewCtrl(Storage, Builder,
     }
     $scope.errors = result.errors;
     $scope.warnings = result.warnings;
+    if ($scope.specs && $scope.specs.schemes && $scope.specs.schemes[0] && $scope.specs.host) {
+      $scope.baseurl = $scope.specs.schemes[0] + '://' + $scope.specs.host + $scope.specs.basePath;
+    } else if ($scope.specs && $scope.specs.basePath) {
+      $scope.baseurl = $scope.specs.basePath;
+    }
   }
 
   /*
@@ -66,12 +71,14 @@ SwaggerEditor.controller('PreviewCtrl', function PreviewCtrl(Storage, Builder,
     $scope.errors = null;
     Storage.save('progress',  'success-process');
 
-    Editor.clearAnnotation();
+    if ($rootScope.mode === 'edit') {
+    	Editor.clearAnnotation();
 
-    if (angular.isArray(result.warnings)) {
-      result.warnings.forEach(function (warning) {
-        Editor.annotateSwaggerError(warning, 'warning');
-      });
+    	if (angular.isArray(result.warnings)) {
+      	result.warnings.forEach(function (warning) {
+        	Editor.annotateSwaggerError(warning, 'warning');
+      	});
+    	}
     }
   }
 
@@ -81,7 +88,7 @@ SwaggerEditor.controller('PreviewCtrl', function PreviewCtrl(Storage, Builder,
   function onBuildFailure(result) {
     onBuild(result);
 
-    if (angular.isArray(result.errors)) {
+    if (angular.isArray(result.errors) && $rootScope.mode === 'edit') {
       if (result.errors[0].yamlError) {
         Editor.annotateYAMLErrors(result.errors[0].yamlError);
         Storage.save('progress', 'error-yaml');
@@ -126,6 +133,7 @@ SwaggerEditor.controller('PreviewCtrl', function PreviewCtrl(Storage, Builder,
   $scope.getAllTags = TagManager.getAllTags;
   $scope.getCurrentTags = TagManager.getCurrentTags;
   $scope.stateParams = $stateParams;
+  $scope.apps = Drupal.settings.ibm_apim.apps;
 
   function refreshTags(specs) {
     if (angular.isObject(specs)) {

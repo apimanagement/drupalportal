@@ -21,8 +21,9 @@ function removeVendorExtensions(obj) {
 
 SwaggerEditor
   .directive('schemaModel', function ($parse) {
+    var rootPath = Drupal.settings.basePath + 'sites/all/modules/ibm_apim/swaggereditor/app/';
     return {
-      templateUrl: 'templates/schema-model.html',
+      templateUrl: rootPath + 'templates/schema-model.html',
       restrict: 'E',
       replace: true,
       scope: {

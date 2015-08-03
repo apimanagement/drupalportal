@@ -1,12 +1,13 @@
 <div class="modal-header">
-  <h3 class="modal-title">API Key Authentication</h3>
+  <h3 class="modal-title">API Key Identification</h3>
 </div>
 <div class="modal-body">
   <form role="form" class="form-horizontal" ng-submit="authenticate(apiKey)">
     <div class="form-group">
-      <label class="col-sm-3">API Key</label>
+      <label class="col-sm-3">Client ID</label>
       <div class="col-sm-9">
-        <input type="text" class="form-control" placeholder="key" ng-model="apiKey">
+        <div class="noAppsFound" ng-hide="creds.length">Register an application in order to select a Client ID.</div>
+        <select class="form-control" id="apiKey" ng-model="apiKey" ng-options="cred.clientid as cred.descr for cred in clientids"></select>
       </div>
     </div>
   </form>

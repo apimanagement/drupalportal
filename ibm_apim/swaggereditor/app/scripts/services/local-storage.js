@@ -57,9 +57,19 @@ SwaggerEditor.service('LocalStorage', function LocalStorage($localStorage, $q) {
       changeListeners[key].push(fn);
     }
   }
+  
+  /*
+  *
+ */
+ function reset() {
+   var result = $localStorage.$reset;
+   
+   $localStorage[storageKey] = {};
+   return result;
+ }
 
   this.save = save;
-  this.reset = $localStorage.$reset;
+  this.reset = reset;
   this.load = load;
   this.addChangeListener = addChangeListener;
 });

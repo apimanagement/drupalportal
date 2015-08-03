@@ -18,7 +18,7 @@ SwaggerEditor.service('Builder', function Builder($q) {
     if (!stringValue) {
       deferred.reject({
         specs: null,
-        errors: [{emptyDocsError: 'Empty Document Error'}]
+        warnings: [{loadingWarning: 'Please wait while the API content is being rendered.'}]
       });
 
       return deferred.promise;

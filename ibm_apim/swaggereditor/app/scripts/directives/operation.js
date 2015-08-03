@@ -1,17 +1,24 @@
 'use strict';
 
 SwaggerEditor.directive('operation', function (defaults) {
+  var rootPath = Drupal.settings.basePath + 'sites/all/modules/ibm_apim/swaggereditor/app/';
   return {
     restrict: 'E',
     replace: true,
-    templateUrl: 'templates/operation.html',
+    templateUrl: rootPath + 'templates/operation.html',
     scope: false,
     link: function ($scope) {
       $scope.isTryOpen = false;
-      $scope.enableTryIt = defaults.enableTryIt;
+      //$scope.enableTryIt = defaults.enableTryIt;
       $scope.toggleTry = function toggleTry() {
         $scope.isTryOpen = !$scope.isTryOpen;
       };
+      // APIM honour testable flag
+      if ($scope.specs['x-ibm-configuration'] && $scope.specs['x-ibm-configuration'].testable == false) {
+        $scope.enableTryIt = false;
+      } else {
+        $scope.enableTryIt = defaults.enableTryIt;
+      }
 
       /*
        * Gets all available parameters

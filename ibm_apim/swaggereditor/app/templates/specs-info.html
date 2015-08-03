@@ -6,8 +6,9 @@
   </header>
 
   <div class="info-container section-content" collapse-when="isCollapsed(['info'])" ng-ani>
-    <div marked="specs.info.description"></div>
+    <!--  <div marked="specs.info.description"></div> -->
     <h4>Version <span>{{specs.info.version}}</span></h4>
+    <h4 ng-if="baseurl">Base URL <span>{{baseurl}}</span></h4>
     <div class="contact info-box" ng-if="specs.info.contact">
       <h4>Contact information</h4>
       <p ng-if="specs.info.contact.name">{{specs.info.contact.name}}</p>
@@ -26,6 +27,9 @@
       <h4>License</h4>
       <p ng-if="!specs.info.license.url">{{specs.info.license.name}}</p>
       <p ng-if="specs.info.license.url"><a target="_blank" href="{{specs.info.license.url}}">{{specs.info.license.name}}</a></p>
+    </div>
+    <div ng-repeat="(key, value) in specs.info" ng-if="key.substring(0, 2).toLowerCase() === 'x-'">
+        <h4>{{key}} {{value}}</h4>
     </div>
   </div>
 </div>
