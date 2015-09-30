@@ -1,7 +1,7 @@
 {
   "name": "json-refs",
   "main": "browser/json-refs.js",
-  "version": "0.3.2",
+  "version": "1.0.2",
   "homepage": "https://github.com/whitlockjc/json-refs",
   "authors": [
     "Jeremy Whitlock <jwhitlock@apache.org>"
@@ -23,19 +23,18 @@
   ],
   "dependencies": {
     "traverse": "~0.6.7",
-    "lodash-compat": "~3.10.0",
-    "path-loader": "~0.0.2"
+    "path-loader": "~0.1.0"
   },
   "devDependencies": {
     "mocha": "^2.1.0"
   },
-  "_release": "0.3.2",
+  "_release": "1.0.2",
   "_resolution": {
     "type": "version",
-    "tag": "v0.3.2",
-    "commit": "471b7a79b6945bf2db3397278af56f40119628be"
+    "tag": "v1.0.2",
+    "commit": "2c11b19842c6890b4253c0706c2db580a06e6b16"
   },
   "_source": "git://github.com/whitlockjc/json-refs.git",
-  "_target": "~0.3.2",
+  "_target": "~1.0.2",
   "_originalSource": "json-refs"
 }

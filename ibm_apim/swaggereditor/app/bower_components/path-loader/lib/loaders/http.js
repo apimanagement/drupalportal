@@ -1,3 +1,5 @@
+/*eslint-env node, browser */
+
 /*
  * The MIT License (MIT)
  *

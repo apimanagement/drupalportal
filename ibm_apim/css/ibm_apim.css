@@ -1365,3 +1365,23 @@ span.flag-wrapper.flag-bookmarks {
   fill: #9467bd;
   stroke: none;
 }
+
+.swaggerErrorMessage {
+  border: 1px solid #F00;
+  padding: 20px;
+  color: #B60009;
+  background-color: #FFD5D5;
+  font-weight: 600;
+  margin-top: 20px;
+}
+.swaggerErrorMessage.hiddenError {
+  display: none;
+}
+
+.swaggerLoadingMessage {
+  display: block;
+  text-align: center;
+}
+.swaggerLoadingMessage.hiddenLoader {
+  display: none;
+}

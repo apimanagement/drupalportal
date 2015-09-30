@@ -97,7 +97,15 @@ drupal_add_js('jQuery(document).ready(function(){
 
 		<div class="clearBoth section apimMainContent">
 			<label class="label apimField apimDescription"><?php print t('Description'); ?></label>
-			<div id="app_description"><?php print $plan_description[0]['safe_value']; ?></div>
+			<div id="app_description">
+						   <?php
+			   if (module_exists('markdown')) {
+                 print _filter_markdown($plan_description[0]['safe_value'], null);
+               } else {
+                 print '<p>'. $plan_description[0]['safe_value'] .'</p>';
+               }
+               ?>
+			</div>
 		</div>
 <?php
 if (module_exists('api')) {

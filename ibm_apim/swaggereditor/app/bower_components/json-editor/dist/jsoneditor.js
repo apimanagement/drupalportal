@@ -1,8 +1,8 @@
-/*! JSON Editor v0.7.18 - JSON Schema -> HTML Editor
+/*! JSON Editor v0.7.21 - JSON Schema -> HTML Editor
  * By Jeremy Dorn - https://github.com/jdorn/json-editor/
  * Released under the MIT license
  *
- * Date: 2015-05-09
+ * Date: 2015-07-03
  */
 
 /**
@@ -199,9 +199,9 @@ var $extend = function(destination) {
 };
 
 var $each = function(obj,callback) {
-  if(!obj) return;
+  if(!obj || typeof obj !== "object") return;
   var i;
-  if(typeof obj.length === 'number') {
+  if(Array.isArray(obj) || (typeof obj.length === 'number' && obj.length > 0 && (obj.length - 1) in obj)) {
     for(i=0; i<obj.length; i++) {
       if(callback(i,obj[i])===false) return;
     }
@@ -637,6 +637,9 @@ JSONEditor.prototype = {
     while (schema.$ref) {
       var ref = schema.$ref;
       delete schema.$ref;
+      
+      if(!this.refs[ref]) ref = decodeURIComponent(ref);
+      
       schema = this.extendSchemas(schema,this.refs[ref]);
     }
     return schema;
@@ -2411,7 +2414,6 @@ JSONEditor.defaults.editors.object = JSONEditor.AbstractEditor.extend({
           
           if(editor.options.hidden) editor.container.style.display = 'none';
           else this.theme.setGridColumnSize(editor.container,rows[i].editors[j].width);
-          editor.container.className += ' container-' + key;
           row.appendChild(editor.container);
         }
       }
@@ -2427,7 +2429,6 @@ JSONEditor.defaults.editors.object = JSONEditor.AbstractEditor.extend({
         
         if(editor.options.hidden) editor.container.style.display = 'none';
         else self.theme.setGridColumnSize(editor.container,12);
-        editor.container.className += ' container-' + key;
         row.appendChild(editor.container);
       });
     }
@@ -2594,6 +2595,7 @@ JSONEditor.defaults.editors.object = JSONEditor.AbstractEditor.extend({
       this.addproperty_list.style.overflowY = 'auto';
       this.addproperty_list.style.overflowX = 'hidden';
       this.addproperty_list.style.paddingLeft = '5px';
+      this.addproperty_list.setAttribute('class', 'property-selector');
       this.addproperty_add = this.getButton('add','add','add');
       this.addproperty_input = this.theme.getFormInputField('text');
       this.addproperty_input.setAttribute('placeholder','Property name...');
@@ -2782,7 +2784,9 @@ JSONEditor.defaults.editors.object = JSONEditor.AbstractEditor.extend({
     else this.showEditJSON();
   },
   insertPropertyControlUsingPropertyOrder: function (property, control, container) {
-    var propertyOrder = this.schema.properties[property].propertyOrder;
+    var propertyOrder;
+    if (this.schema.properties[property])
+      propertyOrder = this.schema.properties[property].propertyOrder;
     if (typeof propertyOrder !== "number") propertyOrder = 1000;
     control.propertyOrder = propertyOrder;
 
@@ -2805,7 +2809,11 @@ JSONEditor.defaults.editors.object = JSONEditor.AbstractEditor.extend({
     checkbox = self.theme.getCheckbox();
     checkbox.style.width = 'auto';
 
-    labelText = this.schema.properties[key].title ? this.schema.properties[key].title : key;
+    if (this.schema.properties[key] && this.schema.properties[key].title)
+      labelText = this.schema.properties[key].title;
+    else
+      labelText = key;
+
     label = self.theme.getCheckboxLabel(labelText);
 
     control = self.theme.getFormControl(label,checkbox);
@@ -2922,7 +2930,10 @@ JSONEditor.defaults.editors.object = JSONEditor.AbstractEditor.extend({
     this._super(editor);
   },
   canHaveAdditionalProperties: function() {
-    return (this.schema.additionalProperties === true) || !this.jsoneditor.options.no_additional_properties;
+    if (typeof this.schema.additionalProperties === "boolean") {
+      return this.schema.additionalProperties;
+    }
+    return !this.jsoneditor.options.no_additional_properties;
   },
   destroy: function() {
     $each(this.cached_editors, function(i,el) {
@@ -3738,6 +3749,7 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
       var i = self.rows.length;
       if(self.row_cache[i]) {
         self.rows[i] = self.row_cache[i];
+        self.rows[i].setValue(self.rows[i].getDefault());
         self.rows[i].container.style.display = '';
         if(self.rows[i].tab) self.rows[i].tab.style.display = '';
         self.rows[i].register();
@@ -4921,57 +4933,65 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
           select_options = select_options.concat(this.enumSource[i]);
           select_titles = select_titles.concat(this.enumSource[i]);
         }
-        // A watched field
-        else if(vars[this.enumSource[i].source]) {
-          var items = vars[this.enumSource[i].source];
-          
-          // Only use a predefined part of the array
-          if(this.enumSource[i].slice) {
-            items = Array.prototype.slice.apply(items,this.enumSource[i].slice);
+        else {
+          var items = [];
+          // Static list of items
+          if(Array.isArray(this.enumSource[i].source)) {
+            items = this.enumSource[i].source;
+          // A watched field
+          } else {
+            items = vars[this.enumSource[i].source];
           }
-          // Filter the items
-          if(this.enumSource[i].filter) {
-            var new_items = [];
+          
+          if(items) {
+            // Only use a predefined part of the array
+            if(this.enumSource[i].slice) {
+              items = Array.prototype.slice.apply(items,this.enumSource[i].slice);
+            }
+            // Filter the items
+            if(this.enumSource[i].filter) {
+              var new_items = [];
+              for(j=0; j<items.length; j++) {
+                if(this.enumSource[i].filter({i:j,item:items[j]})) new_items.push(items[j]);
+              }
+              items = new_items;
+            }
+            
+            var item_titles = [];
+            var item_values = [];
             for(j=0; j<items.length; j++) {
-              if(this.enumSource[i].filter({i:j,item:items[j]})) new_items.push(items[j]);
+              var item = items[j];
+              
+              // Rendered value
+              if(this.enumSource[i].value) {
+                item_values[j] = this.enumSource[i].value({
+                  i: j,
+                  item: item
+                });
+              }
+              // Use value directly
+              else {
+                item_values[j] = items[j];
+              }
+              
+              // Rendered title
+              if(this.enumSource[i].title) {
+                item_titles[j] = this.enumSource[i].title({
+                  i: j,
+                  item: item
+                });
+              }
+              // Use value as the title also
+              else {
+                item_titles[j] = item_values[j];
+              }
             }
-            items = new_items;
-          }
-          
-          var item_titles = [];
-          var item_values = [];
-          for(j=0; j<items.length; j++) {
-            var item = items[j];
             
-            // Rendered value
-            if(this.enumSource[i].value) {
-              item_values[j] = this.enumSource[i].value({
-                i: j,
-                item: item
-              });
-            }
-            // Use value directly
-            else {
-              item_values[j] = items[j];
-            }
+            // TODO: sort
             
-            // Rendered title
-            if(this.enumSource[i].title) {
-              item_titles[j] = this.enumSource[i].title({
-                i: j,
-                item: item
-              });
-            }
-            // Use value as the title also
-            else {
-              item_titles[j] = item_values[j];
-            }
+            select_options = select_options.concat(item_values);
+            select_titles = select_titles.concat(item_titles);
           }
-          
-          // TODO: sort
-          
-          select_options = select_options.concat(item_values);
-          select_titles = select_titles.concat(item_titles);
         }
       }
       
@@ -6401,7 +6421,7 @@ JSONEditor.defaults.themes.foundation5 = JSONEditor.defaults.themes.foundation.e
   },
   getTabHolder: function() {
     var el = document.createElement('div');
-    el.innerHTML = "<dl class='tabs vertical'></dl><div class='tabs-content'></div>";
+    el.innerHTML = "<dl class='tabs vertical'></dl><div class='tabs-content vertical'></div>";
     return el;
   },
   getTab: function(text) {
@@ -6806,33 +6826,57 @@ JSONEditor.defaults.iconlibs.jqueryui = JSONEditor.AbstractIconLib.extend({
 });
 
 JSONEditor.defaults.templates["default"] = function() {
-  var expandVars = function(vars) {
-    var expanded = {};
-    $each(vars, function(i,el) {
-      if(typeof el === "object" && el !== null) {
-        var tmp = {};
-        $each(el, function(j,item) {
-          tmp[i+'.'+j] = item;
-        });
-        $extend(expanded,expandVars(tmp));
-      }
-      else {
-        expanded[i] = el;
-      }
-    });
-    return expanded;
-  };
-  
   return {
     compile: function(template) {
-      return function (vars) {
-        var expanded = expandVars(vars);
+      var matches = template.match(/{{\s*([a-zA-Z0-9\-_\.]+)\s*}}/g);
+      var l = matches.length;
+
+      // Shortcut if the template contains no variables
+      if(!l) return function() { return template; };
+
+      // Pre-compute the search/replace functions
+      // This drastically speeds up template execution
+      var replacements = [];
+      var get_replacement = function(i) {
+        var p = matches[i].replace(/[{}\s]+/g,'').split('.');
+        var n = p.length;
+        var func;
         
-        var ret = template+"";
-        // Only supports basic {{var}} macro replacement
-        $each(expanded,function(key,value) {
-          ret = ret.replace(new RegExp('{{\\s*'+key+'\\s*}}','g'),value);
+        if(n > 1) {
+          var cur;
+          func = function(vars) {
+            cur = vars;
+            for(i=0; i<n; i++) {
+              cur = cur[p[i]];
+              if(!cur) break;
+            }
+            return cur;
+          };
+        }
+        else {
+          p = p[0];
+          func = function(vars) {
+            return vars[p];
+          };
+        }
+        
+        replacements.push({
+          s: matches[i],
+          r: func
         });
+      };
+      for(var i=0; i<l; i++) {
+        get_replacement(i);
+      }
+
+      // The compiled function
+      return function(vars) {
+        var ret = template+"";
+        var r;
+        for(i=0; i<l; i++) {
+          r = replacements[i];
+          ret = ret.replace(r.s, r.r(vars));
+        }
         return ret;
       };
     }
@@ -7232,3 +7276,5 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
 
   window.JSONEditor = JSONEditor;
 })();
+
+//# sourceMappingURL=jsoneditor.js.map

@@ -32,7 +32,15 @@
     } catch (Exception $e) {
     } ?></div>
 					<div class="apimSummaryDescription">
-					  <p class="apimFade" title="<?php print $plan_description[0]['safe_value']; ?>"><?php print $plan_description[0]['safe_value']; ?></p>
+					                          <?php
+                        print '<div class="apimFade" title="'. $plan_description[0]['safe_value'] .'">';
+                        if (module_exists('markdown')) {
+                          print _filter_markdown($plan_description[0]['safe_value'], null);
+                        } else {
+                          print '<p>'. $plan_description[0]['safe_value'] .'</p>';
+                        }
+                        print '</div>';
+                        ?>
 					</div>
 				</div>
 			</div>

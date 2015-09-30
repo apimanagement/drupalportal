@@ -1,5 +1,25 @@
 ## Release Notes
 
+### v1.0.2 (2015-07-21)
+
+* Fix problem where references to schemas with circular composition/inheritance could result in attempting to update reference metadata that does not exist
+
+### v1.0.1 (2015-07-20)
+
+* Fix problem where circular references caused by composition/inheritance wasn't caught properly
+
+### v1.0.0 (2015-07-17)
+
+* Circular references are now identified in metadata _(Issue #22)_
+* Fixed a few scenarios where local self references to root didn't work right
+* Rewrote using ES5 which removed the need for `lodash-compat`
+* `#resolveRefs` now collapses all reference pointers so that the metadata key is now the reference to the local document instead of where
+its `$ref` was *(This is a breaking change and that is why we are doing a `1.0` release)*
+* `#resolveRefs` now defers local reference resolution until after remote references are resolved _(Issue #26)_
+* `#resolveRefs` now handles recursive relative references gracefully _(Issue #24)_
+* `#resolveRefs` now records metadata for remote references _(Issue #25)_
+* `#resolveRefs` now supports callbacks, as always, and promises  _(Always returns a promise even if callbacks are used)_
+
 ### v0.3.2 (2015-07-08)
 
 * Unresolved references leave the original reference in the document so as not to break JSON Schema validation

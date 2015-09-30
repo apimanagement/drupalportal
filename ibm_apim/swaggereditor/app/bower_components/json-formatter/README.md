@@ -8,10 +8,15 @@ JSON Formatter is an AngularJS directive for rendering JSON objects in HTML with
 
 ## Usage
 
-* Install via Bower
+* Install via Bower or npm
 
   ```bash
   bower install json-formatter --save
+  ```
+  ...or
+
+  ```bash
+  npm install jsonformatter --save
   ```
 * Add `jsonFormatter` to your app dependencies
   ```js
@@ -29,6 +34,27 @@ JSON Formatter is an AngularJS directive for rendering JSON objects in HTML with
   <json-formatter json="{my: 'json'}" open="1"></json-formatter>
   ```
 * `open` attribute accepts a number which indicates how many levels rendered JSON should be opened
+
+#### Configuration
+
+You can use `JSONFormatterConfig` provider to configure JOSN Formatter.
+
+Available configurations
+
+##### Hover Preview
+* `hoverPreviewEnabled`: enable preview on hover
+* `hoverPreviewArrayCount`: number of array items to show in preview Any array larger than this number will be shown as `Array[XXX]` where `XXX` is length of the array.
+* `hoverPreviewFieldCount`: number of object properties to show for object preview. Any object with more properties that thin number will be truncated.
+
+Example using configuration
+
+```js
+app.config(function (JSONFormatterConfigProvider) {
+
+  // Enable the hover preview feature
+  JSONFormatterConfigProvider.hoverPreviewEnabled = true;
+});
+```
 
 ## Demo
 See [Examples here](http://azimi.me/json-formatter/demo/demo.html)

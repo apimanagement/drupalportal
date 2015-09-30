@@ -112,6 +112,20 @@ function ibm_apim_theme($existing, $type, $theme, $path) {
  */
 function ibm_apim_form_user_login_block_alter(&$form, &$form_state) {
   _ibm_apim_user_login_form_alter($form, $form_state);
+  if (module_exists('security_questions')) {
+    // Redirect login block submissions to the main login form.
+    // @todo Is there a better way to hand off from the login block to /user?
+    $form['form_id']['#value'] = 'user_login';
+    // Preserve the login block's destination.
+    $url = drupal_parse_url($form['#action']);
+    if (isset($url['query']['destination'])) {
+      $options = array('query' => array('destination' => $url['query']['destination']));
+    }
+    else {
+      $options = array();
+    }
+    $form['#action'] = url('user', $options);
+  }
 }
 
 /**
@@ -153,7 +167,107 @@ function _ibm_apim_user_login_form_alter(&$form, &$form_state) {
       }
     }
   }
+
   $form['#submit'][] = 'ibm_apim_authenticate_submit';
+  if (module_exists('security_questions')) {
+    // Abort if the login forms are not protected.
+    $login_forms_protected = variable_get('security_questions_user_login', FALSE);
+    $protection_mode = variable_get('security_questions_protection_mode', 'after');
+
+    if ($login_forms_protected != FALSE) {
+      // Phase 1: Initial login prompt.
+      if (empty($form_state['security_questions']['name'])) {
+        // If the questions come before the password, hide the password field.
+        if ($protection_mode == 'before') {
+          unset($form['pass']);
+          // Without a password, some of core's validators won't work.
+          $form['#validate'] = array(
+
+            // We can keep the core validator for a blocked username.
+            'user_login_name_validate',
+
+            // But we need to provide our own to test that the user exists.
+            'security_questions_user_login_name_validate',
+
+            // And we need our own flood event handler, to avoid clearing the flood
+            // event before the password is entered.
+            'security_questions_user_login_flood_validate');
+        }
+        // Otherwise, it's possible that the user may be able to skip phase 2, so
+        // we need to keep core's validators and add our answer validator.
+        else {
+          $form['#validate'][] = 'security_questions_user_login_answer_validate';
+        }
+      }
+      // Phase 2: Security questions.
+      else {
+        $name = $form_state['security_questions']['name'];
+        $form['name'] = array('#type' => 'value', '#value' => $name);
+        $account = user_load_by_name($name);
+
+        // If the user has already chosen "remember this computer" on a challenge,
+        // remember that choice.
+        if (!empty($form_state['security_questions']['remember'])) {
+          $form['remember'] = array('#type' => 'value', '#value' => TRUE);
+        }
+
+        // What we do next depends on whether we have the user's password yet.
+        if (empty($form_state['security_questions']['pass'])) {
+          // If the user is allowed to bypass question challenges or has already
+          // successfully answered one, then we just need to collect the password
+          // and add our answer validator.
+          if (!empty($form_state['security_questions']['passed_challenge']) || security_questions_bypass_challenge($account)) {
+            $form['#validate'][] = 'security_questions_user_login_answer_validate';
+          }
+          // Otherwise, it's time for a challenge.
+          else {
+            $form += security_questions_challenge($account);
+            // Show the "remember this computer" option, if enabled.
+            if (variable_get('security_questions_cookie', FALSE)) {
+              $form['remember'] = array(
+                '#title' => t('Remember this computer'),
+                '#type' => 'checkbox');
+            }
+            // We also don't want to get the password until after the challenge,
+            // so we need to unset it and use the alternate validators.
+            unset($form['pass']);
+            $form['#validate'] = array(
+              'user_login_name_validate',
+              'security_questions_user_login_name_validate',
+              'security_questions_user_login_flood_validate',
+              'security_questions_user_login_answer_validate');
+          }
+        }
+        else {
+          $form['pass'] = array(
+            '#type' => 'value',
+            '#value' => $form_state['security_questions']['pass']);
+          $form['#validate'][] = 'security_questions_user_login_answer_validate';
+
+          // If we're here, it means that both the user name and password have been
+          // validated, but the user has not been logged in yet because either a
+          // challenge is needed or the required number of answers is not on file.
+          if (empty($form_state['security_questions']['passed_challenge'])) {
+            $form += security_questions_challenge($account);
+            // Show the "remember this computer" option, if enabled.
+            if (variable_get('security_questions_cookie', FALSE)) {
+              $form['remember'] = array(
+                '#title' => t('Remember this computer'),
+                '#type' => 'checkbox');
+            }
+          }
+          else {
+            module_load_include('inc', 'security_questions', 'security_questions.pages');
+            $form += security_questions_user_form($form, $form_state, $account);
+            $form['#validate'][] = 'security_questions_user_login_user_form_validate';
+          }
+        }
+      }
+    }
+
+    // use our submission handler not theirs to avoid conflicts
+    $form['#submit'] = array_diff($form['#submit'], array("security_questions_user_login_submit"));
+  }
 }
 
 /**
@@ -320,6 +434,23 @@ function ibm_apim_form_alter(&$form, &$form_state, $form_id) {
           $remoteid = $form['#user']->data['remote_id'];
         }
         $form['account']['remote_id'] = array('#type' => 'hidden', '#value' => $remoteid);
+        // allow admin to edit their own email address
+        if ($user->uid == 1) {
+          $form['account']['mail']['#disabled'] = FALSE;
+          $form['account']['mail']['#required'] = TRUE;
+          if (isset($form['field_first_name'])) {
+            $form['field_first_name']['#required'] = FALSE;
+            $form['field_first_name']['und']['#required'] = 0;
+            $form['field_first_name']['und'][0]['#required'] = FALSE;
+            $form['field_first_name']['und'][0]['value']['#required'] = FALSE;
+          }
+          if (isset($form['field_last_name'])) {
+            $form['field_last_name']['#required'] = FALSE;
+            $form['field_last_name']['und']['#required'] = 0;
+            $form['field_last_name']['und'][0]['#required'] = FALSE;
+            $form['field_last_name']['und'][0]['value']['#required'] = FALSE;
+          }
+        }
       }
       else {
         // admin editing user account
@@ -579,48 +710,69 @@ function ibm_apim_authenticate_validate($form, &$form_state) {
         return;
       }
     }
-    // We are not limited by flood control, so try to authenticate.
-    $authenticated = ibm_apim_authenticate($name, $pass);
-    if ($authenticated) {
-      $result = _ibm_apim_authenticated_login($name, $pass, $authenticated);
-      $account = $result['account'];
-      $orgs = $result['orgs'];
-      // Set $form_state['uid'] as a flag for user_login_final_validate().
-      $form_state['uid'] = $account->uid;
-      // if not a member of any orgs then redirect to the org creation form
-      if (!isset($orgs) || count($orgs) < 1) {
-        $form_state['noorgs'] = true;
+
+    // We are not limited by flood control, so try to authenticate (but dont login yet).
+    if (module_exists('security_questions')) {
+      $authenticated = ibm_apim_authenticate($name, $pass);
+      if ($authenticated) {
+        $result = _ibm_apim_authenticated_login($name, $pass, $authenticated, false);
+        $account = $result['account'];
+        $orgs = $result['orgs'];
+        // Set $form_state['uid'] as a flag for user_login_final_validate().
+        $form_state['uid'] = $account->uid;
+        if (isset($account->uid)) {
+          form_set_value(array('#parents' => array('account')), $account, $form_state);
+        }
+      }
+    }
+    else {
+      // We are not limited by flood control, so try to authenticate (but dont login yet).
+      $authenticated = ibm_apim_authenticate($name, $pass);
+      if ($authenticated) {
+        $result = _ibm_apim_authenticated_login($name, $pass, $authenticated, false);
+        $account = $result['account'];
+        $orgs = $result['orgs'];
+        // Set $form_state['uid'] as a flag for user_login_final_validate().
+        $form_state['uid'] = $account->uid;
+        if (isset($account->uid)) {
+          form_set_value(array('#parents' => array('account')), $account, $form_state);
+        }
+        // if not a member of any orgs then redirect to the org creation form
+        if (!isset($orgs) || count($orgs) < 1) {
+          $form_state['noorgs'] = true;
+        }
       }
     }
   }
 }
 
 // internal function to create an account if needed for new login
-function _ibm_apim_authenticated_login($name, $pass, $authenticated) {
+function _ibm_apim_authenticated_login($name, $pass, $authenticated, $login = true) {
   $orgs = array();
 
   // this sets up the external user with Drupal by creating a local entry. If they don't exist they are added
-  _ibm_apim_external_login_register($name, array('status' => 1, 'pass' => $pass), true);
+  _ibm_apim_external_login_register($name, array('status' => 1, 'pass' => $pass), $login);
 
   // we must set the 'uid' to pass back. this looks up the logged in user and sets the Drupal UID
   $account = user_external_load($name);
-
-  $result = ibm_apim_call('/v1/portal/orgs');
-  if (isset($result) && isset($result->data) && !isset($result->data['errors'])) {
-    $orgs = $result->data;
-  }
-  $devorg = '';
-  $org_ids = array();
   $json_user_info = $authenticated;
+  $devorg = '';
+  if ($login == true) {
+    $result = ibm_apim_call('/v1/portal/orgs');
+    if (isset($result) && isset($result->data) && !isset($result->data['errors'])) {
+      $orgs = $result->data;
+    }
+    $org_ids = array();
 
-  if (isset($orgs)) {
-    foreach ($orgs as $org) {
-      if ($devorg != '') {
-        $devorg .= ', ';
+    if (isset($orgs)) {
+      foreach ($orgs as $org) {
+        if ($devorg != '') {
+          $devorg .= ', ';
+        }
+        $devorg .= $org['name'];
+        $org_ids[$org['id']] = array();
+        $org_ids[$org['id']] = ($org['owner'] ? 'owner' : 'member');
       }
-      $devorg .= $org['name'];
-      $org_ids[$org['id']] = array();
-      $org_ids[$org['id']] = ($org['owner'] ? 'owner' : 'member');
     }
   }
 
@@ -662,9 +814,98 @@ function _ibm_apim_authenticated_login($name, $pass, $authenticated) {
  * Submission handler for the login form.
  */
 function ibm_apim_authenticate_submit($form, &$form_state) {
-  if (isset($form_state['noorgs']) && $form_state['noorgs'] == true) {
-    drupal_set_message(t('You need to create a developer organization to continue.'));
-    drupal_goto('ibm_apim/org/create');
+  if (module_exists('security_questions')) {
+    // if login is not protected then nothing else to do
+    if (!variable_get('security_questions_user_login', FALSE)) {
+      ibm_apim_authenticate_submit_redirect($form, $form_state);
+      return;
+    }
+    // Were the user name and password valid?
+    $is_authenticated = !empty($form_state['uid']);
+
+    // Was the security question challenge answered correctly or not required?
+    $passed_challenge = !empty($form_state['security_questions']['passed_challenge']);
+
+    // Is the required number of security question answers on file?
+    if ($is_authenticated) {
+      $account = user_load($form_state['uid']);
+      // Users with bypass permission aren't required to have answers on file.
+      if (user_access('bypass security questions', $account)) {
+        $has_required_number = TRUE;
+      }
+      else {
+        $required = variable_get('security_questions_number_required', 3);
+        $answers = count(security_questions_get_answer_list($account->uid));
+        $has_required_number = ($answers >= $required);
+      }
+    }
+    else {
+      $has_required_number = FALSE;
+    }
+
+    // If all of the above tests passed, log in as normal.
+    if ($is_authenticated && $passed_challenge && $has_required_number) {
+      if (!empty($form_state['values']['remember'])) {
+        $form_state['security_questions']['remember'] = TRUE;
+      }
+      ibm_apim_authenticate_submit_redirect($form, $form_state);
+    }
+    // Otherwise, save what information we have and rebuild for the next phase.
+    else {
+      $form_state['security_questions'] = array(
+        'name' => $form_state['values']['name'],
+        'pass' => empty($form_state['values']['pass']) ? FALSE : $form_state['values']['pass'],
+        'passed_challenge' => $passed_challenge,
+        'remember' => !empty($form_state['values']['remember']));
+      $form_state['rebuild'] = TRUE;
+      // Also, wipe the uid from the form state to ensure that the user name and
+      // password are retested on the next run.
+      if (isset($form_state['uid'])) {
+        unset($form_state['uid']);
+      }
+    }
+  }
+  else {
+    ibm_apim_authenticate_submit_redirect($form, $form_state);
+  }
+}
+
+/**
+ * Submission handler for the login form.
+ */
+function ibm_apim_authenticate_submit_redirect($form, &$form_state) {
+  $orgs = array();
+  $devorg = '';
+  // passed validation so login
+  if (isset($form_state['uid'])) {
+    user_login_submit(array(), $form_state);
+  }
+
+  if ($form_state['uid'] != 1) {
+    $result = ibm_apim_call('/v1/portal/orgs');
+    if (isset($result) && isset($result->data) && !isset($result->data['errors'])) {
+      $orgs = $result->data;
+      foreach ($orgs as $org) {
+        if ($devorg != '') {
+          $devorg .= ', ';
+        }
+        $devorg .= $org['name'];
+      }
+      if (!isset($orgs) || count($orgs) < 1) {
+        drupal_set_message(t('You need to create a developer organization to continue.'));
+        drupal_goto('ibm_apim/org/create');
+      }
+      else {
+        $account = user_load($form_state['uid']);
+        $edit = array(
+          'field_developer_organization' => array('und' => array(0 => array('value' => $devorg))));
+        user_save($account, $edit);
+        drupal_goto('<front>');
+      }
+    }
+    else {
+      drupal_goto('<front>');
+    }
   }
   else {
     drupal_goto('<front>');
@@ -685,6 +926,21 @@ function ibm_apim_authenticate($name, $pass) {
   // Make sure we have the session variables set
   _ibm_apim_check_and_get_config();
   $apim_session = &_ibm_apim_get_apim_session();
+
+  // Clear out our internal caches
+  $apim_session = &_ibm_apim_get_apim_session();
+  unset($apim_session['apis_documents']);
+  unset($apim_session['apis']);
+  unset($apim_session['api_list']);
+  unset($apim_session['plans']);
+  unset($apim_session['plan_list']);
+
+  // app cacheing not implemented yet
+  // unset($apim_session['apps'])
+  // unset($apim_session['app_list']);
+
+  watchdog('ibm_apim_authenticate', 'cleared local session caches', NULL, WATCHDOG_NOTICE);
+
   $host_pieces = _ibm_apim_parse_apim_host();
   $url = $host_pieces['url'] . '/v1/portal/me';
   $headers = array(
@@ -1745,6 +2001,11 @@ function ibm_apim_menu() {
       'weight' => 7,
       'access callback' => 'user_is_logged_in');
   }
+  $items['ibm_apim/version'] = array(
+    'title' => 'IBM API Management Version',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'ibm_apim_version',
+    'access callback' => TRUE);
   return $items;
 }
 
@@ -2794,6 +3055,22 @@ function ibm_apim_form_user_pass_alter(&$form, &$form_state) {
     elseif (!empty($form_state['security_questions']['uid'])) {
       $account = user_load($form_state['security_questions']['uid']);
     }
+    elseif ($account == FALSE) {
+      // fallback code incase validator hasn't managed to find the account for some reason
+      $name = trim($form_state['values']['name']);
+      // Try to load by email.
+      $users = user_load_multiple(array(), array('mail' => $name, 'status' => '1'));
+      $testaccount = reset($users);
+      if (!$testaccount) {
+        // No success, try to load by name.
+        $users = user_load_multiple(array(), array('name' => $name, 'status' => '1'));
+        $testaccount = reset($users);
+      }
+      if (isset($testaccount->uid)) {
+        $account = $testaccount;
+        form_set_value(array('#parents' => array('account')), $account, $form_state);
+      }
+    }
     if ($account) {
       $form += security_questions_challenge($account);
       $form['#validate'][] = 'security_questions_user_pass_answer_validate';
@@ -2817,9 +3094,9 @@ function ibm_apim_user_pass_submit(&$form, &$form_state) {
     user_pass_submit($form, $form_state);
   }
   else
-    if (((module_exists('security_questions') && $secure_pass_form == TRUE) && (security_questions_bypass_challenge($account) || !empty($form_state['security_questions']['passed_challenge']))) || !module_exists('security_questions') || $secure_pass_form == FALSE) {
+    if (((module_exists('security_questions') && $secure_pass_form == TRUE) && (security_questions_bypass_challenge($account) || (!empty($form_state['security_questions']['passed_challenge']) && $form_state['security_questions']['passed_challenge'] == TRUE))) || !module_exists('security_questions') || $secure_pass_form == FALSE) {
       // if the security questions module is active and set for password resets then need to be on the second pass through this code (after submitting the answers) to actually do something since the security questions module will rebuild the form
-      _ibm_apim_reset_user_password($form_state['values']['name']);
+      _ibm_apim_reset_user_password($account->name);
     }
     else {
       // Otherwise, store the ID of the user requesting the reset and rebuild.
@@ -3043,6 +3320,37 @@ function ibm_apim_activate_create_account_form($token = NULL) {
     }
   }
 
+  if (module_exists('security_questions')) {
+    // Hide the questions form when the user is being registered by an admin.
+    if (!user_access('administer users')) {
+      // Merge in security_questions user form.
+      module_load_include('inc', 'security_questions', 'security_questions.pages');
+      $form['questions'] = array('#tree' => TRUE);
+      $i = 0;
+
+      if (isset($account)) {
+        $form['account'] = array('#type' => 'value', '#value' => $account);
+        // Fields for changing existing answers.
+        $answers = security_questions_get_answer_list($account->uid);
+        foreach ($answers as $answer) {
+          $form['questions'][$i] = security_questions_selector_element('questions[' . $i . ']', $account, $answer);
+          $i++;
+        }
+      }
+
+      // Fields for selecting new answers.
+      $required = variable_get('security_questions_number_required', 3);
+      while ($i < $required) {
+        $form['questions'][$i] = security_questions_selector_element('questions[' . $i . ']', $account);
+        $i++;
+      }
+
+      $form['#validate'][] = 'security_questions_user_register_form_validate';
+      // Can't add security_questions submit handler here, because the user account doesn't
+      // exist yet. Instead, it will get the info during hook_user_insert().
+    }
+  }
+
   $form['token'] = array('#type' => 'hidden', '#value' => $token);
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array('#type' => 'submit', '#value' => t('Activate'));
@@ -3112,6 +3420,9 @@ function ibm_apim_activate_create_account_form_submit_handler($form, &$form_stat
   if ($emailasuser == 1) {
     $data['username'] = $userid;
   }
+  else {
+    $data['username'] = $form_state['values']['name'];
+  }
 
   $result = _ibm_apim_json_http_request($url, 'POST', $headers, json_encode($data));
 
@@ -3119,10 +3430,13 @@ function ibm_apim_activate_create_account_form_submit_handler($form, &$form_stat
     drupal_set_message(t('Your account was created successfully.'));
 
     $fields = array('pass' => $pass, 'email' => $userid, 'mail' => $userid, 'status' => 1);
-    _ibm_apim_external_login_register($userid, $fields, true);
+    _ibm_apim_external_login_register($data['username'], $fields, true);
     global $user;
     $edit = array_intersect_key((array) $user, $form_state['values']);
     $account = user_save($user, $edit);
+    if (module_exists('security_questions')) {
+      security_questions_user_answers_save($user, $form_state['values']['questions']);
+    }
 
     // forcibly log the user out since drupal will automatically log them in
     // and nothing will actually work until they have activated the account in the APIm backend
@@ -4412,8 +4726,8 @@ function ibm_apim_do_saml_login() {
   global $_GET;
   global $base_url;
   $endpoint = _ibm_apim_get_saml_endpoint();
-  $currentpath = str_replace($base_url.'/','',$_SERVER['HTTP_REFERER']);
-  if(isset($currentpath) && !empty($currentpath) && strpos($currentpath, "http") === false) {
+  $currentpath = str_replace($base_url . '/', '', $_SERVER['HTTP_REFERER']);
+  if (isset($currentpath) && !empty($currentpath) && strpos($currentpath, "http") === false) {
     $endpoint .= '?currentpath=' . $currentpath;
   }
   drupal_goto($endpoint, array('external' => TRUE));
@@ -4534,12 +4848,17 @@ function _ibm_apim_download_proxy($url, $node = null) {
   $status = curl_getinfo($ch);
   curl_close($ch);
 
+  // preserve http response code from API call
+  if (isset($status['http_code']) && !empty($status['http_code']) && is_int($status['http_code'])) {
+    http_response_code($status['http_code']);
+  }
+
   // Split header text into an array.
   $header_text = preg_split('/[\r\n]+/', $header);
 
   // Propagate headers to response.
   foreach ($header_text as $header) {
-    if (preg_match('/^(?:Content-Length|Location|Content-Type|Content-Language|Set-Cookie):/i', $header)) {
+    if (preg_match('/^(?:Content-Length|Location|Content-Type|Content-Language|Set-Cookie|X-APIM):/i', $header)) {
       header($header);
     }
   }
@@ -4547,13 +4866,17 @@ function _ibm_apim_download_proxy($url, $node = null) {
   if (isset($node)) {
     header('Content-Disposition: attachment; filename="apidownload.yaml"');
   }
-  else
-    if (preg_match('/^(?:Content-Disposition):/i', $header)) {
-      header($header);
+  else {
+    // use original filename if set
+    foreach ($header_text as $header) {
+      if (preg_match('/^(?:Content-Disposition):/i', $header)) {
+        header($header);
+      }
     }
+  }
 
   if (isset($node) && $node != 'dummy' && isset($contents)) {
-    $data = serialize(json_decode($contents));
+    $data = $contents;
     if ($node->api_resources[$node->language][0]['value'] != $data) {
       $node->api_resources[$node->language][0]['value'] = $data;
       node_save($node);
@@ -4590,6 +4913,9 @@ function _ibm_apim_generate_json_per_api($api) {
     if (isset($gateway_url['path']) && !empty($gateway_url['path'])) {
       $basePath = $gateway_url['path'];
     }
+    if (!isset($basePath) || empty($basePath)) {
+      $basePath = '/';
+    }
   }
   else
     if (isset($apim_session['gatewayURL']) && !empty($apim_session['gatewayURL'])) {
@@ -4604,10 +4930,13 @@ function _ibm_apim_generate_json_per_api($api) {
       if (isset($gateway_url['path']) && !empty($gateway_url['path'])) {
         $basePath = $gateway_url['path'];
       }
+      if (!isset($basePath) || empty($basePath)) {
+        $basePath = '/' . $apim_session['org'] . '/' . $apim_session['env'];
+      }
     }
 
   if (!isset($basePath) || empty($basePath)) {
-    $basePath = '/' . $apim_session['org'] . '/' . $apim_session['env'];
+    $basePath = '/';
   }
   if (!isset($protocol) || empty($protocol)) {
     $protocol = 'https';
@@ -4825,6 +5154,9 @@ function _ibm_apim_generate_json_per_api($api) {
             $newtype['properties'][$key] = array('type' => 'string', 'example' => $val);
           }
         }
+        if (count($newtype['properties']) < 1) {
+          $newtype = array('type' => 'object');
+        }
         $output['definitions']['body' . $bodyindex] = $newtype;
       }
       // handle response body
@@ -4849,6 +5181,9 @@ function _ibm_apim_generate_json_per_api($api) {
           foreach ($decodedbody as $key => $val) {
             $newtype['properties'][$key] = array('type' => 'string', 'example' => $val);
           }
+        }
+        if (count($newtype['properties']) < 1) {
+          $newtype = array('type' => 'object');
         }
         $output['definitions']['response' . $bodyindex] = $newtype;
       }
@@ -4901,65 +5236,69 @@ function _ibm_apim_normalizeSimpleXML($xml, $options = array()) {
 'autoText' => true, // skip textContent key if node has no attributes or child nodes
 'keySearch' => false, // optional search and replace on tag and attribute names
 'keyReplace' => false); // replace values for above search values (as passed to str_replace())
-
-  $options = array_merge($defaults, $options);
-  $namespaces = $xml->getDocNamespaces();
-  $namespaces[''] = null; // add base (empty) namespace
-                          // get attributes from all namespaces
-  $attributesArray = array();
-  foreach ($namespaces as $prefix => $namespace) {
-    foreach ($xml->attributes($namespace) as $attributeName => $attribute) {
-      // replace characters in attribute name
-      if ($options['keySearch'])
-        $attributeName = str_replace($options['keySearch'], $options['keyReplace'], $attributeName);
-      $attributeKey = $options['attributePrefix'] . ($prefix ? $prefix . $options['namespaceSeparator'] : '') . $attributeName;
-      $attributesArray[$attributeKey] = (string) $attribute;
-    }
-  }
-
-  // get child nodes from all namespaces
-  $tagsArray = array();
-  foreach ($namespaces as $prefix => $namespace) {
-    foreach ($xml->children($namespace) as $childXml) {
-      // recurse into child nodes
-      $childArray = _ibm_apim_normalizeSimpleXML($childXml, $options);
-      list($childTagName, $childProperties) = each($childArray);
-
-      // replace characters in tag name
-      if ($options['keySearch'])
-        $childTagName = str_replace($options['keySearch'], $options['keyReplace'], $childTagName);
-        // add namespace prefix, if any
-      if ($prefix)
-        $childTagName = $prefix . $options['namespaceSeparator'] . $childTagName;
-
-      if (!isset($tagsArray[$childTagName])) {
-        // only entry with this key
-        // test if tags of this type should always be arrays, no matter the element count
-        $tagsArray[$childTagName] = in_array($childTagName, $options['alwaysArray']) || !$options['autoArray'] ? array(
-          $childProperties) : $childProperties;
-      }
-      elseif (is_array($tagsArray[$childTagName]) && array_keys($tagsArray[$childTagName]) === range(0, count($tagsArray[$childTagName]) - 1)) {
-        // key already exists and is integer indexed array
-        $tagsArray[$childTagName][] = $childProperties;
-      }
-      else {
-        // key exists so convert to integer indexed array with previous value in position 0
-        $tagsArray[$childTagName] = array($tagsArray[$childTagName], $childProperties);
+  if (isset($xml) && !empty($xml)) {
+    $options = array_merge($defaults, $options);
+    $namespaces = $xml->getDocNamespaces();
+    $namespaces[''] = null; // add base (empty) namespace
+                            // get attributes from all namespaces
+    $attributesArray = array();
+    foreach ($namespaces as $prefix => $namespace) {
+      foreach ($xml->attributes($namespace) as $attributeName => $attribute) {
+        // replace characters in attribute name
+        if ($options['keySearch'])
+          $attributeName = str_replace($options['keySearch'], $options['keyReplace'], $attributeName);
+        $attributeKey = $options['attributePrefix'] . ($prefix ? $prefix . $options['namespaceSeparator'] : '') . $attributeName;
+        $attributesArray[$attributeKey] = (string) $attribute;
       }
     }
+
+    // get child nodes from all namespaces
+    $tagsArray = array();
+    foreach ($namespaces as $prefix => $namespace) {
+      foreach ($xml->children($namespace) as $childXml) {
+        // recurse into child nodes
+        $childArray = _ibm_apim_normalizeSimpleXML($childXml, $options);
+        list($childTagName, $childProperties) = each($childArray);
+
+        // replace characters in tag name
+        if ($options['keySearch'])
+          $childTagName = str_replace($options['keySearch'], $options['keyReplace'], $childTagName);
+          // add namespace prefix, if any
+        if ($prefix)
+          $childTagName = $prefix . $options['namespaceSeparator'] . $childTagName;
+
+        if (!isset($tagsArray[$childTagName])) {
+          // only entry with this key
+          // test if tags of this type should always be arrays, no matter the element count
+          $tagsArray[$childTagName] = in_array($childTagName, $options['alwaysArray']) || !$options['autoArray'] ? array(
+            $childProperties) : $childProperties;
+        }
+        elseif (is_array($tagsArray[$childTagName]) && array_keys($tagsArray[$childTagName]) === range(0, count($tagsArray[$childTagName]) - 1)) {
+          // key already exists and is integer indexed array
+          $tagsArray[$childTagName][] = $childProperties;
+        }
+        else {
+          // key exists so convert to integer indexed array with previous value in position 0
+          $tagsArray[$childTagName] = array($tagsArray[$childTagName], $childProperties);
+        }
+      }
+    }
+
+    // get text content of node
+    $textContentArray = array();
+    $plainText = trim((string) $xml);
+    if ($plainText !== '')
+      $textContentArray[$options['textContent']] = $plainText;
+
+      // stick it all together
+    $propertiesArray = !$options['autoText'] || $attributesArray || $tagsArray || ($plainText === '') ? array_merge($attributesArray, $tagsArray, $textContentArray) : $plainText;
+
+    // return node as array
+    return array($xml->getName() => $propertiesArray);
   }
-
-  // get text content of node
-  $textContentArray = array();
-  $plainText = trim((string) $xml);
-  if ($plainText !== '')
-    $textContentArray[$options['textContent']] = $plainText;
-
-    // stick it all together
-  $propertiesArray = !$options['autoText'] || $attributesArray || $tagsArray || ($plainText === '') ? array_merge($attributesArray, $tagsArray, $textContentArray) : $plainText;
-
-  // return node as array
-  return array($xml->getName() => $propertiesArray);
+  else {
+    return array();
+  }
 }
 
 /**
@@ -5018,6 +5357,12 @@ function _ibm_apim_convert_to_apim_address($values) {
   if ($emailasuser) {
     $username = $mail;
   }
+  else
+    if (isset($values['mail'])) {
+      // if username not email then update that too
+      // commented out until APIM API can handle it
+      // $data['email'] = $mail;
+    }
   $data['username'] = $username;
   // do not include additionalFields for readonly IDPs
   if ($ibm_apim_readonly_idp != TRUE) {
@@ -5086,13 +5431,23 @@ function _ibm_apim_external_login_register($name, $edit = array(), $login = fals
 }
 
 /**
-* Implements hook_cron().
-*/
+ * Implements hook_cron().
+ */
 function ibm_apim_cron() {
   // Clear the cache of the queries used to build up the forum
   // blocks on the home page otherwise they only change when
   // the ALL cache is cleared completely
   cache_clear_all('forum_block_view:', 'cache', TRUE);
+}
+
+/**
+ * Returns the adv portal version number
+ */
+function ibm_apim_version() {
+  $path = drupal_get_path('module', 'ibm_apim') . '/ibm_apim.info';
+  $info = drupal_parse_info_file($path);
+  $data = t('IBM API Management Advanced Portal version %ver', array('%ver' => $info['version']));
+  return $data;
 }
 
 ?>

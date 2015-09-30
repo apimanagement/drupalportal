@@ -1,8 +1,7 @@
 'use strict';
 
-SwaggerEditor.service('Builder', function Builder($q) {
+SwaggerEditor.service('Builder', function Builder(SwayWorker) {
   var load = _.memoize(jsyaml.load);
-  var v2 = SwaggerTools.specs.v2;
 
   /**
    * Build spec docs from a string value
@@ -12,109 +11,61 @@ SwaggerEditor.service('Builder', function Builder($q) {
   */
   function buildDocs(stringValue) {
     var json;
-    var deferred = $q.defer();
 
-    // If stringVlue is empty, return emptyDocsError
-    if (!stringValue) {
-      deferred.reject({
-        specs: null,
-        warnings: [{loadingWarning: 'Please wait while the API content is being rendered.'}]
-      });
+    return new Promise(function (resolve, reject) {
 
-      return deferred.promise;
-    }
-
-    // if jsyaml is unable to load the string value return yamlError
-    try {
-      json = load(stringValue);
-    } catch (yamlError) {
-      deferred.reject({
-        errors: [{yamlError: yamlError}],
-        specs: null
-      });
-
-      return deferred.promise;
-    }
-
-    // Add `title` from object key to definitions
-    // if they are missing title
-    if (json && angular.isObject(json.definitions)) {
-
-      for (var definition in json.definitions) {
-
-        if (angular.isObject(json.definitions[definition]) &&
-            _.isEmpty(json.definitions[definition].title)) {
-
-          json.definitions[definition].title = definition;
-        }
-      }
-    }
-
-    v2.validate(json, function (validationError, validationResults) {
-      if (validationError) {
-        return deferred.reject({
-          specs: json,
-          errors: [validationError]
+      // If stringVlue is empty, return emptyDocsError
+      if (!stringValue) {
+        reject({
+          specs: null,
+          errors: [{emptyDocsError: 'Empty Document Error'}]
         });
       }
 
-      if (validationResults && validationResults.errors &&
-        validationResults.errors.length) {
-        return deferred.reject(_.extend({specs: json}, validationResults));
+      // if jsyaml is unable to load the string value return yamlError
+      try {
+        json = load(stringValue);
+      } catch (yamlError) {
+        reject({
+          errors: [{yamlError: yamlError}],
+          specs: null
+        });
       }
 
-      JsonRefs.resolveRefs(json, function (resolveErrors, resolved) {
-        if (resolveErrors) {
-          return deferred.reject({
-            errors: [resolveErrors],
-            specs: json
-          });
+      // Add `title` from object key to definitions
+      // if they are missing title
+      if (json && _.isObject(json.definitions)) {
+
+        for (var definition in json.definitions) {
+
+          if (_.isObject(json.definitions[definition]) &&
+              !_.startsWith(definition, 'x-') &&
+              _.isEmpty(json.definitions[definition].title)) {
+
+            json.definitions[definition].title = definition;
+          }
         }
+      }
 
-        deferred.resolve(_.extend({specs: resolved}, validationResults));
+      SwayWorker.run({
+        definition: json,
+        jsonRefs: {
+          location: window.location.href
+
+            // TODO: remove when this bug is fixed:
+            // https://github.com/apigee-127/sway/issues/24
+            .replace(/#.+/, '').replace(/\/$/, '')
+        }
+      }, function (data) {
+        if (data.errors.length) {
+          reject(data);
+        } else {
+          resolve(data);
+        }
       });
+
     });
-
-    return deferred.promise;
-  }
-
-  /**
-   * Gets a path JSON object and Specs, finds the path in the
-   * specs JSON and updates it
-   * @param {array} - path an array of keys to reach to an object in JSON
-   *   structure
-   * @param {string} - pathName
-   * @param {object} - specs
-  */
-  function updatePath(path, pathName, specs) {
-    var json;
-    var error = null;
-
-    try {
-      json = load(path);
-    } catch (e) {
-      error = { yamlError: e };
-    }
-
-    if (!error) {
-      specs.paths[pathName] = json[pathName];
-    }
-
-    return {
-      specs: specs,
-      error: error
-    };
-  }
-
-  /*
-   * Returns one path that matches pathName
-   * Returns error object if there is schema incomparability issues
-  */
-  function getPath(specs, path) {
-    return _.pick(specs.paths, path);
   }
 
   this.buildDocs = buildDocs;
-  this.updatePath = updatePath;
-  this.getPath = getPath;
 });

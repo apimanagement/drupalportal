@@ -32,6 +32,6 @@
     "commit": "fb5f933bf82121a26a8a3330ffc265b076d3e38b"
   },
   "_source": "git://github.com/mohsen1/angular-json-schema-form.git",
-  "_target": "~0.1.3",
+  "_target": "~0.1.4",
   "_originalSource": "schema-form"
 }

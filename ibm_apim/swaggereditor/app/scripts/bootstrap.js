@@ -4,25 +4,36 @@ jQuery(function () {
 
   // Try bootstrapping the app with embedded defaults if it exists
   var embeddedDefaults = window.$$embeddedDefaults;
+  var pathname = window.location.pathname;
+
+  if (!_.endsWith(pathname, '/')) {
+    pathname += '/';
+  }
+
+  var url = pathname + 'config/defaults.json';
 
   if (embeddedDefaults) {
-    window.SwaggerEditor.$defaults = embeddedDefaults;
-    angular.bootstrap(window.document, ['SwaggerEditor']);
+    bootstrap(embeddedDefaults);
   } else {
-    var rootPath = '';
-    if (window.location.pathname.lastIndexOf('/') !==
-        (window.location.pathname.length - 1)) {
-      rootPath = Drupal.settings.basePath + 'sites/all/modules/ibm_apim/swaggereditor/app/';
-    }
-    jQuery.getJSON(rootPath + './config/defaults.json').done(function (resp) {
-      window.SwaggerEditor.$defaults = resp;
-      window.SwaggerEditor.$defaults.backendEndpoint = Drupal.settings.ibm_apim.url;
-      //window.SwaggerEditor.$defaults.importProxyUrl = window.location.protocol + "//" + window.location.host + "/?url=";
-      window.SwaggerEditor.$defaults.importProxyUrl = '';
-      angular.bootstrap(window.document, ['SwaggerEditor']);
-    }).fail(function () {
-      console.error('Failed to load defaults.json at',
-        rootPath + './config/defaults.json');
+  /* APIM */
+   var rootPath = Drupal.settings.basePath + 'sites/all/modules/ibm_apim/swaggereditor/app/';
+   var url = rootPath + './config/defaults.json';
+    jQuery.getJSON(url).done(bootstrap).fail(function (error) {
+      console.error('Failed to load defaults.json from', url);
+      console.error(error);
+    });
+  }
+
+  function bootstrap(defaults) {
+
+    // if host is not localhost it's production
+    var isProduction = !/localhost/.test(window.location.host);
+
+    window.SwaggerEditor.$defaults = defaults;
+    window.SwaggerEditor.$defaults.backendEndpoint = Drupal.settings.ibm_apim.url;
+
+    angular.bootstrap(window.document, ['SwaggerEditor'], {
+      //strictDi: isProduction
     });
   }
 });

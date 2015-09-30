@@ -3,9 +3,9 @@
     <form schema-form="requestSchema" ng-model="requestModel" name="requestFrom"></form>
     <div class="raw-request raw">
       <div class="line url">
-        {{operation.operationName | uppercase}}
+        {{operationName | uppercase}}
         <a href="{{generateUrl()}}" target="_blank" tabindex="-1">{{generateUrl()}}</a>
-        {{httpProtorcol}}
+        {{httpProtocol}}
       </div>
       <div class="headers">
         <div class="header" ng-repeat="(headerName, headerValue) in getHeaders()">
@@ -16,10 +16,10 @@
     </div>
     <div class="cors-warning" ng-if="isCrossOrigin()">
       <p>
-        <span class="warning-icon">&#9888;</span>
+        <span class="warning-icon">⚠️</span>
         This is a cross-origin call. Make sure the server at
         <code>{{specs.host}}</code>
-        accepts {{operation.operationName | uppercase}} requests from
+        accepts {{operationName | uppercase}} requests from
         <code>{{locationHost}}</code>.
         <a href="http://www.ibm.com/support/knowledgecenter/SSWHYP_4.0.0/com.ibm.apimgmt.apionprem.doc/tapim_sec_api_cors_enable.html" target="_blank">Learn more</a>
       </p>
@@ -54,7 +54,7 @@
       </tab>
       <tab heading="Raw">
         <div class="raw-response raw">
-          <div class="status">{{httpProtorcol}} {{xhr.statusCode}} {{statusText}}</div>
+          <div class="status">{{httpProtocol}} {{xhr.statusCode}} {{statusText}}</div>
           <div class="resp-headers">{{xhr.getAllResponseHeaders()}}</div>
           <div>{{xhr.responseText}}</div>
         </div>

@@ -97,6 +97,7 @@ dependencies[] = clone
 dependencies[] = d3
 dependencies[] = menu_item_visibility
 dependencies[] = ultimate_cron
+dependencies[] = markdown
 
 ;Enable our modules
 dependencies[] = ibm_apim

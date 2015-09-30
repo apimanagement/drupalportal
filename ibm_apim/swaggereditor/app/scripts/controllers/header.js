@@ -1,8 +1,8 @@
 'use strict';
 
 SwaggerEditor.controller('HeaderCtrl', function HeaderCtrl($scope, $modal,
-  $stateParams, $state, $rootScope, Storage, Builder, FileLoader, ASTManager,
-  Editor, Codegen, Preferences, defaults, strings, $localStorage) {
+  $stateParams, $state, $rootScope, Storage, Builder, FileLoader, Editor,
+  Codegen, Preferences, YAML, defaults, strings, $localStorage) {
 
   if ($stateParams.path) {
     $scope.breadcrumbs  = [{ active: true, name: $stateParams.path }];
@@ -11,18 +11,20 @@ SwaggerEditor.controller('HeaderCtrl', function HeaderCtrl($scope, $modal,
   }
 
   // var statusTimeout;
-  Storage.addChangeListener('progress', function (progressStatus) {
+  $rootScope.$watch('progressStatus', function (progressStatus) {
     var status = strings.stausMessages[progressStatus];
     var statusClass = null;
 
     if (/success/.test(progressStatus)) {
       statusClass = 'success';
-      status = '✔️ ' + status;
     }
 
     if (/error/.test(progressStatus)) {
       statusClass = 'error';
-      status = '❌' + status;
+    }
+
+    if (/working/.test(progressStatus)) {
+      statusClass = 'working';
     }
 
     $scope.status = status;
@@ -41,10 +43,14 @@ SwaggerEditor.controller('HeaderCtrl', function HeaderCtrl($scope, $modal,
   if (!defaults.disableCodeGen) {
     Codegen.getServers().then(function (servers) {
       $scope.servers = servers;
+    }, function () {
+      $scope.serversNotAvailable = true;
     });
 
     Codegen.getClients().then(function (clients) {
       $scope.clients = clients;
+    }, function () {
+      $scope.clientsNotAvailable = true;
     });
   }
 
@@ -74,13 +80,15 @@ SwaggerEditor.controller('HeaderCtrl', function HeaderCtrl($scope, $modal,
   $scope.newProject = function () {
     FileLoader.loadFromUrl('spec-files/guide.yaml').then(function (value) {
       $rootScope.editorValue = value;
-      ASTManager.refresh($rootScope.editorValue);
       Storage.save('yaml', value);
       $state.go('home', {tags: null});
     });
   };
 
-  $scope.assignDownloadHrefs = assignDownloadHrefs;
+  $scope.onFileMenuOpen = function () {
+    assignDownloadHrefs();
+    $rootScope.$broadcast('toggleWatchers', false);
+  };
 
   $scope.openImportFile = function () {
     $modal.open({
@@ -146,48 +154,56 @@ SwaggerEditor.controller('HeaderCtrl', function HeaderCtrl($scope, $modal,
   function assignDownloadHrefs() {
     var MIME_TYPE = 'text/plain';
 
-    Storage.load('yaml').then(function (yaml) {
-
-      // JSON
-      var json = jsyaml.load(yaml);
+    var yaml = $rootScope.editorValue;
+    YAML.load(yaml, function (error, json) {
 
       // if `yaml` is JSON, convert it to YAML
+      var jsonParseError = null;
       try {
         JSON.parse(yaml);
-        yaml = jsyaml.dump(jsyaml.load(yaml));
       } catch (error) {
-        // if JSON.parse throws it means `yaml` is not JSON so we leave it as is
+        jsonParseError = error;
       }
 
-      // swagger and version should be a string to comfort with the schema
-      if (json.info.version) {
-        json.info.version = String(json.info.version);
+      if (!jsonParseError) {
+        YAML.dump(json, function (error, yamlStr) {
+          assign(yamlStr, json);
+        });
+      } else {
+        assign(yaml, json);
       }
-      if (json.swagger) {
-        if (json.swagger === 2) {
-          json.swagger = '2.0';
-        } else {
-          json.swagger = String(json.swagger);
+
+      function assign(yaml, json) {
+        // swagger and version should be a string to comfort with the schema
+        if (json.info.version) {
+          json.info.version = String(json.info.version);
         }
+        if (json.swagger) {
+          if (json.swagger === 2) {
+            json.swagger = '2.0';
+          } else {
+            json.swagger = String(json.swagger);
+          }
+        }
+
+        json = JSON.stringify(json, null, 4);
+        var jsonBlob = new Blob([json], {type: MIME_TYPE});
+        $scope.jsonDownloadHref = window.URL.createObjectURL(jsonBlob);
+        $scope.jsonDownloadUrl = [
+          MIME_TYPE,
+          'swagger.json',
+          $scope.jsonDownloadHref
+        ].join(':');
+
+        // YAML
+        var yamlBlob = new Blob([yaml], {type: MIME_TYPE});
+        $scope.yamlDownloadHref = window.URL.createObjectURL(yamlBlob);
+        $scope.yamlDownloadUrl = [
+          MIME_TYPE,
+          'swagger.yaml',
+          $scope.yamlDownloadHref
+        ].join(':');
       }
-
-      json = JSON.stringify(json, null, 4);
-      var jsonBlob = new Blob([json], {type: MIME_TYPE});
-      $scope.jsonDownloadHref = window.URL.createObjectURL(jsonBlob);
-      $scope.jsonDownloadUrl = [
-        MIME_TYPE,
-        'swagger.json',
-        $scope.jsonDownloadHref
-      ].join(':');
-
-      // YAML
-      var yamlBlob = new Blob([yaml], {type: MIME_TYPE});
-      $scope.yamlDownloadHref = window.URL.createObjectURL(yamlBlob);
-      $scope.yamlDownloadUrl = [
-        MIME_TYPE,
-        'swagger.yaml',
-        $scope.yamlDownloadHref
-      ].join(':');
     });
   }
 
@@ -200,6 +216,8 @@ SwaggerEditor.controller('HeaderCtrl', function HeaderCtrl($scope, $modal,
       android: 'Android',
       'async-scala': 'Async Scala',
       csharp: 'C#',
+      CsharpDotNet2: 'C# .NET 2.0',
+      qt5cpp: 'Qt 5 C++',
       java: 'Java',
       objc: 'Objective-C',
       php: 'PHP',

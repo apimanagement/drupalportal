@@ -38,23 +38,9 @@ if (module_exists('libraries') && libraries_get_path('angular')) {
   drupal_add_js($angularpath . '/angular-resource.js', array('weight' => 2));
   drupal_add_js($angularpath . '/angular-sanitize.js', array('weight' => 2));
 }
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/ace-builds/src-noconflict/ace.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/ace-builds/src-noconflict/mode-yaml.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/ace-builds/src-noconflict/ext-language_tools.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/yaml-js/yaml.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/js-yaml/dist/js-yaml.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/bootstrap/dist/js/bootstrap.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/lodash/lodash.js', array(
-'weight' => 2));
+
+
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/es5-shim/es5-shim.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/json3/lib/json3.js', array(
 'weight' => 2));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/angular-bootstrap/ui-bootstrap-tpls.js', array(
 'weight' => 2));
@@ -62,55 +48,47 @@ drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_
 'weight' => 2));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/angular-marked/angular-marked.js', array(
 'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/ngstorage/ngStorage.js', array(
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/ace-builds/src-noconflict/ace.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/ace-builds/src-noconflict/mode-yaml.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/ace-builds/src-noconflict/ext-language_tools.js', array(
 'weight' => 2));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/angular-ui-ace/ui-ace.js', array(
 'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/angular-ui-router/release/angular-ui-router.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/json-formatter/dist/json-formatter.js', array(
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/raf/index.js', array(
 'weight' => 2));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/angular-ui-layout/ui-layout.js', array(
 'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/json-schema-view/dist/json-schema-view.js', array(
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/angular-ui-router/release/angular-ui-router.js', array(
 'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/objectpath/lib/ObjectPath.js', array(
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/bootstrap/dist/js/bootstrap.js', array(
 'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/swagger-converter/browser.js', array(
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/js-yaml/dist/js-yaml.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/json-formatter/dist/json-formatter.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/json-formatter-js/dist/bundle.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/json-schema-view-js/dist/bundle.min.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/lodash/lodash.js', array(
 'weight' => 2));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/ng-file-upload/ng-file-upload.js', array(
 'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/apply-diff/index.js', array(
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/ngstorage/ngStorage.js', array(
 'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/async/lib/async.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/spark-md5/spark-md5.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/traverse/traverse.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/lodash-compat/lodash.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/path-loader/browser/path-loader.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/z-schema/dist/ZSchema-browser.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/visionmedia-debug/dist/debug.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/json-refs/browser/json-refs.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/swagger-tools/browser/swagger-tools.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/angular-schema-form/dist/schema-form.js', array(
-'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/angular-schema-form/dist/bootstrap-decorator.min.js', array(
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/promise-polyfill/Promise.js', array(
 'weight' => 2));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/json-editor/dist/jsoneditor.js', array(
 'weight' => 2));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/schema-form/dist/schema-form.js', array(
 'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/harmony-collections/harmony-collections.js', array(
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/spark-md5/spark-md5.js', array(
 'weight' => 2));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/raf/index.js', array(
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/yaml-js/yaml.js', array(
+'weight' => 2));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/bower_components/yaml-worker/index.js', array(
 'weight' => 2));
 
 // Add standard .js files from Swagger Editor
@@ -151,8 +129,6 @@ drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/script
 'weight' => 19));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/directives/on-file-change.js', array(
 'weight' => 20));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/directives/path.js', array(
-'weight' => 21));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/directives/operation.js', array(
 'weight' => 22));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/directives/schemamodel.js', array(
@@ -175,8 +151,6 @@ drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/script
 'weight' => 30));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/directives/tryoperation.js', array(
 'weight' => 31));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/sorter.js', array(
-'weight' => 32));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/tag-manager.js', array(
 'weight' => 33));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/autocomplete.js', array(
@@ -189,8 +163,6 @@ drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/script
 'weight' => 37));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/ast-manager.js', array(
 'weight' => 38));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/backend-health-check.js', array(
-'weight' => 39));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/codegen.js', array(
 'weight' => 40));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/focused-path.js', array(
@@ -210,11 +182,19 @@ drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/script
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/analytics.js', array(
 'weight' => 48));
 drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/external-hooks.js', array(
-'weight' => 48));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/router.js', array(
 'weight' => 49));
-drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/plugins/jquery.scroll-into-view.js', array(
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/sway-worker.js', array(
 'weight' => 50));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/yaml.js', array(
+'weight' => 51));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/services/fold-state-manager.js', array(
+'weight' => 52));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/router.js', array(
+'weight' => 53));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/plugins/jquery.scroll-into-view.js', array(
+'weight' => 54));
+drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/swaggereditor/app/scripts/branding.js', array(
+'weight' => 55));
 
 $apim_session = &_ibm_apim_get_apim_session();
 $protocol_lower = strtolower($api_protocol[0]['value']);
@@ -340,7 +320,15 @@ drupal_add_css(drupal_get_path('module', 'ibm_apim') . '/css/ie-9.css', array('w
 
 		<div class="section apimMainContent">
 			<label class="label apimField apimDescription"><?php print t('Description'); ?></label>
-			<div id="api_description"><?php print $api_description[0]['safe_value']; ?></div>
+			<div id="api_description">
+			   <?php
+			   if (module_exists('markdown')) {
+                 print _filter_markdown($api_description[0]['safe_value'], null);
+               } else {
+                 print '<p>'. $api_description[0]['safe_value'] .'</p>';
+               }
+               ?>
+			</div>
 		</div>
 
   <?php
@@ -465,6 +453,8 @@ print "<div class='swagger-section " . $swagger_classes . "'>";
        print"<div id='message-bar' class='swagger-ui-wrap' style='display: none;'>&nbsp;</div>
 			<div id='swagger-ui-container' class='swagger-ui-wrap'></div>
             <div class='swagger-ops-title apimTitle'>".t('API Operations')."</div>
+            <div class='swaggerErrorMessage hiddenError' id='swaggerXHRErrorMessage'>" . t('An error has occurred rendering this API. Please contact your server administrator.') . "</div>
+            <div class='swaggerLoadingMessage' id='swaggerLoadingMessage'><img src='". file_create_url(drupal_get_path('module', 'ibm_apim') . '/images/ajax-loader.gif') . "'></img></div>
 			<div class='total-wrapper' ui-view></div>
 		</div>";
  // Plan selection

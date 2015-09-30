@@ -51,4 +51,27 @@ function ibm_apim_requirements($phase) {
 // hook_uninstall() implementation
 function ibm_apim_uninstall() {
 }
+
+/*
+ * Update code to handle upgrade from earlier version
+ */
+function ibm_apim_update_7400() {
+  // Change SAML Login link
+  $endpoint = variable_get('ibm_apim_saml_endpoint', NULL);
+  $saml = variable_get('ibm_apim_saml_idp', 0);
+  if (isset($endpoint) && !empty($endpoint) && $saml == 1) {
+    $mlid = db_query("SELECT mlid FROM {menu_links} WHERE link_path=:link_path", array(
+      ':link_path' => $endpoint))->fetchField();
+    if (isset($mlid)) {
+      $link = menu_link_load($mlid);
+      if (isset($link)) {
+        $link['link_path'] = 'ibm_apim/saml/login';
+        $link['customized'] = 1;
+        $link['external'] = 0;
+        menu_link_save($link);
+        menu_cache_clear_all();
+      }
+    }
+  }
+}
 ?>

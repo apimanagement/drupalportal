@@ -18,89 +18,117 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
   $scope.requestModel = makeRequestModel();
   $scope.requestSchema = makeRequestSchema();
   $scope.hasFileParam = hasFileParam();
+
   // httpProtocol is static for now we can use HTTP2 later if we wanted
-  $scope.httpProtorcol = 'HTTP/1.1';
+  $scope.httpProtocol = 'HTTP/1.1';
   $scope.locationHost = window.location.host;
 
   configureSchemaForm();
-  
+
   // Deeply watch specs for updates to regenerate the from
   $scope.$watch('specs', function () {
     $scope.requestModel = makeRequestModel();
     $scope.requestSchema = makeRequestSchema();
   }, true);
-  
+
+  // JSON Editor options
+  var defaultOptions = {
+    theme: 'bootstrap3',           // jshint ignore:line
+    remove_empty_properties: true, // jshint ignore:line
+    show_errors: 'change'          // jshint ignore:line
+  };
+
+  var looseOptions = {
+    no_additional_properties: false, // jshint ignore:line
+    disable_properties: false,       // jshint ignore:line
+    disable_edit_json: false         // jshint ignore:line
+  };
+
+  SchemaForm.options = defaultOptions;
+
   /*
    * configure SchemaForm directive based on request schema
   */
   function configureSchemaForm() {
-    /*jshint camelcase: false */
 
-    var defaultOptions = {
-      theme: 'bootstrap3',
-      remove_empty_properties: true,
-      show_errors: 'change'
-    };
+    // Determine if this request has a loose body parameter schema
+    // A loose body parameter schema is a body parameter that allows additional
+    // properties or has no properties object
+    //
+    // Note that "loose schema" is not a formal definition, we use this
+    // definition here to determine type of form to render
+    var loose = false;
 
-    var looseOptions = {
-      no_additional_properties: false,
-      disable_properties: false,
-      disable_edit_json: false
-    };
+    // loose schema is only for requests with body parameter
+    if (!hasRequestBody()) {
+      loose = false;
 
-    var loose = isLoose();
+    } else {
+      // we're accessing deep in the schema. many operations can fail here
+      try {
+
+        for (var p in $scope.requestSchema.properties.parameters.properties) {
+          var param = $scope.requestSchema.properties.parameters.properties[p];
+          if (param.in === 'body' && isLooseJSONSchema(param)) {
+            loose = true;
+          }
+        }
+      } catch (e) {}
+    }
 
     SchemaForm.options = _.extend(defaultOptions, loose ? looseOptions : {});
   }
 
   /*
-   * Determines if this request has a loose body parameter schema
-   * A loose body parameter schema is a body parameter that allows additional
-   * properties or has no properties object
+   * Determines if a JSON Schema is loose
    *
-   * Note that "loose schema" is not a formal definition, we use this definition
-   * here to determine type of form to render
+   * @param {object} schema - A JSON Schema object
    *
    * @returns {boolean}
   */
-  function isLoose() {
+  function isLooseJSONSchema(schema) {
 
-    // loose schema is only for requests with body parameter
-    if (!hasRequestBody()) {
-      return false;
+    // loose object
+    if (schema.additionalProperties || _.isEmpty(schema.properties)) {
+      return true;
     }
 
-    // we're accessing deep in the schema. many operations can fail here
-    try {
+    // loose array of objects
+    if (
+        schema.type === 'array' &&
+        (schema.items.additionalProperties ||
+        _.isEmpty(schema.items.properties))
+      ) {
 
-      for (var p in $scope.requestSchema.properties.parameters.properties) {
-        var param = $scope.requestSchema.properties.parameters.properties[p];
-        if (param.in === 'body') {
-
-          // loose object
-          if (
-              param.type === 'object' &&
-              (param.additionalProperties ||
-              _.isEmpty(param.properties))
-            ) {
-
-            return true;
-          }
-
-          // loose array of objects
-          if (
-              param.type === 'array' &&
-              (param.items.additionalProperties ||
-              _.isEmpty(param.items.properties))
-            ) {
-
-            return true;
-          }
-        }
-      }
-    } catch (e) {}
+      return true;
+    }
 
     return false;
+  }
+
+  /*
+   * Appends JSON Editor options for schema recursively so if a schema needs to
+   * be edited by JSON Editor loosely it's possible
+   *
+   * @param {object} schema - A JSON Schema object
+   *
+   * @returns {object} - A JSON Schema object
+  */
+  function appendJSONEditorOptions(schema) {
+    var looseOptions = {
+      no_additional_properties: false, // jshint ignore:line
+      disable_properties: false,       // jshint ignore:line
+      disable_edit_json: false         // jshint ignore:line
+    };
+
+    // If schema is loose add options for JSON Editor
+    if (isLooseJSONSchema(schema)) {
+      schema.options = looseOptions;
+    }
+
+    _.each(schema.properties, appendJSONEditorOptions);
+
+    return schema;
   }
 
   /*
@@ -116,6 +144,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
     var schema = {
       type: 'object',
       title: 'Request',
+      required: ['scheme', 'accept'],
       properties: {
         scheme: {
           type: 'string',
@@ -197,7 +226,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
     var model = {
 
       // Add first scheme as default scheme
-      scheme: [walkToProperty('schemes')[0]],
+      scheme: walkToProperty('schemes')[0],
 
       // Default Accept header is the first one
       accept: walkToProperty('produces')[0]
@@ -230,7 +259,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
         // if default value is provided use it
         if (angular.isDefined(paramSchema.default)) {
           model.parameters[paramSchema.name] = paramSchema.default;
-          
+
         // if there is no default value but there is minimum or maximum use them
         } else if (angular.isDefined(paramSchema.minimum)) {
           model.parameters[paramSchema.name] = paramSchema.minimum;
@@ -296,7 +325,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
       schema.format = 'file';
     }
 
-    return schema;
+    return appendJSONEditorOptions(schema);
   }
 
   /*
@@ -335,20 +364,19 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
     var securityOptions = [];
 
     // operation level securities
-    if (Array.isArray($scope.operation.security)) {
-      $scope.operation.security.map(function(security) {
-         Object.keys(security).forEach(function(key){
-           securityOptions = securityOptions.concat(key);
-         });
+    if (_.isArray($scope.operation.security)) {
+      $scope.operation.security.map(function (security) {
+        _.keys(security).forEach(function (key) {
+          securityOptions = securityOptions.concat(key);
+        });
       });
-    }
 
     // root level securities
-    if (Array.isArray($scope.specs.security)) {
-      $scope.specs.security.map(function(security) {
-         Object.keys(security).forEach(function(key){
-           securityOptions = securityOptions.concat(key);
-         });
+    } else if (_.isArray($scope.specs.security)) {
+      $scope.specs.security.map(function (security) {
+        _.keys(security).forEach(function (key) {
+          securityOptions = securityOptions.concat(key);
+        });
       });
     }
 
@@ -518,7 +546,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
       jQuery.param(queryParams, isCollectionQueryParam));
 
     // fill in path parameter values inside the path
-    pathStr = $scope.path.pathName.replace(pathParamRegex,
+    pathStr = $scope.pathName.replace(pathParamRegex,
 
       // a simple replace method where it uses the available path parameter
       // value to replace the path parameter or leave it as it is if path
@@ -698,7 +726,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
       // TODO: put the mechanism of getting the file object into a method
       var bodyParamName = bodyParam.name;
       var form = new FormData();
-      var inputEl = $('input[type="file"][name*="' + bodyParamName + '"]')[0];
+      var inputEl = jQuery('input[type="file"][name*="' + bodyParamName + '"]')[0];
 
       if (!inputEl) {
         return 'No file is selected';
@@ -778,7 +806,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
 
     jQuery.ajax({
       url: $scope.generateUrl(),
-      type: $scope.operation.operationName,
+      type: $scope.operationName,
       headers: _.omit($scope.getHeaders(), omitHeaders),
       data: $scope.getRequestBody(),
       contentType: $scope.contentType
@@ -858,12 +886,9 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
   */
   $scope.isType = function (headers, type) {
     var regex = new RegExp(type);
-    /* APIM to handle headers not being set */
-    if (headers && headers['Content-Type']) {
-      return headers['Content-Type'] && regex.test(headers['Content-Type']);
-    } else {
-      return false;
-    }
+    headers = headers || {};
+
+    return headers['Content-Type'] && regex.test(headers['Content-Type']);
   };
 
   /*

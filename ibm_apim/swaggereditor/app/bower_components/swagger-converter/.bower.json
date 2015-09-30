@@ -25,6 +25,6 @@
     "commit": "f19cbc6810f6f91830b7d971465d142164413200"
   },
   "_source": "git://github.com/apigee-127/swagger-converter.git",
-  "_target": "^0.1.0",
+  "_target": "~0.1.7",
   "_originalSource": "swagger-converter"
 }

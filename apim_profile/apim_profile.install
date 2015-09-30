@@ -908,7 +908,7 @@ api/*',
   variable_set('page_cache_maximum_age', "900");
   variable_set('page_compression', 1);
   variable_set('preprocess_js', 1);
-  variable_set('preprocess_css', 0);
+  variable_set('preprocess_css', 1);
 
   // disable cloning of our content types
   variable_set('clone_omitted', array(
@@ -2100,7 +2100,7 @@ function apim_profile_create_bannerblock() {
  */
 function apim_profile_update_7400() {
   // enable cron
-  $modules = array('d3', 'clone', 'angularjs', 'menu_item_visibility', 'site_uploader', 'ultimate_cron');
+  $modules = array('d3', 'clone', 'angularjs', 'menu_item_visibility', 'site_uploader', 'ultimate_cron', 'markdown');
   module_enable($modules, TRUE);
 
   // configure cron
@@ -2166,5 +2166,5 @@ function apim_profile_update_7400() {
   }
   module_disable(array('security_questions'), TRUE);
 
-  variable_set('preprocess_css', 0);
+  variable_set('preprocess_css', 1);
 }

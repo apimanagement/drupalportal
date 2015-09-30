@@ -26,6 +26,11 @@ SwaggerEditor.service('KeywordMap', function KeywordMap(defaults) {
         minLength: String,
         pattern: String,
         not: String,
+
+        // jscs:disable
+        '\$ref': String,
+        // jscs:enable
+
         definitions: {
           '.': this
         },
@@ -53,38 +58,38 @@ SwaggerEditor.service('KeywordMap', function KeywordMap(defaults) {
   }
 
   var jsonSchema = new JSONSchema();
-  var schemes = {
-    http: String,
-    https: String,
-    ws: String,
-    wss: String
-  };
+  var schemes = [
+    'http',
+    'https',
+    'ws',
+    'wss'
+  ];
 
   var externalDocs = {
     description: String,
     url: String
   };
 
-  var mimeTypes = {
-    'text/plain': String,
-    'text/html': String,
-    'text/xml': String,
-    'text/csv': String,
-    'application/json': String,
-    'application/octet-stream': String,
-    'application/xml': String,
-    'application/vnd.': String,
-    'application/pdf': String,
-    'audio/': String,
-    'image/jpeg': String,
-    'image/gif': String,
-    'image/png': String,
-    'multipart/form-data': String,
-    'video/avi': String,
-    'video/mpeg': String,
-    'video/ogg': String,
-    'video/mp4': String
-  };
+  var mimeTypes = [
+    'text/plain',
+    'text/html',
+    'text/xml',
+    'text/csv',
+    'application/json',
+    'application/octet-stream',
+    'application/xml',
+    'application/vnd.',
+    'application/pdf',
+    'audio/',
+    'image/jpeg',
+    'image/gif',
+    'image/png',
+    'multipart/form-data',
+    'video/avi',
+    'video/mpeg',
+    'video/ogg',
+    'video/mp4'
+  ];
 
   var header = {
     name: String,
@@ -93,10 +98,22 @@ SwaggerEditor.service('KeywordMap', function KeywordMap(defaults) {
 
   var parameter = {
     name: String,
-    in: String,
+    in: [
+      'body',
+      'formData',
+      'header',
+      'path',
+      'query'
+    ],
     description: String,
-    required: String,
-    type: String,
+    required: ['true', 'false'],
+    type:  [
+      'string',
+      'number',
+      'boolean',
+      'integer',
+      'array'
+    ],
     format: String,
     schema: jsonSchema
   };
@@ -107,9 +124,7 @@ SwaggerEditor.service('KeywordMap', function KeywordMap(defaults) {
 
   var response =  {
     description: String,
-    schema: {
-      type: String
-    },
+    schema: jsonSchema,
     headers: {
       '.': header
     },
@@ -139,10 +154,25 @@ SwaggerEditor.service('KeywordMap', function KeywordMap(defaults) {
     tags: [String]
   };
 
+  var securityDefinition = {
+    type: ['oauth2', 'apiKey', 'basic'],
+    name: String,
+    flow: ['application', 'implicit', 'accessCode'],
+    scopes: String,
+    tokenUrl: String,
+    authorizationUrl: String,
+    description: String
+  };
+
   var map = {
-    swagger: String,
+    swagger: ['"2.0"'],
     info: {
-      version: String,
+      version: [
+        '1.0.0',
+        '0.0.0',
+        '0.0.1',
+        'something-we-all-get'
+      ],
       title: String,
       description: String,
       termsOfService: String,
@@ -167,9 +197,9 @@ SwaggerEditor.service('KeywordMap', function KeywordMap(defaults) {
     paths: {
 
       //path
-      '.': {
+      '^\/.\?': {
         parameters: [parameter],
-        '.': operation
+        'get|put|post|delete|options|head|patch': operation
       }
     },
 
@@ -181,7 +211,7 @@ SwaggerEditor.service('KeywordMap', function KeywordMap(defaults) {
 
     parameters: [parameter],
     responses: {
-      '.': response
+      '[2-6][0-9][0-9]': response
     },
     security: {
       '.': {
@@ -189,9 +219,7 @@ SwaggerEditor.service('KeywordMap', function KeywordMap(defaults) {
       }
     },
     securityDefinitions: {
-      '.': {
-        '.': String
-      }
+      '.': securityDefinition
     },
     tags: [{
       name: String,

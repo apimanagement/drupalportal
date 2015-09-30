@@ -1,7 +1,8 @@
 'use strict';
 
 SwaggerEditor.service('Backend', function Backend($http, $q, defaults,
-  Builder, ExternalHooks) {
+  $rootScope, Builder, ExternalHooks, YAML) {
+
   var changeListeners =  {};
   var absoluteRegex = /^(\/|http(s)?\:\/\/)/; // starts with slash or http|https
   var buffer = {};
@@ -32,14 +33,21 @@ SwaggerEditor.service('Backend', function Backend($http, $q, defaults,
 
     save('progress', 'progress-saving');
 
+    var httpConfig = {
+      headers: {
+        'content-type': defaults.useYamlBackend ?
+          'application/yaml; charset=utf-8' : 'application/json; charset=utf-8'
+      }
+    };
+
     if (!result.error) {
-      $http.put(backendEndpoint, data)
+      $http.put(backendEndpoint, data, httpConfig)
         .then(function success() {
           ExternalHooks.trigger('put-success', [].slice.call(arguments));
-          save('progress', 'success-saved');
+          $rootScope.progressStatus = 'success-saved';
         }, function failure() {
           ExternalHooks.trigger('put-failure', [].slice.call(arguments));
-          save('progress', 'error-connection');
+          $rootScope.progressStatus = 'error-connection';
         });
     }
   }
@@ -58,12 +66,15 @@ SwaggerEditor.service('Backend', function Backend($http, $q, defaults,
       });
     }
 
-    if (defaults.useYamlBackend && (key === 'yaml' && value)) {
-      commit(value);
-    } else if (key === 'specs' && value) {
-      commit(buffer[key]);
+    if (key === 'yaml' && value) {
+      if (defaults.useYamlBackend) {
+        commit(value);
+      } else {
+        YAML.load(value, function (err, json) {
+          if (!err) { commit(json); }
+        });
+      }
     }
-
   }
 
   /*
@@ -71,20 +82,19 @@ SwaggerEditor.service('Backend', function Backend($http, $q, defaults,
   */
   function load(key) {
     if (key !== 'yaml') {
-      var deferred = $q.defer();
-      if (!key) {
-        deferred.reject();
-      } else {
-        deferred.resolve(buffer[key]);
-      }
-      return deferred.promise;
+      return new Promise(function (resolve, reject) {
+        if (!key) {
+          reject();
+        } else {
+          resolve(buffer[key]);
+        }
+      });
     }
 
     var httpConfig = {
       headers: {
         accept: defaults.useYamlBackend ?
           'application/yaml; charset=utf-8' : 'application/json; charset=utf-8'
-
       }
     };
 

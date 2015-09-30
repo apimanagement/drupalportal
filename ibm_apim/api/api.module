@@ -678,6 +678,7 @@ function api_list_contents() {
   $api_data = NULL;
   $org = ibm_apim_get_current_developer_org();
   $developerOrgs = $org['id'];
+  $apim_session = &_ibm_apim_get_apim_session();
 
   if (isset($developerOrgs)) {
     $developer_org_url = '/orgs/' . $developerOrgs;
@@ -685,11 +686,24 @@ function api_list_contents() {
   else {
     $developer_org_url = '';
   }
+  
   $url = '/v1/portal' . $developer_org_url . '/apis';
 
-  $result = ibm_apim_call($url);
-  if (isset($result) && isset($result->data) && !isset($result->data['errors'])) {
-    $api_data = $result->data;
+  //get cache time to live. default to 3600 seconds if not found
+  $cache_ttl = variable_get('ibm_apim_$cache_ttl', 3600);
+              
+  if (isset($apim_session['api_list'][$url]) && $apim_session['api_list'][$url]['timestamp'] < $cache_ttl+time()) {
+  	watchdog('api_list_contents', 'Cache hit for apis list for url %url', array(
+        '%url' => $url), WATCHDOG_NOTICE);
+  	$api_data = $apim_session['api_list'][$url]['data'];
+  } else {
+	  $result = ibm_apim_call($url);
+	  if (isset($result) && isset($result->data) && !isset($result->data['errors'])) {
+	    $api_data = $result->data;
+	    
+	    //cache them
+	    $apim_session['api_list'][$url] = array( 'data' => $api_data, 'timestamp' => time());	    
+	  }
   }
   return $api_data;
 }
@@ -720,14 +734,21 @@ function api_details_contents($apiid, $apiversion) {
   // check if this api is already cached in the session, if so return that
   $found = false;
   $index = 0;
+  
+  //get cache time to live. default to 3600 seconds if not found
+  $cache_ttl = variable_get('ibm_apim_$cache_ttl', 3600);
+  
   if (isset($apim_session['apis'])) {
     foreach ($apim_session['apis'] as $api) {
       $index++;
-      if (isset($api) && isset($api->id) && isset($api->version)) {
-        if ($api->id == $apiid && $api->version == $apiversion) {
-          if (isset($api->data)) {
+      if (isset($api)) {
+        if ($api['id'] == $apiid && $api['version'] == $apiversion) {
+          if (isset($api['data']) && $api['timestamp'] < $cache_ttl+time()) {
             $found = true;
-            return $api->data;
+            watchdog('api_details_contents', 'Cache hit for api %id version %version', array(
+        		'%id' => $apiid,
+        		'%version' => $apiversion), WATCHDOG_NOTICE);
+            return $api['data'];
           }
           else {
             // if exists but no data then remove it from the cache
@@ -755,7 +776,8 @@ function api_details_contents($apiid, $apiversion) {
       $apim_session['apis'][] = array(
         'id' => $apiid,
         'version' => $apiversion,
-        'data' => $returnValue);
+        'data' => $returnValue,
+        'timestamp' => time());
     }
     return $returnValue;
   }
@@ -776,20 +798,56 @@ function api_details_contents($apiid, $apiversion) {
  */
 function api_documents_contents($apiid, $apiversion) {
   $returnValue = NULL;
+  $apim_session = &_ibm_apim_get_apim_session();
   $org = ibm_apim_get_current_developer_org();
   $developerOrgs = $org['id'];
 
-  if (isset($developerOrgs)) {
-    $developer_org_url = '/orgs/' . $developerOrgs;
-  }
-  else {
-    $developer_org_url = '';
+  //get cache time to live. default to 3600 seconds if not found
+  $cache_ttl = variable_get('ibm_apim_$cache_ttl', 3600);
+  
+  // check if this apis's documents is already cached in the session, if so return that
+  $found = false;
+  $index = 0;
+  if (isset($apim_session['apis_documents'])) {
+    foreach ($apim_session['apis_documents'] as $document) {
+      $index++;
+      if (isset($document)) {
+        if ($document['id'] == $apiid && $document['version'] == $apiversion) {
+          if (isset($document['data']) && $document['timestamp'] < $cache_ttl+time()) {
+            $found = true;
+            watchdog('api_documents_contents', 'Cache hit for api documents %id version %version', array(
+        		'%id' => $apiid,
+        		'%version' => $apiversion), WATCHDOG_NOTICE);
+            return $document['data'];
+          }
+          else {
+            // if exists but no data then remove it from the cache
+            unset($apim_session['apis_documents'][$index]);
+          }
+        }
+      }
+    }
   }
 
-  $url = '/v1/portal' . $developer_org_url . '/apis/' . $apiid . '/v' . $apiversion . '/documents';
-  $result = ibm_apim_call($url);
-  if (isset($result) && isset($result->data)) {
-    $returnValue = $result->data;
+  if ($found == false) {
+	  if (isset($developerOrgs)) {
+	    $developer_org_url = '/orgs/' . $developerOrgs;
+	  }
+	  else {
+	    $developer_org_url = '';
+	  }
+	  
+	  $url = '/v1/portal' . $developer_org_url . '/apis/' . $apiid . '/v' . $apiversion . '/documents';
+	  $result = ibm_apim_call($url);
+	  if (isset($result) && isset($result->data)) {
+	    $returnValue = $result->data;
+	    // cache it in the session
+      	$apim_session['apis_documents'][] = array(
+	        'id' => $apiid, 
+	        'version' => $apiversion, 
+	        'data' => $returnValue,
+        	'timestamp' => time());
+	  }
   }
   return $returnValue;
 }

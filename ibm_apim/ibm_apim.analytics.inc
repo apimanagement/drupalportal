@@ -227,7 +227,9 @@ function ibm_apim_analytics_get_org_datausage_json() {
   $analytics_data = _ibm_apim_analytics_get_datausage(null, null, null);
   header('Content-Disposition: attachment; filename="org_datausage.json"');
   header('Content-Type: application/json');
-  print $analytics_data;
+  if (isset($analytics_data)) {
+    echo drupal_json_encode($analytics_data);
+  }
 }
 
 /*
@@ -237,7 +239,9 @@ function ibm_apim_analytics_get_org_latency_json() {
   $analytics_data = _ibm_apim_analytics_get_latency(null, null, null);
   header('Content-Disposition: attachment; filename="org_latency.json"');
   header('Content-Type: application/json');
-  print $analytics_data;
+  if (isset($analytics_data)) {
+    echo drupal_json_encode($analytics_data);
+  }
 }
 
 /*
@@ -247,7 +251,9 @@ function ibm_apim_analytics_get_org_successrate_json() {
   $analytics_data = _ibm_apim_analytics_get_successrate(null, null, null);
   header('Content-Disposition: attachment; filename="org_successrate.json"');
   header('Content-Type: application/json');
-  print $analytics_data;
+  if (isset($analytics_data)) {
+    echo drupal_json_encode($analytics_data);
+  }
 }
 
 /*
@@ -257,7 +263,9 @@ function ibm_apim_analytics_get_app_datausage_json($appID = NULL) {
   $analytics_data = _ibm_apim_analytics_get_datausage($appID, null, null);
   header('Content-Disposition: attachment; filename="app_datausage.json"');
   header('Content-Type: application/json');
-  print $analytics_data;
+  if (isset($analytics_data)) {
+    echo drupal_json_encode($analytics_data);
+  }
 }
 
 /*
@@ -267,7 +275,9 @@ function ibm_apim_analytics_get_app_latency_json($appID = NULL) {
   $analytics_data = _ibm_apim_analytics_get_latency($appID, null, null);
   header('Content-Disposition: attachment; filename="app_latency.json"');
   header('Content-Type: application/json');
-  print $analytics_data;
+  if (isset($analytics_data)) {
+    echo drupal_json_encode($analytics_data);
+  }
 }
 
 /*
@@ -277,7 +287,9 @@ function ibm_apim_analytics_get_app_successrate_json($appID = NULL) {
   $analytics_data = _ibm_apim_analytics_get_successrate($appID, null, null);
   header('Content-Disposition: attachment; filename="app_successrate.json"');
   header('Content-Type: application/json');
-  print $analytics_data;
+  if (isset($analytics_data)) {
+    echo drupal_json_encode($analytics_data);
+  }
 }
 
 /*
@@ -287,7 +299,9 @@ function ibm_apim_analytics_get_op_datausage_json($appID = NULL, $resourceId = N
   $analytics_data = _ibm_apim_analytics_get_datausage($appID, $resourceId);
   header('Content-Disposition: attachment; filename="op_datausage.json"');
   header('Content-Type: application/json');
-  print $analytics_data;
+  if (isset($analytics_data)) {
+    echo drupal_json_encode($analytics_data);
+  }
 }
 
 /*
@@ -297,7 +311,9 @@ function ibm_apim_analytics_get_op_latency_json($appID = NULL, $resourceId = NUL
   $analytics_data = _ibm_apim_analytics_get_latency($appID, $resourceId);
   header('Content-Disposition: attachment; filename="op_latency.json"');
   header('Content-Type: application/json');
-  print $analytics_data;
+  if (isset($analytics_data)) {
+    echo drupal_json_encode($analytics_data);
+  }
 }
 
 /*
@@ -307,7 +323,9 @@ function ibm_apim_analytics_get_op_successrate_json($appID = NULL, $resourceId =
   $analytics_data = _ibm_apim_analytics_get_successrate($appID, $resourceId);
   header('Content-Disposition: attachment; filename="op_successrate.json"');
   header('Content-Type: application/json');
-  print $analytics_data;
+  if (isset($analytics_data)) {
+    echo drupal_json_encode($analytics_data);
+  }
 }
 
 /*

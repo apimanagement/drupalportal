@@ -1,6 +1,6 @@
 'use strict';
 
-SwaggerEditor.directive('operation', function (defaults) {
+SwaggerEditor.directive('swaggerOperation', function (defaults) {
   var rootPath = Drupal.settings.basePath + 'sites/all/modules/ibm_apim/swaggereditor/app/';
   return {
     restrict: 'E',
@@ -25,9 +25,11 @@ SwaggerEditor.directive('operation', function (defaults) {
        *
        * @returns {array} - array of parameters
       */
-      $scope.getParameters = function () {
-        var hasPathParameter = Array.isArray($scope.path.pathParameters);
-        var hasOperationParameter = Array.isArray($scope.operation.parameters);
+      $scope.getParameters = function getParameters() {
+        var hasPathParameter = _.isArray($scope.path.parameters);
+        var hasOperationParameter = _.isArray($scope.operation.parameters);
+        var operationParameters = $scope.operation.parameters;
+        var pathParameters = $scope.path.parameters;
 
         // if there is no operation and path parameter return empty array
         if (!hasOperationParameter && !hasPathParameter) {
@@ -36,38 +38,50 @@ SwaggerEditor.directive('operation', function (defaults) {
 
         // if there is no operation parameter return only path parameters
         if (!hasOperationParameter) {
-          return $scope.path.pathParameters || [];
+          operationParameters = [];
         }
 
         // if there is no path parameter return operation parameters
         if (!hasPathParameter) {
-          return $scope.operation.parameters || [];
+          pathParameters = [];
         }
 
         // if there is both path and operation parameters return all of them
-        return $scope.operation.parameters.concat($scope.path.pathParameters);
+        return operationParameters.concat(pathParameters)
+          .map(setParameterSchema);
       };
 
       /*
-       * TODO: Docs
+       * Sets the schema object for a parameter even if it doesn't have schema
+       *
+       * @param {object} parameter
+       * @returns {object}
       */
-      $scope.getParameterSchema = function (parameter) {
+      function setParameterSchema(parameter) {
         if (parameter.schema) {
-          return parameter.schema;
+          return parameter;
+
+        } else if (parameter.type === 'array') {
+          parameter.schema = _.pick(parameter, 'type', 'items');
+
+        } else {
+          var schema = {type: parameter.type};
+
+          if (parameter.format) {
+            schema.format = parameter.format;
+          }
+
+          parameter.schema = schema;
         }
 
-        if (parameter.type === 'array') {
-          return _.pick(parameter, 'type', 'items');
+        // if allowEmptyValue is explicitly set to false it means this parameter
+        // is required for making a request.
+        if (parameter.allowEmptyValue === false) {
+          parameter.schema.required = true;
         }
 
-        var schema = {type: parameter.type};
-
-        if (parameter.format) {
-          schema.format = parameter.format;
-        }
-
-        return schema;
-      };
+        return parameter;
+      }
 
       /*
        * Returns true if the operation responses has at least one response with
@@ -77,8 +91,8 @@ SwaggerEditor.directive('operation', function (defaults) {
        * @returns boolean
       */
       $scope.hasAResponseWithSchema = function (responses) {
-        return responses.some(function (response) {
-          return response.schema;
+        return _.keys(responses).some(function (responseCode) {
+          return responses[responseCode] && responses[responseCode].schema;
         });
       };
 
@@ -90,8 +104,8 @@ SwaggerEditor.directive('operation', function (defaults) {
        * @returns boolean
       */
       $scope.hasAResponseWithHeaders = function (responses) {
-        return responses.some(function (response) {
-          return response.headers;
+        return _.keys(responses).some(function (responseCode) {
+          return responses[responseCode] && responses[responseCode].headers;
         });
       };
     }

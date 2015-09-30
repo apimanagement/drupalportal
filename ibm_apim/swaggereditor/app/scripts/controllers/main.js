@@ -2,16 +2,11 @@
 
 SwaggerEditor.controller('MainCtrl', function MainCtrl(
   $scope, $rootScope, $stateParams, $location,
-  Editor, Storage, FileLoader, BackendHealthCheck, Analytics, defaults) {
+  Editor, Storage, FileLoader, Analytics, defaults) {
 
   Analytics.initialize();
 
   $rootScope.$on('$stateChangeStart', Editor.initializeEditor);
-
-  // if backendHealthCheckTimeout is less than zero, it means it is disabled.
-  if (defaults.backendHealthCheckTimeout > 0) {
-    BackendHealthCheck.startChecking();
-  }
   if (!$stateParams.mode) {
     $rootScope.mode = 'preview';
   } else {
@@ -29,6 +24,7 @@ SwaggerEditor.controller('MainCtrl', function MainCtrl(
   * Load Default or URL YAML
   */
   function loadYaml() {
+    /* reset for APIm */
     Storage.reset();
     Storage.load('yaml').then(function (yaml) {
       var url;
@@ -60,6 +56,7 @@ SwaggerEditor.controller('MainCtrl', function MainCtrl(
   */
   function assign(yaml) {
     if (yaml) {
+      /* APIm */
       Storage.reset();
       Storage.save('yaml', yaml);
       $rootScope.editorValue = yaml;
@@ -73,17 +70,16 @@ SwaggerEditor.controller('MainCtrl', function MainCtrl(
 
   // Watch for dropped files and trigger file reader
   $scope.$watch('draggedFiles', function () {
-    var file = $scope.draggedFiles[0];
 
-    if (file) {
-      fileReader.readAsText(file, 'utf-8');
+    if ($scope.draggedFiles instanceof File) {
+      fileReader.readAsText($scope.draggedFiles, 'utf-8');
     }
   });
 
   // on reader success load the string
   fileReader.onloadend = function () {
     if (fileReader.result) {
-      assign(FileLoader.load(fileReader.result));
+      FileLoader.load(fileReader.result).then(assign);
     }
   };
 });

@@ -57,7 +57,15 @@
     } ?></div>
 
                         <div class="apimSummaryDescription">
-						  <p class="apimFade" title="<?php print $api_description[0]['safe_value']; ?>"><?php print $api_description[0]['safe_value']; ?></p>
+                        <?php
+                        print '<div class="apimFade" title="'. $api_description[0]['safe_value'] .'">';
+                        if (module_exists('markdown')) {
+                          print _filter_markdown($api_description[0]['safe_value'], null);
+                        } else {
+                          print '<p>'. $api_description[0]['safe_value'] .'</p>';
+                        }
+                        print '</div>';
+                        ?>
 						</div>
 					</div>
 				</div>

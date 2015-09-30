@@ -1,7 +1,47 @@
 'use strict';
 
 angular.module('jsonFormatter', ['RecursionHelper'])
-.directive('jsonFormatter', ['RecursionHelper', function (RecursionHelper) {
+
+.provider('JSONFormatterConfig', function JSONFormatterConfigProvider() {
+
+  // Default values for hover preview config
+  var hoverPreviewEnabled = false;
+  var hoverPreviewArrayCount = 100;
+  var hoverPreviewFieldCount = 5;
+
+  return {
+    get hoverPreviewEnabled() {
+      return hoverPreviewEnabled;
+    },
+    set hoverPreviewEnabled(value) {
+     hoverPreviewEnabled = !!value;
+    },
+
+    get hoverPreviewArrayCount() {
+      return hoverPreviewArrayCount;
+    },
+    set hoverPreviewArrayCount(value) {
+      hoverPreviewArrayCount = parseInt(value, 10);
+    },
+
+    get hoverPreviewFieldCount() {
+      return hoverPreviewFieldCount;
+    },
+    set hoverPreviewFieldCount(value) {
+      hoverPreviewFieldCount = parseInt(value, 10);
+    },
+
+    $get: function () {
+      return {
+        hoverPreviewEnabled: hoverPreviewEnabled,
+        hoverPreviewArrayCount: hoverPreviewArrayCount,
+        hoverPreviewFieldCount: hoverPreviewFieldCount
+      };
+    }
+  };
+})
+
+.directive('jsonFormatter', ['RecursionHelper', 'JSONFormatterConfig', function jsonFormatterDirective(RecursionHelper, JSONFormatterConfig) {
   function escapeString(str) {
     return str.replace('"', '\"');
   }
@@ -31,20 +71,51 @@ angular.module('jsonFormatter', ['RecursionHelper'])
     return typeof object;
   }
 
-  function link(scope, element, attributes) {
+  function getValuePreview (object, value) {
+    var type = getType(object);
+
+    if (type === 'null' || type === 'undefined') { return type; }
+
+    if (type === 'string') {
+      value = '"' + escapeString(value) + '"';
+    }
+    if (type === 'function'){
+
+      // Remove content of the function
+      return object.toString()
+          .replace(/[\r\n]/g, '')
+          .replace(/\{.*\}/, '') + '{…}';
+
+    }
+    return value;
+  }
+
+  function getPreview(object) {
+    var value = '';
+    if (angular.isObject(object)) {
+      value = getObjectName(object);
+      if (angular.isArray(object))
+        value += '[' + object.length + ']';
+    } else {
+      value = getValuePreview(object, object);
+    }
+    return value;
+  }
+
+  function link(scope) {
     scope.isArray = function () {
-      return Array.isArray(scope.json);
+      return angular.isArray(scope.json);
     };
 
     scope.isObject = function() {
-      return scope.json && typeof scope.json === 'object';
+      return angular.isObject(scope.json);
     };
 
     scope.getKeys = function (){
       if (scope.isObject()) {
         return Object.keys(scope.json).map(function(key) {
-            if (key === '') { return '""'; }
-            return key;
+          if (key === '') { return '""'; }
+          return key;
         });
       }
     };
@@ -92,25 +163,38 @@ angular.module('jsonFormatter', ['RecursionHelper'])
     };
 
     scope.parseValue = function (value){
-      scope.type = getType(scope.json);
-      if (scope.type === 'null') {
-        return 'null';
-      }
-      if (scope.type === 'undefined') {
-        return 'undefined';
-      }
-      if (scope.type === 'string') {
-        value = '"' + escapeString(value) + '"';
-      }
-      if (scope.type === 'function'){
+      return getValuePreview(scope.json, value);
+    };
 
-        // Remove content of the function
-        return scope.json.toString()
-          .replace(/[\r\n]/g, '')
-          .replace(/\{.*\}/, '') + '{ ... }';
+    scope.showThumbnail = function () {
+      return !!JSONFormatterConfig.hoverPreviewEnabled && scope.isObject() && !scope.isOpen;
+    };
 
+    scope.getThumbnail = function () {
+      if (scope.isArray()) {
+
+        // if array length is greater then 100 it shows "Array[101]"
+        if (scope.json.length > JSONFormatterConfig.hoverPreviewArrayCount) {
+          return 'Array[' + scope.json.length + ']';
+        } else {
+          return '[' + scope.json.map(getPreview).join(', ') + ']';
+        }
+      } else {
+
+        var keys = scope.getKeys();
+
+        // the first five keys (like Chrome Developer Tool)
+        var narrowKeys = keys.slice(0, JSONFormatterConfig.hoverPreviewFieldCount);
+
+        // json value schematic information
+        var kvs = narrowKeys
+          .map(function (key) { return key + ':' + getPreview(scope.json[key]); });
+
+        // if keys count greater then 5 then show ellipsis
+        var ellipsis = keys.length >= 5 ? '…' : '';
+
+        return '{' + kvs.join(', ') + ellipsis + '}';
       }
-      return value;
     };
   }
 
@@ -131,3 +215,9 @@ angular.module('jsonFormatter', ['RecursionHelper'])
     }
   };
 }]);
+
+// Export to CommonJS style imports. Exporting this string makes this valid:
+// angular.module('myApp', [require('jsonformatter')]);
+if (typeof module === 'object') {
+  module.exports = 'jsonFormatter';
+}

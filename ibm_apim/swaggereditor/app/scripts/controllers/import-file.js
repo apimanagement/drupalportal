@@ -1,12 +1,15 @@
 'use strict';
 
 SwaggerEditor.controller('FileImportCtrl', function FileImportCtrl($scope,
-  $modalInstance, $rootScope, $localStorage, $state, FileLoader, Storage,
-  ASTManager) {
+  $modalInstance, $rootScope, $localStorage, $state, FileLoader, Storage) {
   var results;
 
   $scope.fileChanged = function ($fileContent) {
-    results = FileLoader.load($fileContent);
+    FileLoader.load($fileContent).then(function (res) {
+      $scope.$apply(function () {
+        results = res;
+      });
+    });
   };
 
   $scope.ok = function () {
@@ -14,7 +17,6 @@ SwaggerEditor.controller('FileImportCtrl', function FileImportCtrl($scope,
       $rootScope.editorValue = results;
       Storage.save('yaml', results);
       $state.go('home', {tags: null});
-      ASTManager.refresh($rootScope.editorValue);
     }
     $modalInstance.close();
   };

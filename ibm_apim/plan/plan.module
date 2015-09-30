@@ -547,15 +547,30 @@ function plan_list_contents() {
   $plan_data = NULL;
   $org = ibm_apim_get_current_developer_org();
   $developerOrg = $org['id'];
+  $apim_session = &_ibm_apim_get_apim_session();
+  
   if (isset($developerOrg)) {
     $url = '/v1/portal/orgs/' . $developerOrg . '/plans';
   }
   else {
     $url = '/v1/portal/plans';
   }
-  $result = ibm_apim_call($url);
-  if (isset($result) && isset($result->data) && !isset($result->data['errors'])) {
-    $plan_data = $result->data;
+  
+  //get cache time to live. default to 3600 seconds if not found
+  $cache_ttl = variable_get('ibm_apim_$cache_ttl', 3600);
+  
+  if (isset($apim_session['plan_list'][$url]) && $apim_session['plan_list'][$url]['timestamp'] < $cache_ttl+time()) {
+  	$plan_data = $apim_session['plan_list'][$url]['data'];
+  	watchdog('plan_list_contents', 'Cache hit for plans list for url %url', array(
+        '%url' => $url), WATCHDOG_NOTICE);
+  } else {
+	  $result = ibm_apim_call($url);
+	  if (isset($result) && isset($result->data) && !isset($result->data['errors'])) {
+	    $plan_data = $result->data;
+	    
+	    //cache them
+	    $apim_session['plan_list'][$url] = array( 'data' => $plan_data, 'timestamp' => time());
+	  }
   }
   return $plan_data;
 }
@@ -575,20 +590,27 @@ function plan_list_contents() {
  */
 function plan_details_contents($planid = NULL, $planversion = NULL) {
   $plan_data = NULL;
+  $apim_session = &_ibm_apim_get_apim_session();
   $org = ibm_apim_get_current_developer_org();
   $developerOrgs = $org['id'];
 
+  //get cache time to live. default to 3600 seconds if not found
+  $cache_ttl = variable_get('ibm_apim_$cache_ttl', 3600);
+  
   // check if this plan is already cached in the session, if so return that
   $found = false;
   $index = 0;
   if (isset($apim_session['plans'])) {
     foreach ($apim_session['plans'] as $plan) {
       $index++;
-      if (isset($plan) && isset($plan->id) && isset($plan->version)) {
-        if ($plan->id == $planid && $plan->version == $planversion) {
-          if (isset($plan->data)) {
+      if (isset($plan)) {
+        if ($plan['id'] == $planid && $plan['version'] == $planversion) {
+          if (isset($plan['data']) && $plan['timestamp'] < $cache_ttl+time()) {
             $found = true;
-            return $plan->data;
+            watchdog('plan_details_contents', 'Cache hit for plan %id version %version', array(
+        		'%id' => $planid,
+        		'%version' => $planversion), WATCHDOG_NOTICE);
+            return $plan['data'];
           }
           else {
             // if exists but no data then remove it from the cache
@@ -613,7 +635,8 @@ function plan_details_contents($planid = NULL, $planversion = NULL) {
       $apim_session['plans'][] = array(
         'id' => $planid,
         'version' => $planversion,
-        'data' => $plan_data);
+        'data' => $plan_data,
+        'timestamp' => time());
     }
     return $plan_data;
   }
