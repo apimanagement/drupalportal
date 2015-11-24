@@ -39,13 +39,7 @@ SwaggerEditor.service('FileLoader', function FileLoader($http, defaults, YAML) {
         } else {
           load(resp.data).then(resolve, reject);
         }
-      }, function(response) {
-        var errornode = angular.element( document.querySelector( '#swaggerXHRErrorMessage' ) );
-        errornode.removeClass('hiddenError');
-        var spinnernode = angular.element( document.querySelector( '#swaggerLoadingMessage' ) );
-        spinnernode.addClass('hiddenLoader');
-        reject();
-      });
+      }, reject);
     });
   }
 

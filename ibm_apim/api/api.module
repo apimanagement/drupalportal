@@ -104,6 +104,7 @@ function api_form_api_node_form_alter(&$form, &$form_state) {
   $form['api_soapversion']['#access'] = 0;
   $form['api_resources']['#access'] = 0;
   $form['api_ibmconfiguration']['#access'] = 0;
+  $form['api_wsdl']['#access'] = 0;
 }
 
 /**
@@ -156,7 +157,7 @@ function api_node_access($node, $op, $account) {
   $apifound = FALSE;
   if ($type == 'api' && $op == 'view') {
     $apis = api_list_contents();
-    if ($apis) {
+    if (is_array($apis)) {
       foreach ($apis as $api) {
         if (isset($node->api_apiid) && $api['id'] == $node->api_apiid[$node->language][0]['value']) {
           $apifound = TRUE;
@@ -186,6 +187,7 @@ function api_preprocess_node(&$variables) {
     $variables['theme_hook_suggestions'][] = 'node__api__search_result';
   }
   if ($variables['node']->type == 'api') {
+    $variables['customfields'] = _api_get_custom_fields();
     $showversion = variable_get('ibm_apim_show_versions', 1);
     $versiontext = '';
     if ($showversion == 1) {
@@ -222,6 +224,84 @@ function api_preprocess_node(&$variables) {
           'refreshTokensEnabled' => false,
           'tokenRevocationURL' => null);
       }
+      $variables['swaggerstrings'] = array(
+        'paths' => t('Paths'),
+        'models' => t('Models'),
+        'deprecated' => t('Deprecated'),
+        'summary' => t('Summary'),
+        'description' => t('Description'),
+        'parameters' => t('Parameters'),
+        'paramname' => t('Name'),
+        'paramlocated' => t('Located in'),
+        'paramdesc' => t('Description'),
+        'paramrequired' => t('Required'),
+        'paramschema' => t('Schema'),
+        'yes' => t('Yes'),
+        'no' => t('No'),
+        'request' => t('Request'),
+        'response' => t('Response'),
+        'responses' => t('Responses'),
+        'respcode' => t('Code'),
+        'respdescription' => t('Description'),
+        'respheaders' => t('Headers'),
+        'respschema' => t('Schema'),
+        'respname' => t('Name'),
+        'resptype' => t('Type'),
+        'respdetails' => t('Details'),
+        'security' => t('Security'),
+        'securityschema' => t('Security Schema'),
+        'securityscopes' => t('Scopes'),
+        'trythisop' => t('Try this operation'),
+        'close' => t('Close'),
+        'changecreds' => t('Change credentials'),
+        'providecreds' => t('Provide credentials'),
+        'savecreds' => t('Save credentials'),
+        'secdefname' => t('Name'),
+        'secdefin' => t('In'),
+        'secdefflow' => t('Flow'),
+        'authorizationurl' => t('Authorization URL'),
+        'tokenurl' => t('Token URL'),
+        'baseurl' => t('Base URL'),
+        'contactinfo' => t('Contact Information'),
+        'termsofservice' => t('Terms of service'),
+        'license' => t('License'),
+        'tagshowingonly' => t('Showing only operations with the following tag:'),
+        'tagshowingonlyplural' => t('Showing only operations with the following tags:'),
+        'tagfilter' => 'Filter operations by a tag:',
+        'learnmore' => t('Learn more'),
+        'tryitsending' => t('Sending...'),
+        'tryitsend' => t('Send Request'),
+        'tryitrendered' => t('Rendered'),
+        'tryitpretty' => t('Pretty'),
+        'tryitraw' => t('Raw'),
+        'tryitheaders' => t('Headers'),
+        'tryitbody' => t('Body'),
+        'tryitplaintext' => t('Plain text:'),
+        'tryitcorswarning' => t('This is a cross-origin call. Make sure the server accepts requests from this host.'),
+        'tryitfile' => t('File'),
+        'switchtojson' => t('Switch to JSON'),
+        'switchtoschema' => t('Switch to schema'),
+        'authapikey' => t('API Key Authentication'),
+        'authapikeyvalue' => t('API Key'),
+        'authcancel' => t('Cancel'),
+        'authbasic' => t('HTTP Basic Authentication'),
+        'authbasicusername' => t('User Name'),
+        'authbasicpassword' => t('Password'),
+        'authclientid' => t('Client ID'),
+        'authclientidregister' => t('Register an application in order to select a Client ID.'),
+        'authoauth' => t('OAuth 2.0 Authentication'),
+        'oauthauthorizationendpointurl' => t('Authorization endpoint URL:'),
+        'oauthtokenendpointurl' => t('Token endpoint URL:'),
+        'oauthdefscope' => t('Default scope:'),
+        'oauthflows' => t('Flows:'),
+        'oauthtokenrefresh' => t('Token refresh:'),
+        'oauthdisabled' => t('disabled'),
+        'oauthenabled' => t('enabled'),
+        'oauthtokenrevocationurl' => t('Token revocation URL:'),
+        'oauthinstructions' => t('Please follow OAuth flow, copy access token from OAuth and paste it here.'),
+        'oauthaccesstoken' => t('Access Token'),
+        'oauthaccesstokenplaceholder' => t('access_token'),
+        'tryitdata' => t('Data'));
     }
   }
 }
@@ -296,10 +376,10 @@ function api_collection_callback($apiid = NULL, $apiversion = NULL) {
 
     $apis = api_list_contents();
 
-    if ($apis) {
+    if (is_array($apis)) {
       foreach ($apis as $api) {
         $apifound = FALSE;
-        if ($nodes) {
+        if (is_array($nodes)) {
           foreach ($nodes as $node) {
             if (isset($node->api_apiid) && isset($node->api_version) && $api['id'] == $node->api_apiid[$node->language][0]['value'] && $api['version'] == $node->api_version[$node->language][0]['value']) {
               $apifound = TRUE;
@@ -318,9 +398,9 @@ function api_collection_callback($apiid = NULL, $apiversion = NULL) {
 
     if (!empty($nids)) {
       // now remove the nodes that weren't in our list of APIs
-      if ($apis) {
+      if (is_array($apis)) {
         $nodes = node_load_multiple($nids);
-        if ($nodes) {
+        if (is_array($nodes)) {
           foreach ($nodes as $node) {
             foreach ($apis as $api) {
               if (isset($node->api_apiid) && isset($node->api_version) && $api['id'] == $node->api_apiid[$node->language][0]['value'] && $api['version'] == $node->api_version[$node->language][0]['value']) {
@@ -401,15 +481,62 @@ function _api_createNewAPINode($api) {
   $hostvariable = variable_get('ibm_apim_host');
   $apim_session = &_ibm_apim_get_apim_session();
   global $user;
-  $node = new stdClass();
+  $oldtags = array();
+
+  // find if there is an existing node for this API (maybe at old version)
+  // if so then clone it and base new node on that.
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node')->entityCondition('bundle', 'api')->fieldCondition('api_apiid', 'value', $api['id'])->propertyOrderBy('nid', 'ASC');
+  $results = $query->execute();
+  if (isset($results['node'])) {
+    $api_nids = array_keys($results['node']);
+    if (is_array($api_nids) && count($api_nids) > 0) {
+      $node = node_load($api_nids[0]);
+    }
+  }
+  if (isset($node)) {
+    if (is_array($node->field_apitags[$node->language])) {
+      foreach ($node->field_apitags[$node->language] as $tag) {
+        if (isset($tag['tid'])) {
+          $oldtags[] = $tag['tid'];
+        }
+      }
+    }
+    $node->field_apitags[$node->language] = array();
+    // unset version and node ids
+    // this is so that node_save creates a new node rather than updating the existing one
+    unset($node->nid);
+    unset($node->vid);
+    unset($node->path);
+    unset($node->api_apimhostname[$node->language]);
+    unset($node->api_providerid[$node->language]);
+    unset($node->api_environmentid[$node->language]);
+    unset($node->api_apiid[$node->language]);
+    unset($node->api_version[$node->language]);
+    unset($node->api_description[$node->language]);
+    unset($node->api_context[$node->language]);
+    unset($node->api_protocol[$node->language]);
+    unset($node->api_authorization[$node->language]);
+    unset($node->api_authentication[$node->language]);
+    unset($node->api_authorizationTokenURL[$node->language]);
+    unset($node->api_authorizationurl[$node->language]);
+    unset($node->api_oauthconfig[$node->language]);
+    unset($node->api_url[$node->language]);
+    unset($node->api_updated[$node->language]);
+    unset($node->api_ibmconfiguration[$node->language]);
+    unset($node->api_wsdl[$node->language]);
+    unset($node->api_resources[$node->language]);
+  }
+  else {
+    $node = new stdClass();
+    $node->type = "api";
+    node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
+  }
+
   $node->title = $api['name'];
-  $node->type = "api";
-  node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
   $node->language = LANGUAGE_NONE;
   $node->uid = 1;
   $node->status = 1;
-  $node->promote = 0;
-  $node->comment = 2;
 
   $node->api_apimhostname[$node->language][] = array(
     'value' => $hostvariable,
@@ -420,7 +547,9 @@ function _api_createNewAPINode($api) {
   $node->api_environmentid[$node->language][] = array(
     'value' => $apim_session['env'],
     'format' => 'plain_text');
-  $node->api_apiid[$node->language][] = array('value' => $api['id'], 'format' => 'plain_text');
+  $node->api_apiid[$node->language][] = array(
+    'value' => $api['id'],
+    'format' => 'plain_text');
   $node->api_version[$node->language][] = array(
     'value' => $api['version'],
     'format' => 'plain_text');
@@ -443,35 +572,99 @@ function _api_createNewAPINode($api) {
   $node->api_authentication[$node->language][] = array(
     'value' => $api['authentication'],
     'format' => 'plain_text');
+  if (!isset($api['authorizationTokenURL']) || empty($api['authorizationTokenURL'])) {
+    $api['authorizationTokenURL'] = '';
+  }
   $node->api_authorizationTokenURL[$node->language][] = array(
     'value' => $api['authorizationTokenURL'],
     'format' => 'plain_text');
+  if (!isset($api['authorizationURL']) || empty($api['authorizationURL'])) {
+    $api['authorizationURL'] = '';
+  }
   $node->api_authorizationurl[$node->language][] = array(
     'value' => $api['authorizationURL'],
     'format' => 'plain_text');
+  if (!isset($api['oauthConfig']) || empty($api['oauthConfig'])) {
+    $api['oauthConfig'] = '';
+  }
   $node->api_oauthconfig[$node->language][] = array(
     'value' => serialize($api['oauthConfig']),
     'format' => 'plain_text');
-  $node->api_url[$node->language][] = array('value' => $api['url'], 'format' => 'plain_text');
+  $node->api_url[$node->language][] = array(
+    'value' => $api['url'],
+    'format' => 'plain_text');
   $node->api_updated[$node->language][] = array(
     'value' => $api['updatedAt'],
     'format' => 'plain_text');
+  if (!isset($api['x-ibm-configuration']) || empty($api['x-ibm-configuration'])) {
+    $api['x-ibm-configuration'] = '';
+  }
   $node->api_ibmconfiguration[$node->language][] = array(
     'value' => serialize($api['x-ibm-configuration']),
     'format' => 'plain_text');
+
+  // save now to reduce timing window
   $node = node_submit($node); // Prepare node for saving
   node_save($node);
 
-  $phase_tagging = variable_get('ibm_apim_autotag_with_phase', 1);
-  if ($phase_tagging == 1) {
-    if (isset($api['x-ibm-configuration']['phase'])) {
-      _api_phase_tag($node, $api['x-ibm-configuration']['phase']);
+  // if SOAP API then go get the wsdl too
+  if (isset($api['protocol']) && (strtolower($api['protocol']) == 'soap')) {
+    $host_pieces = _ibm_apim_parse_apim_host();
+    $url = $host_pieces['url'] . '/v1/portal/apis/' . $api['id'] . '/v' . $api['version'] . '/wsdl';
+    $wsdlresult = ibm_apim_raw_data($url);
+    if (isset($wsdlresult) && isset($wsdlresult->data) && !isset($wsdlresult->data['errors'])) {
+      $data = $wsdlresult->data;
+      $blob = mb_substr($data, 0, 5);
+      if (strpos($blob, 'PK') !== false) {
+        $data = _api_get_string_from_zip($data);
+      }
+      $serialized = filter_xss(serialize($data));
+      if ((isset($data) && !empty($data)) && (!isset($node->api_wsdl[$node->language][0]['value']) || $node->api_wsdl[$node->language][0]['value'] != $serialized)) {
+        try {
+          $node->api_wsdl[$node->language][] = array(
+            'value' => $serialized,
+            'format' => 'plain_text');
+          $node = node_submit($node); // Prepare node for saving
+          node_save($node);
+        }
+        catch (Exception $e) {
+          watchdog('_api_createNewAPINode', 'Save of WSDL to database failed with: %data', array(
+            '%data' => $e->getMessage()), WATCHDOG_NOTICE);
+        }
+      }
     }
   }
 
   $autocreate_forum = variable_get('ibm_apim_autocreate_apiforum', 1);
   if ($autocreate_forum == 1) {
     _api_create_forum($api['name'], $api['description']);
+  }
+  if (is_array($oldtags) && count($oldtags) > 0) {
+    $currenttags = $node->field_apitags[$node->language];
+    if (!is_array($currenttags)) {
+      $currenttags = array();
+    }
+    foreach ($oldtags as $tid) {
+      if (isset($tid)) {
+        $found = false;
+        foreach ($currenttags as $currentvalue) {
+          if (isset($currentvalue['tid']) && $currentvalue['tid'] == $tid) {
+            $found = true;
+          }
+        }
+        if ($found == false) {
+          $currenttags[] = array('tid' => $tid);
+        }
+      }
+    }
+    $node->field_apitags[$node->language] = $currenttags;
+    node_save($node);
+  }
+  $phase_tagging = variable_get('ibm_apim_autotag_with_phase', 1);
+  if ($phase_tagging == 1) {
+    if (isset($api['x-ibm-configuration']['phase'])) {
+      _api_phase_tag($node, $api['x-ibm-configuration']['phase']);
+    }
   }
   return $node->nid;
 }
@@ -499,13 +692,51 @@ function _api_updateExistingAPINode($node, $api) {
     $node->api_protocol[$node->language][0]['value'] = $api['protocol'];
     $node->api_authorization[$node->language][0]['value'] = $api['authorization'];
     $node->api_authentication[$node->language][0]['value'] = $api['authentication'];
+    if (!isset($api['authorizationTokenURL']) || empty($api['authorizationTokenURL'])) {
+      $api['authorizationTokenURL'] = '';
+    }
     $node->api_authorizationTokenURL[$node->language][0]['value'] = $api['authorizationTokenURL'];
+    if (!isset($api['authorizationURL']) || empty($api['authorizationURL'])) {
+      $api['authorizationURL'] = '';
+    }
     $node->api_authorizationurl[$node->language][0]['value'] = $api['authorizationURL'];
+    if (!isset($api['oauthConfig']) || empty($api['oauthConfig'])) {
+      $api['oauthConfig'] = '';
+    }
     $node->api_oauthconfig[$node->language][0]['value'] = serialize($api['oauthConfig']);
     $node->api_url[$node->language][0]['value'] = $api['url'];
     $node->api_updated[$node->language][0]['value'] = $api['updatedAt'];
+    if (!isset($api['x-ibm-configuration']) || empty($api['x-ibm-configuration'])) {
+      $api['x-ibm-configuration'] = '';
+    }
     $node->api_ibmconfiguration[$node->language][0]['value'] = serialize($api['x-ibm-configuration']);
     node_save($node);
+
+    // if SOAP API then go get the wsdl too
+    if (isset($api['protocol']) && (strtolower($api['protocol']) == 'soap')) {
+      $url = $host_pieces['url'] . '/v1/portal/apis/' . $api['id'] . '/v' . $api['version'] . '/wsdl';
+      $wsdlresult = ibm_apim_raw_data($url);
+      if (isset($wsdlresult) && isset($wsdlresult->data) && !isset($wsdlresult->data['errors'])) {
+        $data = $wsdlresult->data;
+        $blob = mb_substr($data, 0, 5);
+        if (strpos($blob, 'PK') !== false) {
+          // zip file
+          $data = _api_get_string_from_zip($data);
+        }
+        $serialized = filter_xss(serialize($data));
+        if ((isset($data) && !empty($data)) && (!isset($node->api_wsdl[$node->language][0]['value']) || $node->api_wsdl[$node->language][0]['value'] != $serialized)) {
+          try {
+            $node->api_wsdl[$node->language][0]['value'] = $serialized;
+            node_save($node);
+          }
+          catch (Exception $e) {
+            watchdog('_api_createNewAPINode', 'Save of WSDL to database failed with: %data', array(
+              '%data' => $e->getMessage()), WATCHDOG_NOTICE);
+          }
+        }
+      }
+    }
+
     $phase_tagging = variable_get('ibm_apim_autotag_with_phase', 1);
     if ($phase_tagging == 1) {
       if (isset($api['x-ibm-configuration']['phase'])) {
@@ -526,7 +757,7 @@ function _api_phase_tag($node, $origphase) {
     $vobj = taxonomy_vocabulary_machine_name_load($vocabulary);
     $phase_parenttag = taxonomy_get_term_by_name($phase_parentname, $vocabulary);
     // get the 'Phase' tag container tid if exists, if not create it.
-    if (!empty($phase_parenttag)) {
+    if (isset($phase_parenttag) && !empty($phase_parenttag)) {
       $phase_parentterms = array_values($phase_parenttag);
       $phaseparenttid = $phase_parentterms[0]->tid;
     }
@@ -538,37 +769,41 @@ function _api_phase_tag($node, $origphase) {
       taxonomy_term_save($phaseparentterm);
       $phaseparenttid = $phaseparentterm->tid;
     }
-    // create tag for this phase if it doesnt already exist
-    $phase_tag = taxonomy_get_term_by_name($phase, $vocabulary);
-    if (!empty($phase_tag)) {
-      $phase_terms = array_values($phase_tag);
-      $phasetid = $phase_terms[0]->tid;
-    }
-    else {
-      $phaseterm = new stdClass();
-      $phaseterm->name = $phase;
-      $phaseterm->vid = $vobj->vid;
-      $phaseterm->parent = $phaseparenttid;
-      taxonomy_term_save($phaseterm);
-      $phasetid = $phaseterm->tid;
-    }
-    // remove any existing other phase tags and then add the new one
-    // have to ensure we preserve other tags the user might have added
-    $newtags = array();
-    if (isset($node->field_apitags[$node->language])) {
-      foreach ($node->field_apitags[$node->language] as $existingtagarray) {
-        $existingtag = $taxonomy_term_load($existingtagarray->tid);
-        if (!isset($existingtag->parent) || $existingtag->parent != $phaseparenttid) {
-          $newtags[] = array('tid' => $existingtag->tid);
+    if (isset($phaseparenttid)) {
+      // create tag for this phase if it doesnt already exist
+      $phase_tag = taxonomy_get_term_by_name($phase, $vocabulary);
+      if (!empty($phase_tag)) {
+        $phase_terms = array_values($phase_tag);
+        $phasetid = $phase_terms[0]->tid;
+      }
+      else {
+        $phaseterm = new stdClass();
+        $phaseterm->name = $phase;
+        $phaseterm->vid = $vobj->vid;
+        $phaseterm->parent = $phaseparenttid;
+        taxonomy_term_save($phaseterm);
+        $phasetid = $phaseterm->tid;
+      }
+      // remove any existing other phase tags and then add the new one
+      // have to ensure we preserve other tags the user might have added
+      $newtags = array();
+      if (is_array($node->field_apitags[$node->language])) {
+        foreach ($node->field_apitags[$node->language] as $existingtagarray) {
+          if (isset($existingtagarray) && isset($existingtagarray->tid)) {
+            $existingtag = taxonomy_term_load($existingtagarray->tid);
+            if (isset($existingtag) && (!isset($existingtag->parent) || $existingtag->parent != $phaseparenttid)) {
+              $newtags[] = array('tid' => $existingtag->tid);
+            }
+          }
         }
       }
-    }
 
-    // add the tag to the node
-    if (isset($phasetid)) {
-      $newtags[] = array('tid' => $phasetid);
-      $node->field_apitags[$node->language] = $newtags;
-      node_save($node);
+      // add the tag to the node
+      if (isset($phasetid)) {
+        $newtags[] = array('tid' => $phasetid);
+        $node->field_apitags[$node->language] = $newtags;
+        node_save($node);
+      }
     }
   }
 }
@@ -577,57 +812,130 @@ function _api_phase_tag($node, $origphase) {
  * Create a forum for this API
  */
 function _api_create_forum($apiname = NULL, $apidescription = NULL) {
-  if (isset($apiname)) {
-    // sanitise api name
-    $cleanname = _api_sanitise_apiname($apiname);
-    if (module_exists('forum')) {
+  try {
+    if (isset($apiname)) {
+      // sanitise api name
+      $cleanname = _api_sanitise_apiname($apiname);
+      if (module_exists('forum') && isset($cleanname)) {
 
-      module_load_include('inc', 'forum', 'forum.admin');
-      // get the container ID
-      $containerID = taxonomy_get_term_by_name('APIs');
-      if (empty($containerID)) {
-        _api_create_forum_container();
+        module_load_include('inc', 'forum', 'forum.admin');
+        // get the container ID
         $containerID = taxonomy_get_term_by_name('APIs');
-        if (empty($containerID)) {
-          // container doesnt exist and failed to create it. abort.
-          drupal_set_message(t('Failed to find or create the forum container for this API.'), 'error');
+        if (!isset($containerID) || empty($containerID)) {
+          _api_create_forum_container();
+          $containerID = taxonomy_get_term_by_name('APIs');
+          if (empty($containerID)) {
+            // container doesnt exist and failed to create it. abort.
+            drupal_set_message(t('Failed to find or create the forum container for this API.'), 'error');
+            return;
+          }
+        }
+        $forumID = taxonomy_get_term_by_name($cleanname);
+        if (!empty($forumID)) {
+          // forum by this name already exists. abort (silently).
           return;
         }
+        else {
+          // if dont have a container then no point continuing
+          if (isset($containerID)) {
+            reset($containerID);
+            $first_key = key($containerID);
+            if (isset($first_key)) {
+              $forum_form_fields = array();
+              $forum_form_fields['values']['name'] = $cleanname;
+              $forum_form_fields['values']['description'] = $apidescription;
+              $forum_form_fields['values']['parent'][0] = $containerID[$first_key]->tid;
+              $forum_form_fields['values']['weight'] = 0;
+              $forum_form_fields['values']['vid'] = variable_get('forum_nav_vocabulary', 1);
+              $form_state = form_state_defaults();
+              if (module_exists('forum_access')) {
+                module_load_include('inc', 'forum_access', 'forum_access.admin');
+                $forum = _forum_access_forum_form($forum_form_fields, $form_state, false);
+              }
+              else {
+                $forum = forum_form_forum($forum_form_fields, $form_state);
+              }
+              $forum['form_id']['#value'] = "forum-form-forum";
+              forum_form_submit($forum, $forum_form_fields);
+              if (module_exists('forum_access')) {
+                $forumID = null;
+                $forums = taxonomy_get_term_by_name($cleanname);
+                if (is_array($forums)) {
+                  foreach ($forums as $forum_item) {
+                    $forumID = $forum_item->tid;
+                    if (isset($forumID)) {
+                      $form_state['values']['tid'] = $forumID;
+                      $form_state['values']['forum_access'] = array(
+                        'update_choice' => 0,
+                        'force_update' => 1,
+                        'template' => array(
+                          'taxonomy' => array('1' => '0'),
+                          'load_button' => 'Load',
+                          'template_tid' => NULL,
+                          'select_by_default' => 0,
+                          'load_for_new' => 0),
+                        'grants' => array(
+                          'col_ids' => array(
+                            '0' => 'view',
+                            '1' => 'create',
+                            '2' => 'update',
+                            '3' => 'delete'),
+                          'checkboxes' => array(
+                            'view' => array(
+                              '1' => '1',
+                              '2' => '2',
+                              '3' => 0,
+                              '4' => 0,
+                              '5' => '5'),
+                            'create' => array(
+                              '1' => 0,
+                              '2' => '2',
+                              '3' => 0,
+                              '4' => 0,
+                              '5' => '5'),
+                            'update' => array(
+                              '1' => 0,
+                              '2' => 0,
+                              '3' => TRUE,
+                              '4' => 0,
+                              '5' => '5'),
+                            'delete' => array(
+                              '1' => 0,
+                              '2' => 0,
+                              '3' => TRUE,
+                              '4' => 0,
+                              '5' => '5'))));
+
+                      _forum_access_form_submit($forum, $form_state);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
-      $forumID = taxonomy_get_term_by_name($cleanname);
-      if (!empty($forumID)) {
-        // forum by this name already exists. abort (silently).
-        return;
-      }
-      else {
-        reset($containerID);
-        $first_key = key($containerID);
-        $forum_form_fields = array();
-        $forum_form_fields['values']['name'] = $cleanname;
-        $forum_form_fields['values']['description'] = $apidescription;
-        $forum_form_fields['values']['parent'][0] = $containerID[$first_key]->tid;
-        $forum_form_fields['values']['weight'] = 0;
-        $forum_form_fields['values']['vid'] = variable_get('forum_nav_vocabulary', 1);
-        $form_state = form_state_defaults();
-        $forum = forum_form_forum($forum_form_fields, $form_state);
-        $forum['form_id']['#value'] = "forum-form-forum";
-        forum_form_submit($forum, $forum_form_fields);
+    }
+
+    // Don't show a confirmation, error, etc. message about this in the UI, put them in the log instead
+    $messages = drupal_get_messages();
+
+    $type_to_severity = array(
+      'status' => WATCHDOG_NOTICE,
+      'warning' => WATCHDOG_WARNING,
+      'error' => WATCHDOG_ERROR);
+    if (is_array($messages)) {
+      foreach ($messages as $type => $type_messages) {
+        foreach ($type_messages as $msg) {
+          watchdog('_api_create_forum', '%type: %msg', array(
+            '%type' => $type,
+            '%msg' => $msg), $type_to_severity[$type]);
+        }
       }
     }
   }
-
-  // Don't show a confirmation, error, etc. message about this in the UI, put them in the log instead
-  $messages = drupal_get_messages();
-
-  $type_to_severity = array(
-    'status' => WATCHDOG_NOTICE,
-    'warning' => WATCHDOG_WARNING,
-    'error' => WATCHDOG_ERROR);
-
-  foreach ($messages as $type => $type_messages) {
-    foreach ($type_messages as $msg) {
-      watchdog('_api_create_forum', '%type: %msg', array('%type' => $type, '%msg' => $msg), $type_to_severity[$type]);
-    }
+  catch (Exception $e) {
+    // quietly ignore error
   }
 }
 
@@ -647,10 +955,13 @@ function _api_create_forum_container() {
     $forum_container_fields['values']['weight'] = 0;
     $forum_container_fields['values']['vid'] = variable_get('forum_nav_vocabulary', 1);
     $container = forum_form_container($forum_container_fields, $form_state);
-    $container['form_id']['#value'] = 'forum_form_container';
-    forum_form_submit($container, $forum_container_fields);
+    if (isset($container)) {
+      $container['form_id']['#value'] = 'forum_form_container';
+      forum_form_submit($container, $forum_container_fields);
+    }
   }
 }
+
 /*
  * This method sanitises the API names to ensure that it is a valid forum name
  */
@@ -686,24 +997,27 @@ function api_list_contents() {
   else {
     $developer_org_url = '';
   }
-  
+
   $url = '/v1/portal' . $developer_org_url . '/apis';
 
-  //get cache time to live. default to 3600 seconds if not found
+  // get cache time to live. default to 3600 seconds if not found
   $cache_ttl = variable_get('ibm_apim_$cache_ttl', 3600);
-              
-  if (isset($apim_session['api_list'][$url]) && $apim_session['api_list'][$url]['timestamp'] < $cache_ttl+time()) {
-  	watchdog('api_list_contents', 'Cache hit for apis list for url %url', array(
-        '%url' => $url), WATCHDOG_NOTICE);
-  	$api_data = $apim_session['api_list'][$url]['data'];
-  } else {
-	  $result = ibm_apim_call($url);
-	  if (isset($result) && isset($result->data) && !isset($result->data['errors'])) {
-	    $api_data = $result->data;
-	    
-	    //cache them
-	    $apim_session['api_list'][$url] = array( 'data' => $api_data, 'timestamp' => time());	    
-	  }
+
+  if (isset($apim_session['api_list'][$url]) && $apim_session['api_list'][$url]['timestamp'] < $cache_ttl + time()) {
+    watchdog('api_list_contents', 'Cache hit for apis list for url %url', array(
+      '%url' => $url), WATCHDOG_NOTICE);
+    $api_data = $apim_session['api_list'][$url]['data'];
+  }
+  else {
+    $result = ibm_apim_call($url);
+    if (isset($result) && isset($result->data) && !isset($result->data['errors'])) {
+      $api_data = $result->data;
+
+      // cache them
+      $apim_session['api_list'][$url] = array(
+        'data' => $api_data,
+        'timestamp' => time());
+    }
   }
   return $api_data;
 }
@@ -734,20 +1048,20 @@ function api_details_contents($apiid, $apiversion) {
   // check if this api is already cached in the session, if so return that
   $found = false;
   $index = 0;
-  
-  //get cache time to live. default to 3600 seconds if not found
+
+  // get cache time to live. default to 3600 seconds if not found
   $cache_ttl = variable_get('ibm_apim_$cache_ttl', 3600);
-  
+
   if (isset($apim_session['apis'])) {
     foreach ($apim_session['apis'] as $api) {
       $index++;
       if (isset($api)) {
         if ($api['id'] == $apiid && $api['version'] == $apiversion) {
-          if (isset($api['data']) && $api['timestamp'] < $cache_ttl+time()) {
+          if (isset($api['data']) && $api['timestamp'] < $cache_ttl + time()) {
             $found = true;
             watchdog('api_details_contents', 'Cache hit for api %id version %version', array(
-        		'%id' => $apiid,
-        		'%version' => $apiversion), WATCHDOG_NOTICE);
+              '%id' => $apiid,
+              '%version' => $apiversion), WATCHDOG_NOTICE);
             return $api['data'];
           }
           else {
@@ -802,9 +1116,9 @@ function api_documents_contents($apiid, $apiversion) {
   $org = ibm_apim_get_current_developer_org();
   $developerOrgs = $org['id'];
 
-  //get cache time to live. default to 3600 seconds if not found
+  // get cache time to live. default to 3600 seconds if not found
   $cache_ttl = variable_get('ibm_apim_$cache_ttl', 3600);
-  
+
   // check if this apis's documents is already cached in the session, if so return that
   $found = false;
   $index = 0;
@@ -813,11 +1127,11 @@ function api_documents_contents($apiid, $apiversion) {
       $index++;
       if (isset($document)) {
         if ($document['id'] == $apiid && $document['version'] == $apiversion) {
-          if (isset($document['data']) && $document['timestamp'] < $cache_ttl+time()) {
+          if (isset($document['data']) && $document['timestamp'] < $cache_ttl + time()) {
             $found = true;
             watchdog('api_documents_contents', 'Cache hit for api documents %id version %version', array(
-        		'%id' => $apiid,
-        		'%version' => $apiversion), WATCHDOG_NOTICE);
+              '%id' => $apiid,
+              '%version' => $apiversion), WATCHDOG_NOTICE);
             return $document['data'];
           }
           else {
@@ -830,24 +1144,24 @@ function api_documents_contents($apiid, $apiversion) {
   }
 
   if ($found == false) {
-	  if (isset($developerOrgs)) {
-	    $developer_org_url = '/orgs/' . $developerOrgs;
-	  }
-	  else {
-	    $developer_org_url = '';
-	  }
-	  
-	  $url = '/v1/portal' . $developer_org_url . '/apis/' . $apiid . '/v' . $apiversion . '/documents';
-	  $result = ibm_apim_call($url);
-	  if (isset($result) && isset($result->data)) {
-	    $returnValue = $result->data;
-	    // cache it in the session
-      	$apim_session['apis_documents'][] = array(
-	        'id' => $apiid, 
-	        'version' => $apiversion, 
-	        'data' => $returnValue,
-        	'timestamp' => time());
-	  }
+    if (isset($developerOrgs)) {
+      $developer_org_url = '/orgs/' . $developerOrgs;
+    }
+    else {
+      $developer_org_url = '';
+    }
+
+    $url = '/v1/portal' . $developer_org_url . '/apis/' . $apiid . '/v' . $apiversion . '/documents';
+    $result = ibm_apim_call($url);
+    if (isset($result) && isset($result->data)) {
+      $returnValue = $result->data;
+      // cache it in the session
+      $apim_session['apis_documents'][] = array(
+        'id' => $apiid,
+        'version' => $apiversion,
+        'data' => $returnValue,
+        'timestamp' => time());
+    }
   }
   return $returnValue;
 }
@@ -952,7 +1266,7 @@ function _api_get_plans_for_api($apiid, $apiversion) {
   $results = array();
   if (module_exists('plan')) {
     $plans_data = plan_list_contents();
-    if ($plans_data) {
+    if (is_array($plans_data)) {
       foreach ($plans_data as $plan) {
         $plan_details = plan_details_contents($plan['id'], $plan['version']);
         if (!isset($plan['displayName'])) {
@@ -1001,15 +1315,121 @@ function _api_wsdl_proxy_callback($apiid, $apiversion) {
   // Make sure we have the session variables set
   _ibm_apim_check_and_get_config();
   $apim_session = &_ibm_apim_get_apim_session();
+  $org = ibm_apim_get_current_developer_org();
+  $developerOrgs = $org['id'];
+  if (isset($developerOrgs)) {
+    $developer_org_url = '/orgs/' . $developerOrgs;
+  }
+  else {
+    $developer_org_url = '';
+  }
+
   $host_pieces = _ibm_apim_parse_apim_host();
   if (empty($host_pieces)) {
     drupal_set_message(t('IBM APIM Module is not correctly configured. Specify a valid hostname and try again.'), 'error');
     return;
   }
-  $url = $host_pieces['url'] . '/v1/portal/apis/' . $apiid . '/' . $apiversion . '/wsdl';
+  $url = $host_pieces['url'] . '/v1/portal' . $developer_org_url . '/apis/' . $apiid . '/' . $apiversion . '/wsdl';
   _ibm_apim_download_proxy($url);
 }
 
 function _api_path_param_to_arg($arg) {
   return $arg;
+}
+
+/*
+ * take a bytearray, write it out to a zip file, and then read in
+ * concatenating all file content into a string
+ */
+function _api_get_string_from_zip($data) {
+  $draft = "";
+  $file = drupal_realpath(file_unmanaged_save_data($data));
+  $tempdir = _api_tempdir(file_directory_temp());
+  $zip = new ZipArchive();
+  if ($zip->open($file) === TRUE) {
+    $zip->extractTo($tempdir);
+    $zip->close();
+
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($tempdir, RecursiveDirectoryIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+    foreach ($files as $fileinfo) {
+      $filename = $files->getFilename();
+      $pathname = $files->getPathname();
+      $fourcharext = strtolower(substr($filename, -4));
+      $threecharext = strtolower(substr($filename, -3));
+      if ($fourcharext == "wsdl" || $threecharext == "xml" || $threecharext == "xsd") {
+        $draft .= $filename . '\n';
+        $handle = fopen($pathname, "r");
+        $contents = fread($handle, filesize($pathname));
+        fclose($handle);
+        $handle = null;
+        // remove BOM
+        $contents = str_replace("\xEF\xBB\xBF", '', $contents);
+        $draft .= $contents . '\n';
+      }
+    }
+  }
+  // clear up zip and temp extract dir
+  file_unmanaged_delete($file);
+  _api_deletedir($tempdir);
+  return $draft;
+}
+
+/*
+ * utility function to create and return the name of a temporary directory
+ */
+function _api_tempdir($dir = false, $prefix = 'wsdlzip') {
+  $tempfile = tempnam($dir, $prefix);
+  if (file_exists($tempfile)) {
+    unlink($tempfile);
+  }
+  mkdir($tempfile);
+  if (is_dir($tempfile)) {
+    return $tempfile;
+  }
+}
+
+/*
+ * utility function to recursively delete a directory
+ */
+function _api_deletedir($dir) {
+  if (is_dir($dir)) {
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+    foreach ($files as $fileinfo) {
+      $todo = ($fileinfo->isDir() ? 'rmdir' : 'unlink');
+      $todo($fileinfo->getRealPath());
+    }
+    rmdir($dir);
+  }
+}
+
+function _api_get_custom_fields() {
+  $all_fields = field_info_instances("node", "api");
+  $keys = array_keys($all_fields);
+  $apifields = array(
+    'api_apimhostname',
+    'api_providerid',
+    'api_environmentid',
+    'api_apiid',
+    'api_version',
+    'api_productid',
+    'api_image',
+    'api_description',
+    'api_context',
+    'api_protocol',
+    'api_authorization',
+    'api_authentication',
+    'api_authorizationtokenurl',
+    'api_authorizationurl',
+    'api_url',
+    'api_oauthconfig',
+    'api_soapversion',
+    'api_resources',
+    'api_wsdl',
+    'api_updated',
+    'api_ibmconfiguration',
+    'field_apirating',
+    'field_apitags');
+
+  $diff = array_diff($keys, $apifields);
+  return $diff;
 }

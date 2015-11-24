@@ -543,7 +543,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
 
     // generate the query string portion of the URL based on query parameters
     queryParamsStr = window.decodeURIComponent(
-      jQuery.param(queryParams, isCollectionQueryParam));
+      $.param(queryParams, isCollectionQueryParam));
 
     // fill in path parameter values inside the path
     pathStr = $scope.pathName.replace(pathParamRegex,
@@ -726,7 +726,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
       // TODO: put the mechanism of getting the file object into a method
       var bodyParamName = bodyParam.name;
       var form = new FormData();
-      var inputEl = jQuery('input[type="file"][name*="' + bodyParamName + '"]')[0];
+      var inputEl = $('input[type="file"][name*="' + bodyParamName + '"]')[0];
 
       if (!inputEl) {
         return 'No file is selected';
@@ -756,7 +756,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
 
     // if encoding is x-www-form-urlencoded use jQuery.param method to stringify
     } else if (/urlencode/.test(contentType)) {
-      return jQuery.param(bodyModel);
+      return $.param(bodyModel);
     }
 
     return null;
@@ -804,7 +804,7 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
     var omitHeaders = ['Host', 'Accept-Encoding', 'Connection', 'Origin',
       'Referer', 'User-Agent', 'Cache-Control', 'Content-Length'];
 
-    jQuery.ajax({
+    $.ajax({
       url: $scope.generateUrl(),
       type: $scope.operationName,
       headers: _.omit($scope.getHeaders(), omitHeaders),
@@ -817,9 +817,6 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
       $scope.textStatus = textStatus;
       $scope.error = errorThrown;
       $scope.xhr = jqXHR;
-      if (jqXHR.status == 0) {
-        $scope.error = "No response. This is a cross-origin call. Make sure the server accepts requests from this portal. Or if using self-signed SSL certificates then click on the URL above to accept the certificate before trying again."
-      }
 
       $scope.$digest();
     })
@@ -897,11 +894,6 @@ SwaggerEditor.controller('TryOperation', function ($scope, formdataFilter,
    * @returns {boolean}
   */
   $scope.isCrossOrigin = function () {
-    Drupal.settings.ibm_apim.show_cors_warnings;
-    if (Drupal.settings.ibm_apim.show_cors_warnings && Drupal.settings.ibm_apim.show_cors_warnings == 1 && $scope.specs['x-ibm-configuration'] && $scope.specs['x-ibm-configuration'].enforced == false) {
-      return $scope.specs.host;
-    } else {
-      return false;
-    }
+    return $scope.specs.host && $scope.specs.host !== $scope.locationHost;
   };
 });

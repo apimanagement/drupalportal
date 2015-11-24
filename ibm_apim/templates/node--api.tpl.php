@@ -207,6 +207,7 @@ $ibm_apim_js_settings = array(
   'url' => $GLOBALS['base_url'] . '/?q=ibm_apim/swaggerjson/' . $content['api_apiid'][0]['#markup'] . '/' . $content['api_version'][0]['#markup'] . '/' . $protocol,
   'authtype' => $api_authentication[0]['value'],
   'context_header' => $apim_session['org'] . '.' . $apim_session['env'],
+  'swaggerstrings' => $variables['swaggerstrings'],
   'apps' => $apps);
 if (isset($apim_session['auth'])) {
   $ibm_apim_js_settings['basic_auth'] = 'Basic ' . $apim_session['auth'];
@@ -225,7 +226,7 @@ drupal_add_css(drupal_get_path('module', 'ibm_apim') . '/css/ie-9.css', array('w
 ?>
 <div class="pagebreadcrumb"><?php print l("< " .t('Back to APIs'), 'api');?></div>
 <article id="node-<?php print $node->nid; ?>"
-	class="<?php print $classes; ?> clearfix" <?php print $attributes; ?>>
+	class="<?php print $classes . ' ' . $content['api_apiid'][0]['#markup'] . ' ' . $protocol; ?> clearfix" <?php print $attributes; ?>>
 
   <?php print $unpublished; ?>
 
@@ -351,10 +352,12 @@ drupal_add_css(drupal_get_path('module', 'ibm_apim') . '/css/ie-9.css', array('w
           'html' => TRUE));
       }
       $leftdiv = $leftdiv . '</span></div></div>';
+      $descrset = '';
       if (isset($doc['description']) && $doc['description'] != '') {
         $rightdiv = $rightdiv . '<div>' . check_plain($doc['description']) . '</div>';
+        $descrset = 'shortname';
       }
-      print '<div class="apiDocLeft">';
+      print '<div class="apiDocLeft ' . $descrset . '">';
       print $leftdiv;
       print '</div><div class="apiDocRight">';
       print $rightdiv;
@@ -439,6 +442,12 @@ drupal_add_css(drupal_get_path('module', 'ibm_apim') . '/css/ie-9.css', array('w
   }
 
   print "</div>";
+}
+
+if (is_array($customfields) && count($customfields) > 0) {
+  foreach($customfields as $customfield) {
+    print render($content[$customfield]);
+  }
 }
 
  print "</div></div>";

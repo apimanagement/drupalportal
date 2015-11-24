@@ -17,7 +17,7 @@
           <span class="security-type">({{getHumanSecurityType(securityDefinition.type)}})</span>
           <div class="authentication">
             <div>
-              <button ng-click="authenticate(securityDefinitionName, securityDefinition)" class="authenticate">{{isAuthenticated(securityDefinitionName) ? 'Change credentials' : 'Provide credentials'}}</button>
+              <button ng-click="authenticate(securityDefinitionName, securityDefinition)" class="authenticate">{{isAuthenticated(securityDefinitionName) ? 'Change Authentication' : 'Authenticate'}}</button>
             </div>
           </div>
         </h4>
@@ -62,3 +62,4 @@
     </div>
   </div>
 </div>
+

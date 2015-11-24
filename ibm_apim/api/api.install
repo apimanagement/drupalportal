@@ -87,6 +87,7 @@ function _api_installed_fields() {
       'field_name' => 'api_resources',
       'label' => t('Operations'),
       'type' => 'text_long'),
+    'api_wsdl' => array('field_name' => 'api_wsdl', 'label' => t('WSDL'), 'type' => 'text_long'),
     'api_updated' => array('field_name' => 'api_updated', 'label' => t('Updated'), 'type' => 'text'),
     'api_ibmconfiguration' => array(
       'field_name' => 'api_ibmconfiguration',
@@ -225,6 +226,12 @@ function _api_installed_instances() {
       'label' => t('SOAP Version'),
       'widget' => array('type' => 'text_textfield'),
       'display' => array('default' => array('label' => t('SOAP Version'), 'type' => 'text'))),
+    'api_wsdl' => array(
+  	  'field_name' => 'api_wsdl',
+      'type' => 'text_long',
+  	  'label' => t('WSDL'),
+  	  'widget' => array('type' => 'text_textarea'),
+  	  'display' => array('default' => array('label' => t('WSDL'), 'type' => 'text_long'))),
     'api_resources' => array(
       'field_name' => 'api_resources',
       'type' => 'text_long',

@@ -6,9 +6,7 @@
  *
 */
 SwaggerEditor.service('SwayWorker', function SwayWorker() {
-  /* APIM */
-  var rootPath = Drupal.settings.basePath + 'sites/all/modules/ibm_apim/swaggereditor/app/';
-  var worker = new Worker(rootPath + '/bower_components/sway-worker/index.js');
+  var worker = new Worker('bower_components/sway-worker/index.js');
   var queue = [];
   var currentTask = null;
 

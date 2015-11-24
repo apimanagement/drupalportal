@@ -42,6 +42,7 @@ ul.tabs li a.active:visited {
 /* Links */
 a,
 a:visited,
+.myorgAddUserLink h3,
 .portal .portalApi .testAPILink a,
 .portal .portalApi .testAPILink a:visited {
   color: #0077d9;
@@ -434,6 +435,11 @@ a.buttonLink,
 .supportList a {
   background-color: #0078d9;
   color: #fffeff;
+}
+button:disabled,
+input.form-submit:disabled,
+input[type="submit"]:disabled {
+  background-color: #ebebe4;
 }
 
 .numberedList li:before {

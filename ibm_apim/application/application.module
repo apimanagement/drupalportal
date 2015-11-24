@@ -182,7 +182,7 @@ function application_node_access($node, $op, $account) {
   $appfound = FALSE;
   if ($type == 'application' && $op == 'view') {
     $apps = application_list_contents();
-    if ($apps) {
+    if (is_array($apps)) {
       foreach ($apps as $app) {
         if (isset($node->application_apiid) && $app['id'] == $node->application_apiid[$node->language][0]['value']) {
           $appfound = TRUE;
@@ -261,11 +261,30 @@ function application_preprocess_node(&$variables) {
     $variables['theme_hook_suggestions'][] = 'node__application__search_result';
   }
   if ($variables['node']->type == 'application') {
+    $variables['customfields'] = _application_get_custom_fields();
     $isdev = ibm_apim_check_is_developer();
     $variables['isdev'] = $isdev;
     $variables['titlelink'] = '<span class="apimTitle"> <a href="' . url("application/" . $variables['application_apiid'][0]['safe_value']) . '">' . $variables['title'] . '</a> </span>';
     $variables['notificationsettingslink'] = ' <a href="' . url("application/" . $variables['application_apiid'][0]['value'] . "/notifysettings") . '">' . t('Notifications') . '</a> ';
-    $variables['analyticslink'] = ' <a href="' . url("ibm_apim/analytics/app/" . $variables['application_apiid'][0]['value']) . '">' . t('Analytics') . '</a> ';
+    $ibm_apim_analytics_datausage = variable_get('ibm_apim_analytics_datausage', 1);
+    $ibm_apim_analytics_latencies = variable_get('ibm_apim_analytics_latencies', 1);
+    $ibm_apim_analytics_successrate = variable_get('ibm_apim_analytics_successrate', 1);
+    $variables['analyticslinks'] = "";
+    if ($ibm_apim_analytics_datausage == 1) {
+      $variables['analyticslinks'] .= ' <a href="' . url("ibm_apim/analytics/app/datausage/" . $variables['application_apiid'][0]['value']) . '">' . t('Data Usage') . '</a> ';
+      if ($ibm_apim_analytics_latencies == 1 || $ibm_apim_analytics_successrate == 1) {
+        $variables['analyticslinks'] .= '|';
+      }    
+    }
+    if ($ibm_apim_analytics_latencies == 1) {
+      $variables['analyticslinks'] .= ' <a href="' . url("ibm_apim/analytics/app/latency/" . $variables['application_apiid'][0]['value']) . '">' . t('Latency') . '</a> ';
+      if ($ibm_apim_analytics_successrate == 1) {
+        $variables['analyticslinks'] .= '|';
+      }
+    }
+    if ($ibm_apim_analytics_successrate == 1) {
+      $variables['analyticslinks'] .= ' <a href="' . url("ibm_apim/analytics/app/successrate/" . $variables['application_apiid'][0]['value']) . '">' . t('Success Rate') . '</a> ';
+    }
     if (isset($isdev) && $isdev == TRUE) {
       $variables['editlink'] = ' <a href="' . url("application/" . $variables['application_apiid'][0]['value'] . "/edit") . '">' . t('Edit') . '</a> ';
       $variables['deletelink'] = ' <a href="' . url("application/" . $variables['application_apiid'][0]['value'] . "/delete") . '">' . t('Delete') . '</a> ';
@@ -386,7 +405,7 @@ function application_collection_callback($appId = NULL) {
     if (!empty($apps)) {
       foreach ($apps as $app) {
         $appfound = FALSE;
-        if ($nodes) {
+        if (is_array($nodes)) {
           foreach ($nodes as $node) {
             if (isset($node->application_apiid) && $app['id'] == $node->application_apiid[$node->language][0]['value']) {
               $appfound = TRUE;
@@ -406,9 +425,9 @@ function application_collection_callback($appId = NULL) {
       $nodes = node_load_multiple($nids);
       $finalnids = array();
       // now remove the nodes that weren't in our list of Apps
-      if ($apps) {
+      if (is_array($apps)) {
         $nodes = node_load_multiple($nids);
-        if ($nodes) {
+        if (is_array($nodes)) {
           foreach ($nodes as $node) {
             foreach ($apps as $app) {
               if (isset($node->application_apiid) && $app['id'] == $node->application_apiid[$node->language][0]['value']) {
@@ -477,15 +496,17 @@ function _application_createNewApplicationNode($app) {
   $hostvariable = variable_get('ibm_apim_host');
   $apim_session = &_ibm_apim_get_apim_session();
   global $user;
+  $oldtags = NULL;
+  
   $node = new stdClass();
-  $node->title = $app['name'];
   $node->type = "application";
   node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
+  
+  $node->title = $app['name'];
   $node->language = LANGUAGE_NONE;
   $node->uid = $user->uid;
   $node->status = 1;
   $node->promote = 0;
-  $node->comment = 2;
 
   $node->application_apimhostname[$node->language][] = array(
     'value' => $hostvariable,
@@ -545,6 +566,7 @@ function _application_createNewApplicationNode($app) {
     'format' => 'plain_text');
   $node = node_submit($node); // Prepare node for saving
   node_save($node);
+
   return $node->nid;
 }
 
@@ -734,7 +756,7 @@ function application_details_contents($appId) {
       }
       if (module_exists('plan')) {
         $returnValue['subscriptions'] = array();
-        if ($sub_data) {
+        if (is_array($sub_data)) {
           foreach ($sub_data as $sub_details) {
             $parts = _application_get_id_and_ver_from_planurl($sub_details['planURL']);
             $temp_array = plan_details_contents($parts['id'], $parts['version']);
@@ -1597,7 +1619,7 @@ function _application_add_application_registration_form($form, &$form_state, $pl
 
     $app_link_info = array();
     $applist = application_list_contents();
-    if ($applist) {
+    if (is_array($applist)) {
       foreach ($applist as $apparray) {
         $app_link_info[$apparray['orgID'] . ':' . $apparray['id']] = $apparray['name'];
       }
@@ -1871,3 +1893,30 @@ function _application_get_id_and_ver_from_planurl($planurl) {
 function _application_path_param_to_arg($arg) {
   return $arg;
 }
+
+function _application_get_custom_fields() {
+  $all_fields = field_info_instances("node", "application");
+  $keys = array_keys($all_fields);
+  $appfields = array(
+      'application_apimhostname',
+      'application_providerid',
+      'application_environmentid',
+      'application_apiid',
+      'application_description',
+      'application_orgid',
+      'application_public',
+      'application_enabled',
+      'application_image',
+      'application_imageurl',
+      'application_oauthredirecturi',
+      'application_url',
+      'application_state',
+      'application_updated',
+      'field_applicationrating',
+      'field_applicationtags');
+
+  $diff = array_diff ( $keys , $appfields);
+  return $diff;
+}
+
+?>

@@ -108,6 +108,12 @@ drupal_add_js('jQuery(document).ready(function(){
 			</div>
 		</div>
 <?php
+if (is_array($customfields) && count($customfields) > 0) {
+  foreach($customfields as $customfield) {
+    print render($content[$customfield]);
+  }
+}
+
 if (module_exists('api')) {
 	print '<div class="includedAPIsTitle">'. t('APIs included') .'</div>';
 	print '<div id="accordion">';

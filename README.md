@@ -119,4 +119,4 @@ javascript libraries and theme) can be downloaded from the <a href="https://gith
 <p>This is provided 'as-is' with no guarantee of official support but we will endeavour to respond to all Issues raised as best we can.</p>
 
 <h2>Requirements</h2>
-<p>You will require IBM API Management v4.0.2.0 to use this code.</p>
+<p>You will require IBM API Management v4.0.3.0 to use this code.</p>

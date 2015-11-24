@@ -2,16 +2,16 @@
 core = 7.x
 
 api = 2
-projects[drupal][version] = "7.38"
+projects[drupal][version] = "7.41"
 
 ; Modules
 projects[at_tools][version] = "1.x-dev"
 
-projects[addtoany][version] = "4.7"
+projects[addtoany][version] = "4.9"
 
 projects[advanced_forum][version] = "2.5"
 
-projects[autologout][version] = "4.3"
+projects[autologout][version] = "4.4"
 
 projects[bean][version] = "1.9"
 
@@ -19,11 +19,11 @@ projects[block_class][version] = "2.1"
 
 projects[block_class_styles][version] = "2.4"
 
-projects[ctools][version] = "1.7"
+projects[ctools][version] = "1.9"
 
 projects[entity][version] = "1.6"
 
-projects[faq][version] = "1.0"
+projects[faq][version] = "1.1"
 
 projects[fivestar][version] = "2.1"
 
@@ -35,9 +35,9 @@ projects[phpmailer][version] = "3.x-dev"
 
 projects[panels][version] = "3.5"
 
-projects[jquery_update][version] = "2.6"
+projects[jquery_update][version] = "3.0-alpha3"
 
-projects[password_policy][version] = "1.11"
+projects[password_policy][version] = "1.12"
 
 projects[tagclouds][version] = "1.10"
 
@@ -59,17 +59,17 @@ projects[captcha][version] = "1.x-dev"
 
 projects[login_redirect][version] = "1.2"
 
-projects[search404][version] = "1.3"
+projects[search404][version] = "1.x-dev"
 
 projects[token][version] = "1.6"
 
-projects[flag][version] = "3.6"
+projects[flag][version] = "3.7"
 
 projects[imce][version] = "1.9"
 
 projects[imce_wysiwyg][version] = "1.0"
 
-projects[linkit][version] = "3.3"
+projects[linkit][version] = "3.4"
 
 projects[linkit_picker][version] = "3.0-rc2"
 
@@ -93,7 +93,7 @@ projects[i18n][version] = "1.13"
 
 projects[translation_helpers][version] = "1.0"
 
-projects[addressfield][version] = "1.1"
+projects[addressfield][version] = "1.2"
 
 projects[image_captcha_refresh][version] = "1.5"
 
@@ -123,6 +123,36 @@ projects[menu_item_visibility][version] = "1.0-beta1"
 
 projects[ultimate_cron][version] = "2.0-rc1"
 
+projects[flood_control][version] = "1.0"
+
+projects[acl][version] = "1.1"
+
+projects[chain_menu_access][version] = "2.0"
+
+projects[forum_access][version] = "1.2"
+
+projects[follow][version] = "2.0-alpha1"
+
+projects[search_autocomplete][version] = "4.7"
+
+projects[markdown][version] = "1.2"
+
+projects[httprl][version] = "1.14"
+
+projects[advagg][version] = "2.16"
+
+projects[slick][version] = "2.0-rc2"
+
+projects[slick_views][version] = "2.0-rc2"
+
+projects[slick_extras][version] = "2.0-beta3"
+
+projects[profanity][version] = "1.x-dev"
+
+projects[seckit][version] = "1.9"
+
+projects[restrict_by_ip][version] = "3.1"
+
 ; Themes
 projects[adaptivetheme][version] = "3.2"
 
@@ -150,3 +180,7 @@ projects[forum_approval][type] = "module"
 projects[clone][download][type] = ""
 projects[clone][download][url] = ""
 projects[clone][type] = "module"
+
+projects[front_page][download][type] = ""
+projects[front_page][download][url] = ""
+projects[front_page][type] = "module"

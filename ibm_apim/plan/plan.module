@@ -94,7 +94,7 @@ function plan_node_access($node, $op, $account) {
   $planfound = FALSE;
   if ($type == 'plan' && $op == 'view') {
     $plans = plan_list_contents();
-    if ($plans) {
+    if (is_array($plans)) {
       foreach ($plans as $plan) {
         if (isset($node->plan_apiid) && $plan['id'] == $node->plan_apiid[$node->language][0]['value']) {
           $planfound = TRUE;
@@ -124,6 +124,7 @@ function plan_preprocess_node(&$variables) {
     $variables['theme_hook_suggestions'][] = 'node__plan__search_result';
   }
   if ($variables['node']->type == 'plan') {
+    $variables['customfields'] = _application_get_custom_fields();
     $showversion = variable_get('ibm_apim_show_versions', 1);
     $versiontext = '';
     if ($showversion == 1) {
@@ -251,7 +252,7 @@ function plan_subscribeapp_modal_form($form, &$form_state, $planId, $planVersion
   }
   $apps = application_list_contents();
   $options = array();
-  if ($apps) {
+  if (is_array($apps)) {
     foreach ($apps as $app) {
       $options[$app['id']] = $app['name'];
     }
@@ -368,10 +369,10 @@ function plan_collection_callback($planid = NULL, $planversion = NULL) {
     }
 
     $plans = plan_list_contents();
-    if ($plans) {
+    if (is_array($plans)) {
       foreach ($plans as $plan) {
         $planfound = FALSE;
-        if ($nodes) {
+        if (is_array($nodes)) {
           foreach ($nodes as $node) {
             if (isset($node->plan_apiid) && isset($node->plan_version) && $plan['id'] == $node->plan_apiid[$node->language][0]['value'] && $plan['version'] == $node->plan_version[$node->language][0]['value']) {
               $planfound = TRUE;
@@ -390,9 +391,9 @@ function plan_collection_callback($planid = NULL, $planversion = NULL) {
 
     if (!empty($nids)) {
       // now remove the nodes that weren't in our list of Plans
-      if ($plans) {
+      if (is_array($plans)) {
         $nodes = node_load_multiple($nids);
-        if ($nodes) {
+        if (is_array($nodes)) {
           foreach ($nodes as $node) {
             foreach ($plans as $plan) {
               if (isset($node->plan_apiid) && isset($node->plan_version) && $plan['id'] == $node->plan_apiid[$node->language][0]['value'] && $plan['version'] == $node->plan_version[$node->language][0]['value']) {
@@ -460,15 +461,54 @@ function _plan_createNewPlanNode($plan) {
   $hostvariable = variable_get('ibm_apim_host');
   $apim_session = &_ibm_apim_get_apim_session();
   global $user;
-  $node = new stdClass();
+  $oldtags = array();
+
+  // find if there is an existing node for this Plan (maybe at old version)
+  // if so then clone it and base new node on that.
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node')->entityCondition('bundle', 'plan')->fieldCondition('plan_apiid', 'value', $plan['id'])->propertyOrderBy('nid', 'ASC');
+  $results = $query->execute();
+  if (isset($results['node'])) {
+  	$plan_nids = array_keys($results['node']);
+  	if (is_array($plan_nids) && count($plan_nids) > 0) {
+  		$node = node_load($plan_nids[0]);
+  	}
+  }
+  if (isset($node)) {
+    if (is_array($node->field_plantags[$node->language])) {
+      foreach ($node->field_plantags[$node->language] as $tag) {
+        if (isset($tag['tid'])) {
+          $oldtags[] = $tag['tid'];
+        }
+      }
+    }
+    $node->field_plantags[$node->language] = array();
+  	// unset version and node ids
+  	// this is so that node_save creates a new node rather than updating the existing one
+  	unset($node->nid);
+  	unset($node->vid);
+  	unset($node->path);
+  	unset($node->plan_apimhostname[$node->language]);
+  	unset($node->plan_providerid[$node->language]);
+  	unset($node->plan_environmentid[$node->language]);
+  	unset($node->plan_apiid[$node->language]);
+  	unset($node->plan_version[$node->language]);
+  	unset($node->plan_description[$node->language]);
+  	unset($node->plan_displayname[$node->language]);
+  	unset($node->plan_requiresapproval[$node->language]);
+  	unset($node->plan_subscribable[$node->language]);
+  	unset($node->plan_url[$node->language]);
+  	unset($node->plan_updated[$node->language]);
+  } else {
+  	$node = new stdClass();
+  	$node->type = "plan";
+  	node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
+  }
+
   $node->title = $plan['name'];
-  $node->type = "plan";
-  node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
   $node->language = LANGUAGE_NONE;
   $node->uid = 1;
   $node->status = 1;
-  $node->promote = 0;
-  $node->comment = 2;
 
   $node->plan_apimhostname[$node->language][] = array(
     'value' => $hostvariable,
@@ -505,6 +545,28 @@ function _plan_createNewPlanNode($plan) {
     'format' => 'plain_text');
   $node = node_submit($node); // Prepare node for saving
   node_save($node);
+
+  if (is_array($oldtags) && count($oldtags) > 0) {
+    $currenttags = $node->field_plantags[$node->language];
+    if (!is_array($currenttags)) {
+      $currenttags = array();
+    }
+    foreach ($oldtags as $tid) {
+      if (isset($tid)) {
+        $found = false;
+        foreach ($currenttags as $currentvalue) {
+          if (isset($currentvalue['tid']) && $currentvalue['tid'] == $tid) {
+            $found = true;
+          }
+        }
+        if ($found == false) {
+          $currenttags[] = array('tid' => $tid);
+        }
+      }
+    }
+    $node->field_plantags[$node->language] = $currenttags;
+    node_save($node);
+  }
   return $node->nid;
 }
 
@@ -548,17 +610,17 @@ function plan_list_contents() {
   $org = ibm_apim_get_current_developer_org();
   $developerOrg = $org['id'];
   $apim_session = &_ibm_apim_get_apim_session();
-  
+
   if (isset($developerOrg)) {
     $url = '/v1/portal/orgs/' . $developerOrg . '/plans';
   }
   else {
     $url = '/v1/portal/plans';
   }
-  
+
   //get cache time to live. default to 3600 seconds if not found
   $cache_ttl = variable_get('ibm_apim_$cache_ttl', 3600);
-  
+
   if (isset($apim_session['plan_list'][$url]) && $apim_session['plan_list'][$url]['timestamp'] < $cache_ttl+time()) {
   	$plan_data = $apim_session['plan_list'][$url]['data'];
   	watchdog('plan_list_contents', 'Cache hit for plans list for url %url', array(
@@ -567,7 +629,7 @@ function plan_list_contents() {
 	  $result = ibm_apim_call($url);
 	  if (isset($result) && isset($result->data) && !isset($result->data['errors'])) {
 	    $plan_data = $result->data;
-	    
+
 	    //cache them
 	    $apim_session['plan_list'][$url] = array( 'data' => $plan_data, 'timestamp' => time());
 	  }
@@ -596,7 +658,7 @@ function plan_details_contents($planid = NULL, $planversion = NULL) {
 
   //get cache time to live. default to 3600 seconds if not found
   $cache_ttl = variable_get('ibm_apim_$cache_ttl', 3600);
-  
+
   // check if this plan is already cached in the session, if so return that
   $found = false;
   $index = 0;
@@ -644,4 +706,26 @@ function plan_details_contents($planid = NULL, $planversion = NULL) {
 
 function _plan_path_param_to_arg($arg) {
   return $arg;
+}
+
+function _plan_get_custom_fields() {
+  $all_fields = field_info_instances("node", "plan");
+  $keys = array_keys($all_fields);
+  $planfields = array('plan_apimhostname',
+    'plan_providerid',
+    'plan_environmentid',
+    'plan_apiid',
+    'plan_version',
+    'plan_description',
+    'plan_displayname',
+    'plan_requiresapproval',
+    'plan_subscribable',
+    'plan_apis',
+    'plan_url',
+    'plan_updated',
+    'field_planrating',
+    'field_plantags');
+
+  $diff = array_diff ( $keys , $planfields);
+  return $diff;
 }

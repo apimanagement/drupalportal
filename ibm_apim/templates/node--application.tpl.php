@@ -83,7 +83,7 @@ print '<span class="apimImageActions">'.$uploadimagelink;
 		<div class="apimTitleContainer">
 			<p class="apimTitle">
 				<span><?php print $title; ?></span>
-				<?php print '<span class="apimAppActions">' . $analyticslink . ' | ' . $notificationsettingslink;
+				<?php print '<span class="apimAppActions">' . $analyticslinks . ' | ' . $notificationsettingslink;
 				if (isset($isdev) && $isdev == TRUE) {
 				  print ' | '. $editlink . ' | ' . $deletelink;
 				}
@@ -127,7 +127,7 @@ print '<span class="apimImageActions">'.$uploadimagelink;
       });', 'inline');
      print '<div class="credentialTable"><div class="credentialPreSpacer"><div class="credentialSpacer"></div><div class="credentialSpacer"></div></div><div class="credentialContainer">
        <div class="credentialInfo">
-        <div class="credentialInfoDescription">'. $cred['description'] .'</div>
+        <div class="credentialInfoDescription">'. check_plain($cred['description']) .'</div>
         <label for="clientID" class="label apimField apiClientID">'. t('Client ID') .'</label>
         <div id="app_client_id" class="app_client_id">
 		  <input class="toggle-password" id="clientID'.$index.'" type="password" readonly value="'. $cred['clientID'] .'" />
@@ -159,6 +159,13 @@ print '<span class="apimImageActions">'.$uploadimagelink;
 		<div id="app_oauth_redirecturi" class="app_oauth_redirecturi"><?php print $application_oauthredirecturi[0]['safe_value']; ?></div>
 
     </div>
+        <div>
+	<?php if (is_array($customfields) && count($customfields) > 0) {
+  			foreach($customfields as $customfield) {
+   	 		  print render($content[$customfield]);
+  			}
+		  } ?>
+	</div>
   </div>
  </div>
 <?php
@@ -216,10 +223,21 @@ print '<span class="apimImageActions">'.$uploadimagelink;
 		 <div class='displayInlineTop resourceDesc boundedText' title='" . check_plain($resource['description']) . "'>" . check_plain($resource['description']) . "</div>
 		 <div class='displayInlineTop boundedText tableLabel'>" . t('Rate Limit:') . "</div>
 		 <div class='displayInlineTop resourceRateLimit'>" . $ratelimitstr . "</div>";
-          if (isset($sub['approved']) && $sub['approved'] == false) {
+          $ibm_apim_analytics_latencies = variable_get('ibm_apim_analytics_latencies', 1);
+          $ibm_apim_analytics_successrate = variable_get('ibm_apim_analytics_successrate', 1);
+          $ibm_apim_analytics_datausage = variable_get('ibm_apim_analytics_datausage', 1);
+          $urlstring = NULL;
+          if ($ibm_apim_analytics_datausage == 1) {
+            $urlstring = 'datausage';
+          } else if ($ibm_apim_analytics_successrate == 1) {
+            $urlstring = 'successrate';
+          } else if ($ibm_apim_analytics_latencies == 1) {
+            $urlstring = 'latency';
+          }
+          if ((isset($sub['approved']) && $sub['approved'] == false ) || $urlstring == NULL) {
 		    print "<div class='displayInlineTop resourceAnalytics'>&nbsp;</div>";
           } else {
-            print "<div class='displayInlineTop resourceAnalytics'><a href='" . url('ibm_apim/analytics/' . $variables['application_apiid'][0]['safe_value'] . '/' . base64_encode($resource['path']) . '/' . strtolower(check_plain($resource['verb'])). '/' . strtolower(check_plain($resource['id']))) . "'><span class='analyticsIcon'></span></a></div>";
+            print "<div class='displayInlineTop resourceAnalytics'><a href='" . url('ibm_apim/analytics/'.$urlstring.'/' . $variables['application_apiid'][0]['safe_value'] . '/' . ibm_apim_base64_url_encode($resource['path']) . '/' . strtolower(check_plain($resource['verb'])). '/' . strtolower(check_plain($resource['id']))) . "'><span class='analyticsIcon'></span></a></div>";
           }
 	   print "</div>";
         }

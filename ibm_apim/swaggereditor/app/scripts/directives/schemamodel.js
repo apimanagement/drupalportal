@@ -2,9 +2,8 @@
 
 SwaggerEditor.directive('schemaModel', function () {
 
-  var rootPath = Drupal.settings.basePath + 'sites/all/modules/ibm_apim/swaggereditor/app/';
   return {
-    templateUrl: rootPath + 'templates/schema-model.html',
+    templateUrl: 'templates/schema-model.html',
     restrict: 'E',
     replace: true,
     scope: {

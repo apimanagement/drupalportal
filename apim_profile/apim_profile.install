@@ -41,7 +41,13 @@ function apim_profile_install() {
     'notifications_account',
     'content_approval_field',
     'fasttoggle_node',
-    'site_uploader');
+    'site_uploader',
+    'comprehensive_uninstaller',
+    // 'advagg_bundler',
+    // 'advagg_css_compress',
+    // 'advagg_js_compress',
+    'slick_ui',
+    'slick_fields');
   module_enable($modules, TRUE);
 
   // Don't need these
@@ -66,7 +72,8 @@ function apim_profile_install() {
       "callbacks" => array("language" => "locale_language_from_browser"),
       "file" => "includes/locale.inc",
       "cache" => 0),
-    "language-default" => array("callbacks" => array("language" => "locale_language_from_default"))));
+    "language-default" => array(
+      "callbacks" => array("language" => "locale_language_from_default"))));
   variable_set('language_negotiation_language_content', array(
     "locale-interface" => array(
       "callbacks" => array("language" => "locale_language_from_interface"),
@@ -98,7 +105,10 @@ function apim_profile_install() {
         'label' => 'Language',
         'description' => 'Language selection',
         'weight' => 0),
-      'title' => array('label' => 'Title', 'description' => 'Node module element', 'weight' => -5)),
+      'title' => array(
+        'label' => 'Title',
+        'description' => 'Node module element',
+        'weight' => -5)),
     'display' => array(
       'language' => array(
         'label' => 'Language',
@@ -594,9 +604,8 @@ plan/*'))->condition('module', 'system')->condition('delta', 'navigation')->exec
 
   // workaround a jquery update bug in hierarchical_select
   variable_set('jquery_update_compression_type', 'min');
-  variable_set('jquery_update_jquery_admin_version', '1.10');
   variable_set('jquery_update_jquery_cdn', 'none');
-  variable_set('jquery_update_jquery_version', '1.10');
+  variable_set('jquery_update_jquery_version', '1.8');
 
   // set taxonomy menu to show on sidebar
   db_insert('block')->fields(array(
@@ -621,6 +630,16 @@ api/*',
     'delta' => 'login-menu',
     'theme' => 'ibm_apim_theme'))->execute();
 
+  // set follow user to show on sidebar right
+  db_update('block')->fields(array(
+    'status' => 1,
+    'region' => 'sidebar_second',
+    'title' => '',
+    'pages' => "user/*",
+    'visibility' => 1,
+    'cache' => 2))->condition('module', 'follow')->condition('delta', 'user')->condition('theme', 'ibm_apim_theme')->execute();
+  variable_set('follow_user_block_title', '1');
+
   // Enable pathologic to make sure all links are correct. If we don't
   // do this then the footer links do not work on all pages.
   $enable_pathologic = function ($text_format) {
@@ -636,11 +655,15 @@ api/*',
   // Set session timeout
   module_load_include('inc', 'autologout', 'autologout.admin');
   $form_state = form_state_defaults();
-  $form_state['values'] = array('autologout_timeout' => '3600');
+  $form_state['values'] = array(
+    'autologout_timeout' => '1800',
+    'autologout_padding' => '0',
+    'autologout_no_dialog' => 1);
   drupal_form_submit('autologout_settings', $form_state);
+  variable_set('ibm_apim_done_autologout_upgrade', 1);
 
   // Set default password policy
-  $policy = array("complexity" => "3", "length" => "8");
+  $policy = array("character_types" => "3", "length" => "8");
   db_insert('password_policy')->fields(array(
     'pid' => 1,
     'name' => 'password-strength',
@@ -687,6 +710,7 @@ api/*',
 
   // auto create forums
   _apim_profile_configure_forums();
+  variable_set('ibm_apim_done_forum_access_upgrade', 1);
   variable_set('ibm_apim_autocreate_apiforum', 1);
 
   variable_set('ibm_apim_show_placeholder_images', 1);
@@ -751,6 +775,7 @@ api/*',
     'view any banner_block bean',
     'search content',
     'use advanced search',
+    'use Search Autocomplete',
     'view any twitter_timeline bean');
   user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, $anonpermissions);
   $authpermissions = array(
@@ -766,6 +791,7 @@ api/*',
     'access APIs tickets',
     'search content',
     'use advanced search',
+    'use Search Autocomplete',
     'maintain own subscriptions',
     'manage own subscriptions',
     'subscribe to content',
@@ -799,6 +825,7 @@ api/*',
     'access APIs tickets',
     'search content',
     'use advanced search',
+    'use Search Autocomplete',
     'use text format full_html',
     'use text format filtered_html',
     'administer faq',
@@ -852,6 +879,7 @@ api/*',
     'access APIs tickets',
     'search content',
     'use advanced search',
+    'use Search Autocomplete',
     'use text format filtered_html',
     'delete own forum content',
     'delete any forum content',
@@ -907,8 +935,9 @@ api/*',
   variable_set('cache_lifetime', "0");
   variable_set('page_cache_maximum_age', "900");
   variable_set('page_compression', 1);
-  variable_set('preprocess_js', 1);
+  variable_set('preprocess_js', 0);
   variable_set('preprocess_css', 1);
+  variable_set('ibm_apim_done_csspreprocess_upgrade', 1);
 
   // disable cloning of our content types
   variable_set('clone_omitted', array(
@@ -937,11 +966,19 @@ api/*',
   variable_set('ultimate_cron_plugin_logger_cache_settings', array(
     'bin' => 'cache_ultimate_cron',
     'timeout' => '-1'));
+
+  // Always set this as we have changed poorman_keepalive from 0 to 1
   variable_set('ultimate_cron_plugin_launcher_serial_settings', array(
     'lock_timeout' => '3600',
     'max_threads' => '1',
-    'poorman_keepalive' => 1,
+    'poorman_keepalive' => 0,
     'thread' => 'any'));
+
+  // Always set this as we are changing a default setting that already exists
+  variable_set('ultimate_cron_plugin_settings_poorman_settings', array(
+    'launcher' => '',
+    'early_page_flush' => 1,
+    'user_agent' => 'Ultimate Cron'));
 
   // Make our cron job run every minute
   db_insert('ultimate_cron_job')->fields(array(
@@ -949,8 +986,44 @@ api/*',
     'title' => 'Default cron handler',
     'settings' => 'a:3:{s:9:"scheduler";a:2:{s:4:"name";s:0:"";s:6:"simple";a:1:{s:5:"rules";a:1:{i:0;s:9:"* * * * *";}}}s:8:"launcher";a:2:{s:4:"name";s:0:"";s:6:"serial";a:0:{}}s:6:"logger";a:2:{s:4:"name";s:0:"";s:5:"cache";a:0:{}}}'))->execute();
 
+  // configure search 404 and advanced CSS/JS aggregation
+  variable_set('search404_ignore_query', 'css js gz gif jpg jpeg bmp png');
+  // variable_set('advagg_js_compressor', '3');
+  // variable_set('advagg_js_compress_add_license', 1);
+  // variable_set('advagg_js_compress_inline', '3');
+  // variable_set('advagg_js_compress_inline_if_not_cacheable', 0);
+  // variable_set('advagg_js_compressor_file_settings', array("misc__jquery--ba-bbq--js"=> "0", "sites__all__modules__search_autocomplete__js__jquery--autocomplete--js" => "0","sites__all__modules__search_autocomplete__js__search_autocomplete--admin--js" => 0));
+  // variable_set('advagg_js_compress_packer', 0);
+  // variable_set('advagg_css_compressor', '2');
+  // variable_set('advagg_css_compress_inline', '0');
+  // variable_set('advagg_css_compress_inline_if_not_cacheable', 0);
+  // variable_set('advagg_gzip', 0);
+
+  variable_set('seckit_clickjacking', array(
+    "x_frame" => "1",
+    "x_frame_allow_from" => "",
+    "js_css_noscript" => 1,
+    "noscript_message" => "Sorry, you need to enable JavaScript to visit this website."));
+  variable_set('ibm_apim_done_frameprevention_upgrade', 1);
+
+  // workaround a security hole in flag_bookmarks allowing users to see other people's bookmarks
+  _apim_profile_create_bookmark_view();
+  variable_set('ibm_apim_done_flag_bookmark_upgrade', 1);
+
   // Update the menu router information.
   menu_rebuild();
+
+  // rebuild node access tables
+  node_access_rebuild();
+
+  // Flush all caches to ensure that any full bootstraps during the installer
+  // do not leave stale cached data, and that any content types or other items
+  // registered by the install profile are registered correctly.
+  drupal_flush_all_caches();
+
+  // Also clear all caches for good measure. What is the difference between
+  // flushing and clearing. Who knows.
+  cache_clear_all();
 }
 
 /**
@@ -960,7 +1033,9 @@ function apim_profile_configure_connection_form() {
   drupal_set_title(st('Configure API Management'));
   global $base_url;
 
-  $form['apim_config'] = array('#type' => 'fieldset', '#title' => st('Configure API Mangement'));
+  $form['apim_config'] = array(
+    '#type' => 'fieldset',
+    '#title' => st('Configure API Mangement'));
   $form['apim_config']['apim_hostname'] = array(
     '#title' => t('API Manager Hostname'),
     '#description' => t('To configure this Developer Portal to work with the API Manager host you must also go to /apimanager on the API Manager host, select the environment for this Developer Portal and ensure that the "Custom Developer Portal URL" is set to: @baseurl', array(
@@ -977,7 +1052,10 @@ function apim_profile_configure_connection_form() {
     '#type' => 'checkbox',
     '#default_value' => 1);
   $form['actions'] = array('#type' => 'actions');
-  $form['actions']['submit'] = array('#type' => 'submit', '#value' => st('Finish'), '#weight' => 15);
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => st('Finish'),
+    '#weight' => 15);
 
   return $form;
 }
@@ -1057,7 +1135,9 @@ function apim_profile_configure_translations_form() {
     // '#default_value' => array_keys(_apim_profile_locale_get_predefined_list()),
     '#size' => 11);
 
-  $form['submit'] = array('#type' => 'submit', '#value' => st('Install selected languages'));
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => st('Install selected languages'));
 
   return $form;
 }
@@ -1124,7 +1204,8 @@ function apim_profile_install_finished(&$install_state) {
   $output = '<p>' . st('Congratulations, you installed @drupal!', array(
     '@drupal' => drupal_install_profile_distribution_name())) . '</p>';
   $output .= '<p>' . (isset($messages['error']) ? st('Review the messages above before visiting <a href="@url">your new site</a>.', array(
-    '@url' => url(''))) : st('<a href="@url">Visit your new site</a>.', array('@url' => url('')))) . '</p>';
+    '@url' => url(''))) : st('<a href="@url">Visit your new site</a>.', array(
+    '@url' => url('')))) . '</p>';
 
   // Run cron to populate update status tables (if available) so that users
   // will be warned if they've installed an out of date Drupal version.
@@ -1142,6 +1223,9 @@ function apim_profile_install_finished(&$install_state) {
 
   // Rebuild node types
   node_types_rebuild();
+
+  // rebuild node access tables
+  node_access_rebuild();
 
   // Rebuild the menu
   menu_rebuild();
@@ -1248,7 +1332,12 @@ function _apim_profile_add_ratings() {
         'unsigned' => TRUE,
         'not null' => FALSE,
         'description' => '')),
-    'primary key' => array('entity_type', 'entity_id', 'deleted', 'delta', 'language'),
+    'primary key' => array(
+      'entity_type',
+      'entity_id',
+      'deleted',
+      'delta',
+      'language'),
     'indexes' => array(
       'entity_type' => array('entity_type'),
       'bundle' => array('bundle'),
@@ -1309,7 +1398,12 @@ function _apim_profile_add_ratings() {
         'unsigned' => TRUE,
         'not null' => FALSE,
         'description' => '')),
-    'primary key' => array('entity_type', 'entity_id', 'deleted', 'delta', 'language'),
+    'primary key' => array(
+      'entity_type',
+      'entity_id',
+      'deleted',
+      'delta',
+      'language'),
     'indexes' => array(
       'entity_type' => array('entity_type'),
       'bundle' => array('bundle'),
@@ -1395,7 +1489,12 @@ function _apim_profile_add_ratings() {
         'unsigned' => TRUE,
         'not null' => FALSE,
         'description' => '')),
-    'primary key' => array('entity_type', 'entity_id', 'deleted', 'delta', 'language'),
+    'primary key' => array(
+      'entity_type',
+      'entity_id',
+      'deleted',
+      'delta',
+      'language'),
     'indexes' => array(
       'entity_type' => array('entity_type'),
       'bundle' => array('bundle'),
@@ -1456,7 +1555,12 @@ function _apim_profile_add_ratings() {
         'unsigned' => TRUE,
         'not null' => FALSE,
         'description' => '')),
-    'primary key' => array('entity_type', 'entity_id', 'deleted', 'delta', 'language'),
+    'primary key' => array(
+      'entity_type',
+      'entity_id',
+      'deleted',
+      'delta',
+      'language'),
     'indexes' => array(
       'entity_type' => array('entity_type'),
       'bundle' => array('bundle'),
@@ -1542,7 +1646,12 @@ function _apim_profile_add_ratings() {
         'unsigned' => TRUE,
         'not null' => FALSE,
         'description' => '')),
-    'primary key' => array('entity_type', 'entity_id', 'deleted', 'delta', 'language'),
+    'primary key' => array(
+      'entity_type',
+      'entity_id',
+      'deleted',
+      'delta',
+      'language'),
     'indexes' => array(
       'entity_type' => array('entity_type'),
       'bundle' => array('bundle'),
@@ -1603,7 +1712,12 @@ function _apim_profile_add_ratings() {
         'unsigned' => TRUE,
         'not null' => FALSE,
         'description' => '')),
-    'primary key' => array('entity_type', 'entity_id', 'deleted', 'delta', 'language'),
+    'primary key' => array(
+      'entity_type',
+      'entity_id',
+      'deleted',
+      'delta',
+      'language'),
     'indexes' => array(
       'entity_type' => array('entity_type'),
       'bundle' => array('bundle'),
@@ -1712,7 +1826,12 @@ function _apim_profile_add_tags() {
         'not null' => FALSE,
         'default' => NULL,
         'description' => '')),
-    'primary key' => array('entity_type', 'entity_id', 'deleted', 'delta', 'language'),
+    'primary key' => array(
+      'entity_type',
+      'entity_id',
+      'deleted',
+      'delta',
+      'language'),
     'indexes' => array(
       'entity_type' => array('entity_type'),
       'bundle' => array('bundle'),
@@ -1769,7 +1888,12 @@ function _apim_profile_add_tags() {
         'not null' => FALSE,
         'default' => NULL,
         'description' => '')),
-    'primary key' => array('entity_type', 'entity_id', 'deleted', 'delta', 'language'),
+    'primary key' => array(
+      'entity_type',
+      'entity_id',
+      'deleted',
+      'delta',
+      'language'),
     'indexes' => array(
       'entity_type' => array('entity_type'),
       'bundle' => array('bundle'),
@@ -1855,7 +1979,12 @@ function _apim_profile_add_tags() {
         'not null' => FALSE,
         'default' => NULL,
         'description' => '')),
-    'primary key' => array('entity_type', 'entity_id', 'deleted', 'delta', 'language'),
+    'primary key' => array(
+      'entity_type',
+      'entity_id',
+      'deleted',
+      'delta',
+      'language'),
     'indexes' => array(
       'entity_type' => array('entity_type'),
       'bundle' => array('bundle'),
@@ -1912,7 +2041,12 @@ function _apim_profile_add_tags() {
         'not null' => FALSE,
         'default' => NULL,
         'description' => '')),
-    'primary key' => array('entity_type', 'entity_id', 'deleted', 'delta', 'language'),
+    'primary key' => array(
+      'entity_type',
+      'entity_id',
+      'deleted',
+      'delta',
+      'language'),
     'indexes' => array(
       'entity_type' => array('entity_type'),
       'bundle' => array('bundle'),
@@ -1998,7 +2132,12 @@ function _apim_profile_add_tags() {
         'not null' => FALSE,
         'default' => NULL,
         'description' => '')),
-    'primary key' => array('entity_type', 'entity_id', 'deleted', 'delta', 'language'),
+    'primary key' => array(
+      'entity_type',
+      'entity_id',
+      'deleted',
+      'delta',
+      'language'),
     'indexes' => array(
       'entity_type' => array('entity_type'),
       'bundle' => array('bundle'),
@@ -2055,7 +2194,12 @@ function _apim_profile_add_tags() {
         'not null' => FALSE,
         'default' => NULL,
         'description' => '')),
-    'primary key' => array('entity_type', 'entity_id', 'deleted', 'delta', 'language'),
+    'primary key' => array(
+      'entity_type',
+      'entity_id',
+      'deleted',
+      'delta',
+      'language'),
     'indexes' => array(
       'entity_type' => array('entity_type'),
       'bundle' => array('bundle'),
@@ -2100,7 +2244,28 @@ function apim_profile_create_bannerblock() {
  */
 function apim_profile_update_7400() {
   // enable cron
-  $modules = array('d3', 'clone', 'angularjs', 'menu_item_visibility', 'site_uploader', 'ultimate_cron', 'markdown');
+  $modules = array(
+    'd3',
+    'clone',
+    'angularjs',
+    'menu_item_visibility',
+    'site_uploader',
+    'comprehensive_uninstaller',
+    'ultimate_cron',
+    'markdown',
+    'follow',
+    'flood_control',
+    'search_autocomplete',
+    'front_page',
+    'slick',
+    'slick_views',
+    'slick_extras',
+    'slick_ui',
+    'slick_fields',
+    'profanity',
+    'seckit',
+    'restrict_by_ip'
+  );
   module_enable($modules, TRUE);
 
   // configure cron
@@ -2114,13 +2279,18 @@ function apim_profile_update_7400() {
       'timeout' => '-1'));
   }
 
-  if (variable_get('ultimate_cron_plugin_launcher_serial_settings', NULL) == NULL) {
-    variable_set('ultimate_cron_plugin_launcher_serial_settings', array(
-      'lock_timeout' => '3600',
-      'max_threads' => '1',
-      'poorman_keepalive' => 1,
-      'thread' => 'any'));
-  }
+  // Always set this as we have changed poorman_keepalive from 0 to 1
+  variable_set('ultimate_cron_plugin_launcher_serial_settings', array(
+    'lock_timeout' => '3600',
+    'max_threads' => '1',
+    'poorman_keepalive' => 0,
+    'thread' => 'any'));
+
+  // Always set this as we are changing a default setting that already exists
+  variable_set('ultimate_cron_plugin_settings_poorman_settings', array(
+    'launcher' => '',
+    'early_page_flush' => 1,
+    'user_agent' => 'Ultimate Cron'));
 
   // Make our cron job run every minute
   $name = db_query("SELECT name FROM {ultimate_cron_job} WHERE name='ibm_apim_cron'")->fetchField();
@@ -2166,5 +2336,300 @@ function apim_profile_update_7400() {
   }
   module_disable(array('security_questions'), TRUE);
 
-  variable_set('preprocess_css', 1);
+  if (variable_get('ibm_apim_done_autologout_upgrade', NULL) == NULL) {
+    module_load_include('inc', 'autologout', 'autologout.admin');
+    $form_state = form_state_defaults();
+    $form_state['values'] = array(
+      'autologout_padding' => '0',
+      'autologout_no_dialog' => 1);
+    drupal_form_submit('autologout_settings', $form_state);
+    variable_set('ibm_apim_done_autologout_upgrade', 1);
+  }
+
+  // update jquery_version
+  variable_set('jquery_update_jquery_version', '1.8');
+
+  // update forum access records
+  if (variable_get('ibm_apim_done_forum_access_upgrade', NULL) == NULL) {
+    // only do upgrade if forum is enabled
+    if (module_exists('forum')) {
+      $modules = array('acl', 'chain_menu_access', 'forum_access');
+      module_enable($modules, TRUE);
+      if (module_exists('forum_access')) {
+        // set forum_access
+        $containerID = taxonomy_get_term_by_name('APIs');
+        $vid = variable_get('forum_nav_vocabulary', 1);
+        if (isset($containerID)) {
+          $children = taxonomy_get_children($containerID, $vid);
+          if (!empty($children)) {
+            foreach ($children as $child) {
+              $forumID = $child->tid;
+              if (!empty($forumID)) {
+                db_insert('forum_access')->fields(array(
+                  'tid' => $forumID,
+                  'rid' => 1,
+                  'grant_view' => 1,
+                  'grant_update' => 0,
+                  'grant_delete' => 0,
+                  'grant_create' => 0,
+                  'priority' => 0))->execute();
+                db_insert('forum_access')->fields(array(
+                  'tid' => $forumID,
+                  'rid' => 2,
+                  'grant_view' => 1,
+                  'grant_update' => 0,
+                  'grant_delete' => 0,
+                  'grant_create' => 1,
+                  'priority' => 0))->execute();
+                db_insert('forum_access')->fields(array(
+                  'tid' => $forumID,
+                  'rid' => 3,
+                  'grant_view' => 0,
+                  'grant_update' => 0,
+                  'grant_delete' => 0,
+                  'grant_create' => 0,
+                  'priority' => 0))->execute();
+                db_insert('forum_access')->fields(array(
+                  'tid' => $forumID,
+                  'rid' => 4,
+                  'grant_view' => 0,
+                  'grant_update' => 0,
+                  'grant_delete' => 0,
+                  'grant_create' => 0,
+                  'priority' => 0))->execute();
+                db_insert('forum_access')->fields(array(
+                  'tid' => $forumID,
+                  'rid' => 5,
+                  'grant_view' => 1,
+                  'grant_update' => 1,
+                  'grant_delete' => 1,
+                  'grant_create' => 1,
+                  'priority' => 0))->execute();
+              }
+            }
+            node_access_rebuild();
+          }
+        }
+      }
+    }
+    variable_set('ibm_apim_done_forum_access_upgrade', 1);
+  }
+
+  // fix password policy
+  $policy = array("character_types" => "3", "length" => "8");
+  db_update('password_policy')->fields(array('policy' => serialize($policy)))->condition('pid', 1)->condition('name', 'password-strength')->execute();
+
+  if (variable_get('ibm_apim_done_csspreprocess_upgrade', NULL) == NULL) {
+    variable_set('preprocess_css', 1);
+    variable_set('ibm_apim_done_csspreprocess_upgrade', 1);
+  }
+
+  // if (variable_get('ibm_apim_done_advagg_upgrade', NULL) == NULL) {
+  // $modules = array(
+  // 'httprl',
+  // 'advagg',
+  // 'advagg_bundler',
+  // 'advagg_css_compress',
+  // 'advagg_js_compress');
+  // module_enable($modules, TRUE);
+
+  // // configure search 404 and advanced CSS/JS aggregation
+  // variable_set('search404_ignore_query', 'css js gz gif jpg jpeg bmp png');
+  // variable_set('advagg_js_compressor', '3');
+  // variable_set('advagg_js_compress_add_license', 1);
+  // variable_set('advagg_js_compress_inline', '3');
+  // variable_set('advagg_js_compress_inline_if_not_cacheable', 0);
+  // variable_set('advagg_js_compress_packer', 0);
+  // variable_set('advagg_css_compressor', '2');
+  // variable_set('advagg_css_compress_inline', '0');
+  // variable_set('advagg_css_compress_inline_if_not_cacheable', 0);
+  // variable_set('advagg_js_compressor_file_settings', array("misc__jquery--ba-bbq--js"=>"0", "sites__all__modules__search_autocomplete__js__jquery--autocomplete--js" => "0","sites__all__modules__search_autocomplete__js__search_autocomplete--admin--js" => 0));
+  // variable_set('advagg_gzip', 0);
+  // variable_set('preprocess_css', 1);
+
+  // // toggle the search404 module to see if helps the css aggregation
+  // module_disable(array('search404'), TRUE);
+  // module_enable(array('search404'), TRUE);
+
+  // variable_set('ibm_apim_done_advagg_upgrade', 1);
+  // }
+  variable_set('preprocess_js', 0);
+
+  // fix a security hole in bookmarks allowing user to access other people's bookmarks
+  if (variable_get('ibm_apim_done_flag_bookmark_upgrade', NULL) == NULL) {
+    _apim_profile_create_bookmark_view();
+    variable_set('ibm_apim_done_flag_bookmark_upgrade', 1);
+  }
+
+  if (variable_get('ibm_apim_done_frameprevention_upgrade', NULL) == NULL) {
+    variable_set('seckit_clickjacking', array(
+      "x_frame" => "1",
+      "x_frame_allow_from" => "",
+      "js_css_noscript" => 1,
+      "noscript_message" => "Sorry, you need to enable JavaScript to visit this website."));
+    variable_set('ibm_apim_done_frameprevention_upgrade', 1);
+  }
+
+  // force a menu rebuild
+  menu_rebuild();
+
+  // Flush all caches to ensure that any full bootstraps during the installer
+  // do not leave stale cached data, and that any content types or other items
+  // registered by the install profile are registered correctly.
+  drupal_flush_all_caches();
+
+  // Also clear all caches for good measure. What is the difference between
+  // flushing and clearing. Who knows.
+  cache_clear_all();
+}
+
+function _apim_profile_create_bookmark_view() {
+  $view = views_get_view('flag_bookmarks_tab', TRUE);
+  if (!isset($view)) {
+    $view = new view();
+    $view->name = 'flag_bookmarks_tab';
+    $view->description = 'Provides a tab on all users\' profile pages containing bookmarks for that user.';
+    $view->tag = 'flag';
+    $view->base_table = 'node';
+    $view->human_name = '';
+    $view->core = 0;
+    $view->api_version = '3.0';
+    $view->disabled = FALSE;
+  }
+  /* Display: Defaults */
+  $handler = $view->new_display('default', 'Defaults', 'default');
+  $handler->display->display_options['title'] = 'User bookmarks';
+  $handler->display->display_options['use_more_always'] = FALSE;
+  $handler->display->display_options['access']['type'] = 'perm';
+  $handler->display->display_options['access']['perm'] = 'flag bookmarks';
+  $handler->display->display_options['cache']['type'] = 'none';
+  $handler->display->display_options['query']['type'] = 'views_query';
+  $handler->display->display_options['exposed_form']['type'] = 'basic';
+  $handler->display->display_options['pager']['type'] = 'none';
+  $handler->display->display_options['style_plugin'] = 'table';
+  $handler->display->display_options['style_options']['grouping'] = '';
+  $handler->display->display_options['style_options']['columns'] = array(
+    'type' => 'type',
+    'title' => 'title',
+    'name' => 'name',
+    'comment_count' => 'comment_count',
+    'last_comment_timestamp' => 'last_comment_timestamp');
+  $handler->display->display_options['style_options']['default'] = 'last_comment_timestamp';
+  $handler->display->display_options['style_options']['info'] = array(
+    'type' => array('sortable' => TRUE),
+    'title' => array('sortable' => TRUE),
+    'name' => array('sortable' => TRUE),
+    'comment_count' => array('sortable' => TRUE),
+    'last_comment_timestamp' => array('sortable' => TRUE));
+  $handler->display->display_options['style_options']['override'] = FALSE;
+  $handler->display->display_options['style_options']['sticky'] = TRUE;
+  $handler->display->display_options['style_options']['order'] = 'desc';
+  /* No results behavior: Global: Text area */
+  $handler->display->display_options['empty']['text']['id'] = 'area';
+  $handler->display->display_options['empty']['text']['table'] = 'views';
+  $handler->display->display_options['empty']['text']['field'] = 'area';
+  $handler->display->display_options['empty']['text']['content'] = 'This user has not yet bookmarked any content.';
+  $handler->display->display_options['empty']['text']['format'] = 'plain_text';
+  /* Relationship: Flags: bookmarks */
+  $handler->display->display_options['relationships']['flag_content_rel']['id'] = 'flag_content_rel';
+  $handler->display->display_options['relationships']['flag_content_rel']['table'] = 'node';
+  $handler->display->display_options['relationships']['flag_content_rel']['field'] = 'flag_content_rel';
+  $handler->display->display_options['relationships']['flag_content_rel']['label'] = 'bookmarks';
+  $handler->display->display_options['relationships']['flag_content_rel']['flag'] = 'bookmarks';
+  $handler->display->display_options['relationships']['flag_content_rel']['user_scope'] = 'any';
+  /* Relationship: Content: Author */
+  $handler->display->display_options['relationships']['uid_1']['id'] = 'uid_1';
+  $handler->display->display_options['relationships']['uid_1']['table'] = 'node';
+  $handler->display->display_options['relationships']['uid_1']['field'] = 'uid';
+  /* Relationship: Flags: User */
+  $handler->display->display_options['relationships']['uid']['id'] = 'uid';
+  $handler->display->display_options['relationships']['uid']['table'] = 'flagging';
+  $handler->display->display_options['relationships']['uid']['field'] = 'uid';
+  $handler->display->display_options['relationships']['uid']['relationship'] = 'flag_content_rel';
+  $handler->display->display_options['relationships']['uid']['label'] = 'bookmarks_user';
+  $handler->display->display_options['relationships']['uid']['required'] = TRUE;
+  /* Field: Content: Type */
+  $handler->display->display_options['fields']['type']['id'] = 'type';
+  $handler->display->display_options['fields']['type']['table'] = 'node';
+  $handler->display->display_options['fields']['type']['field'] = 'type';
+  /* Field: Content: Title */
+  $handler->display->display_options['fields']['title']['id'] = 'title';
+  $handler->display->display_options['fields']['title']['table'] = 'node';
+  $handler->display->display_options['fields']['title']['field'] = 'title';
+  /* Field: User: Name */
+  $handler->display->display_options['fields']['name']['id'] = 'name';
+  $handler->display->display_options['fields']['name']['table'] = 'users';
+  $handler->display->display_options['fields']['name']['field'] = 'name';
+  $handler->display->display_options['fields']['name']['relationship'] = 'uid_1';
+  $handler->display->display_options['fields']['name']['label'] = 'Author';
+  /* Field: Content: Comment count */
+  $handler->display->display_options['fields']['comment_count']['id'] = 'comment_count';
+  $handler->display->display_options['fields']['comment_count']['table'] = 'node_comment_statistics';
+  $handler->display->display_options['fields']['comment_count']['field'] = 'comment_count';
+  $handler->display->display_options['fields']['comment_count']['label'] = 'Replies';
+  /* Field: Content: Last comment time */
+  $handler->display->display_options['fields']['last_comment_timestamp']['id'] = 'last_comment_timestamp';
+  $handler->display->display_options['fields']['last_comment_timestamp']['table'] = 'node_comment_statistics';
+  $handler->display->display_options['fields']['last_comment_timestamp']['field'] = 'last_comment_timestamp';
+  $handler->display->display_options['fields']['last_comment_timestamp']['label'] = 'Last Post';
+  /* Contextual filter: User: Uid */
+  $handler->display->display_options['arguments']['uid']['id'] = 'uid';
+  $handler->display->display_options['arguments']['uid']['table'] = 'users';
+  $handler->display->display_options['arguments']['uid']['field'] = 'uid';
+  $handler->display->display_options['arguments']['uid']['relationship'] = 'uid';
+  $handler->display->display_options['arguments']['uid']['default_action'] = 'empty';
+  $handler->display->display_options['arguments']['uid']['exception']['title_enable'] = TRUE;
+  $handler->display->display_options['arguments']['uid']['title_enable'] = TRUE;
+  $handler->display->display_options['arguments']['uid']['title'] = '%1\'s bookmarks';
+  $handler->display->display_options['arguments']['uid']['default_argument_type'] = 'fixed';
+  $handler->display->display_options['arguments']['uid']['summary']['number_of_records'] = '0';
+  $handler->display->display_options['arguments']['uid']['summary']['format'] = 'default_summary';
+  $handler->display->display_options['arguments']['uid']['summary_options']['items_per_page'] = '25';
+  $handler->display->display_options['arguments']['uid']['specify_validation'] = TRUE;
+  $handler->display->display_options['arguments']['uid']['validate']['type'] = 'php';
+  $handler->display->display_options['arguments']['uid']['validate_options']['code'] = 'global $user;
+if($argument == $user->uid){
+  	return TRUE;
+ } else {
+  	return FALSE;
+}';
+  $handler->display->display_options['arguments']['uid']['validate']['fail'] = 'access denied';
+  /* Filter criterion: Content: Published */
+  $handler->display->display_options['filters']['status']['id'] = 'status';
+  $handler->display->display_options['filters']['status']['table'] = 'node';
+  $handler->display->display_options['filters']['status']['field'] = 'status';
+  $handler->display->display_options['filters']['status']['value'] = 1;
+  $handler->display->display_options['filters']['status']['group'] = '0';
+  $handler->display->display_options['filters']['status']['expose']['operator'] = FALSE;
+
+  /* Display: Page */
+  $handler = $view->new_display('page', 'Page', 'page');
+  $handler->display->display_options['path'] = 'user/%/bookmarks';
+  $handler->display->display_options['menu']['type'] = 'tab';
+  $handler->display->display_options['menu']['title'] = 'Bookmarks';
+  $handler->display->display_options['menu']['weight'] = '0';
+  $translatables['flag_bookmarks_tab'] = array(
+    t('Defaults'),
+    t('User bookmarks'),
+    t('more'),
+    t('Apply'),
+    t('Reset'),
+    t('Sort by'),
+    t('Asc'),
+    t('Desc'),
+    t('This user has not yet bookmarked any content.'),
+    t('bookmarks'),
+    t('author'),
+    t('bookmarks_user'),
+    t('Type'),
+    t('Title'),
+    t('Author'),
+    t('Replies'),
+    t('.'),
+    t(','),
+    t('Last Post'),
+    t('All'),
+    t('%1\'s bookmarks'),
+    t('Page'));
+  views_save_view($view);
 }

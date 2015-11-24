@@ -1,0 +1,225 @@
+<?php
+
+/*
+ * TEST THEMES
+ * Zen http://ftp.drupal.org/files/projects/zen-7.x-5.5.zip
+ * Omega http://ftp.drupal.org/files/projects/omega-7.x-4.4.zip
+ * Bootstrap http://ftp.drupal.org/files/projects/bootstrap-7.x-3.0.zip
+ * Adminimal http://ftp.drupal.org/files/projects/adminimal_theme-7.x-1.23.zip
+ * Corporate Clean http://ftp.drupal.org/files/projects/corporateclean-7.x-2.3.zip
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function comprehensive_uninstaller_menu() {
+  $form['admin/appearance/uninstall'] = array(
+    'title' => 'Uninstall',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('comprehensive_uninstaller_form'),
+    'access callback' => TRUE,
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 100); // Anything >50 will do
+  $form['admin/appearance/uninstall/confirm'] = array(
+    'title' => 'Uninstall',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('comprehensive_uninstaller_confirm_form'),
+    'access callback' => TRUE);
+  return $form;
+}
+
+/**
+ * Implementation of hook_help.
+ *
+ * *****************************************************************************************************
+ * Provide online user help. *
+ * *
+ * By implementing hook_help(), a module can make documentation available to the user for the module *
+ * as a whole, or for specific paths. Help for developers should usually be provided via function *
+ * header comments in the code, or in special API example files. *
+ * *
+ * The page-specific help information provided by this hook appears as a system help block on that *
+ * page. The module overview help information is displayed by the Help module. It can be accessed *
+ * from the page at admin/help or from the Modules page. *
+ * *****************************************************************************************************
+ */
+function comprehensive_uninstaller_help($path, $arg) {
+  if ($path == 'admin/appearance/uninstall') { // Only display help text on uninstall page.
+    $output = '<p>' . t('The uninstall process removes all data related to a theme. To uninstall a theme, you must first disable it on the main <a href="@appearance">Appearance page</a>.', array(
+      '@appearance' => url('admin/appearance'))) . '</p>';
+  }
+  else {
+    $output = '';
+  }
+  return $output;
+}
+
+/**
+ * Implementation of hook_theme.
+ */
+function comprehensive_uninstaller_theme() {
+  return array('comprehensive_uninstaller' => array('render element' => 'form'));
+}
+
+/**
+ * Returns an array containing information of disabled themes.
+ */
+function _comprehensive_uninstaller_get_disabled_themes() {
+  $all_themes = list_themes();
+
+  $disabled_themes = array();
+  $conf_path = preg_quote(conf_path(), '/');
+  $pattern = '/^' . $conf_path . '/';
+  foreach ($all_themes as $name => $theme) {
+    if ($theme->status == 0 && preg_match($pattern, $theme->filename)) { // 0=disabled=FALSE, 1=enabled=TRUE
+      $disabled_themes[$name] = $theme;
+    }
+  }
+  $output = array('#tree' => TRUE);
+  $theme_entries = array();
+  if (!empty($disabled_themes)) {
+    module_load_include('inc', 'system', 'system.admin');
+    uasort($disabled_themes, 'system_sort_themes');
+    foreach ($disabled_themes as $theme) {
+      $theme_name = $theme->info['name'] ? $theme->info['name'] : $theme->name;
+      $theme_entries[$theme_name] = array(
+        'uninstall' => array(
+          '#type' => 'checkbox',
+          '#title' => t('Uninstall @theme theme', array(
+            '@theme' => $theme_name)),
+          '#title_display' => 'invisible'),
+        'name' => array('#markup' => '<strong>' . $theme_name . '</strong>'),
+        'project' => array('#type' => 'hidden', '#value' => $theme->info['project'], '#markup' => $theme->info['project']),
+        'version' => array('#markup' => $theme->info['version']),
+        'description' => array('#markup' => $theme->info['description']));
+    }
+  }
+  return array_merge($output, $theme_entries);
+}
+
+/**
+ * Page Callback / Form Builder for the table form.
+ */
+function comprehensive_uninstaller_form($form, &$form_state) {
+  // form_state=NULL
+  $subform = _comprehensive_uninstaller_get_disabled_themes();
+  $form['table'] = array(
+    '#theme' => 'comprehensive_uninstaller',
+    '#header' => array(
+      t('Uninstall'),
+      t('Name'),
+      t('Project'),
+      t('Version'),
+      t('Description')),
+    'rows' => $subform);
+  if (count($subform) > 1) {
+    $form['submit'] = array('#type' => 'submit', '#value' => t('Uninstall'));
+  }
+  return $form;
+}
+
+/**
+ * Displays a table containing information of disabled themes which are safe to delete.
+ */
+function comprehensive_uninstaller_form_submit($form, &$form_state) {
+  $rows = $form_state['values']['rows'];
+  $uninstall_values = _comprehensive_uninstaller_get_uninstall_values($rows);
+  $themes_to_uninstall = array();
+
+  foreach ($rows as $key => $value) {
+    if ($value['uninstall'] == 1) {
+      array_push($themes_to_uninstall, array('name'=>$key, 'project'=> $value['project']));
+    }
+  }
+
+  if (empty($themes_to_uninstall)) {
+    drupal_set_message(t('No themes selected.'), 'error');
+  }
+  else {
+    foreach ($themes_to_uninstall as $uninstalled_theme) {
+      $rc = _comprehensive_uninstaller_delete_theme_files(array($uninstalled_theme['project']));
+      if ($rc == true) {
+        drupal_set_message(t('The following themes have been uninstalled: @theme', array('@theme'=>$uninstalled_theme['name'])));
+      } else {
+        drupal_set_message(t('An error occurred deleting: @theme', array('@theme'=>$uninstalled_theme['name'])));
+      }
+    }
+  }
+  drupal_flush_all_caches();
+  drupal_goto('admin/appearance/uninstall');
+}
+
+function _comprehensive_uninstaller_delete_theme_files($themes) {
+  $rc = true;
+  if (is_array($themes)) {
+    foreach ($themes as $theme) {
+      $theme_path = drupal_get_path('theme', $theme);
+      if (isset($theme_path)) {
+        _comprehensive_uninstaller_file_delete_recursive($theme_path);
+      } else {
+        $rc = false;
+      }
+    }
+  }
+  return $rc;
+}
+
+function _comprehensive_uninstaller_get_uninstall_values($array) {
+  $uninstall_values = array();
+  if (is_array($array)) {
+    foreach ($array as $child_array) {
+      array_push($uninstall_values, $child_array['uninstall']);
+    }
+  }
+  return $uninstall_values;
+}
+
+function _comprehensive_uninstaller_file_delete_recursive($path) {
+  if (isset($path)) {
+    if (is_dir($path)) { // Path is directory
+      $files = scandir($path);
+      foreach ($files as $file) {
+        if ($file != '.' && $file != '..') {
+          _comprehensive_uninstaller_file_delete_recursive($path . '/' . $file); // Recursive call
+        }
+      }
+      rmdir($path);
+    }
+    else {
+      unlink($path); // Delete the file
+    }
+  }
+}
+
+/**
+ * Theme callback for the form table.
+ */
+function theme_comprehensive_uninstaller($variables) {
+  $form = $variables['form'];
+  $rows = $form['rows'];
+  $header = $form['#header'];
+  $content = array(
+    'header' => $header,
+    'rows' => array(),
+    'empty' => t('No themes are available to uninstall.'));
+  foreach (element_children($rows) as $row_index) {
+    $row = array();
+    foreach (element_children($rows[$row_index]) as $col_index) {
+      if ($col_index == 'uninstall') {
+        $row[] = array(
+          'data' => drupal_render($rows[$row_index][$col_index]),
+          'align' => 'center');
+      } else  if ($col_index == 'project') {
+        // hidden field but also print out label
+        $row[] = drupal_render($rows[$row_index][$col_index]) . $rows[$row_index][$col_index]['#markup'];
+      }
+      else {
+        $row[] = drupal_render($rows[$row_index][$col_index]);
+      }
+    }
+    $content['rows'][] = $row;
+  }
+  return theme('table', $content);
+}
+
+?>

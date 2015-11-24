@@ -68,12 +68,6 @@ SwaggerEditor.controller('PreviewCtrl', function PreviewCtrl(Storage, Builder,
       }
       $rootScope.errors = result.errors || [];
       $rootScope.warnings = result.warnings || [];
-      /* APIM */
-      if (result.specs && result.specs.schemes && result.specs.schemes[0] && result.specs.host) {
-        $scope.baseurl = result.specs.schemes[0] + '://' + result.specs.host + result.specs.basePath;
-      } else if (result.specs && result.specs.basePath) {
-        $scope.baseurl = result.specs.basePath;
-      }
     });
   }
 
@@ -86,12 +80,6 @@ SwaggerEditor.controller('PreviewCtrl', function PreviewCtrl(Storage, Builder,
     $rootScope.$apply(function () {
       $rootScope.progressStatus = 'success-process';
     });
-    
-    /* APIM - remove spinner */
-    var spinnernode = angular.element( document.querySelector( '#swaggerLoadingMessage' ) );
-    spinnernode.addClass('hiddenLoader');
-    /* APIM - collapse all operations */
-    listAllOperation();
 
     Editor.clearAnnotation();
 
@@ -105,11 +93,6 @@ SwaggerEditor.controller('PreviewCtrl', function PreviewCtrl(Storage, Builder,
   */
   function onBuildFailure(result) {
     onBuild(result);
-    
-    if (result.specs) {
-      var spinnernode = angular.element( document.querySelector( '#swaggerLoadingMessage' ) );
-      spinnernode.addClass('hiddenLoader');
-    }
 
     $rootScope.$apply(function () {
       if (angular.isArray(result.errors)) {

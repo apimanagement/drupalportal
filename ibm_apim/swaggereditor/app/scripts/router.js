@@ -3,21 +3,25 @@
 SwaggerEditor.config(function Router($compileProvider, $stateProvider,
   $urlRouterProvider, $logProvider) {
   $urlRouterProvider.otherwise('/');
-  var rootPath = Drupal.settings.basePath + 'sites/all/modules/ibm_apim/swaggereditor/app/';
+
   $stateProvider
   .state('home', {
     url: '/?import&tags&no-proxy',
     views: {
       '': {
-        templateUrl: rootPath + 'views/main.html',
+        templateUrl: 'views/main.html',
         controller: 'MainCtrl'
       },
       'header@home': {
-        templateUrl: rootPath + 'views/header/header.html',
+        templateUrl: 'views/header/header.html',
         controller: 'HeaderCtrl'
       },
+      'editor@home': {
+        templateUrl: 'views/editor/editor.html',
+        controller: 'EditorCtrl'
+      },
       'preview@home': {
-        templateUrl: rootPath + 'views/preview/preview.html',
+        templateUrl: 'views/preview/preview.html',
         controller: 'PreviewCtrl'
       }
     }

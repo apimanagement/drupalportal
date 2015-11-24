@@ -290,9 +290,16 @@ div.credentialTitle .addCredentials {
   margin-right: auto;
 }
 .portal .swagger-section .tags {
-  display: block;
-  text-align: right;
   border: 0;
+}
+.portal .swagger-section.soap .operation .tags {
+  display: none;
+}
+.portal .swagger-section.soap header.pathHeader {
+  display: none;
+}
+.portal .swagger-section.soap li.path>header {
+  display: none;
 }
 .portal .swagger-section table,
 .portal .swagger-section tbody {
@@ -532,11 +539,20 @@ div.credentialTitle .addCredentials {
   display: none;
 }
 
+.swagger-section.soap .requestbody,
+.swagger-section.soap .responsebody {
+  width: 100%;
+  height: 300px;
+}
+
 .apiDocLeft {
   float: left;
   padding-right: 2em;
-  width: 20%;
+  width: 100%;
   padding-bottom: 5px;
+}
+.apiDocLeft.shortname {
+  width: 20%;
 }
 
 .apiDocRight {  
@@ -1041,7 +1057,7 @@ body.page-myorg .columns-inner #breadcrumb {
 }
 
 .myorgAddUserLink {
-  float: right;
+
 }
 .myorgEditLink {
   float: left;
@@ -1188,11 +1204,26 @@ div.password-indicator div[style="width: 10%;"] {
   margin-left: -20%;
   background: #aaaaaa;
 }
-.apiPlanSummary .ui-accordion h3.ui-accordion-header:after {
+.apiPlanSummary .ui-accordion h3.ui-accordion-header:after,
+.productTeaser .ui-accordion h3.ui-accordion-header:after,
+.plantab .apis .ui-accordion h3.ui-accordion-header:after,
+.ui-accordion .myorgAddUserLink h3.ui-accordion-header:after {
   content:'';
   height: 0;
   margin-left: 0;
   background: none;
+}
+.myorgAddUserLink h3 {
+  float: right;
+  color: #0077d9;
+  font-weight: bold;
+}
+.myorgAddUserLink h3 img {
+  padding: 0 5px;
+}
+.ui-accordion .myorgAddUserLink .portalApi.animateMaxHeight {
+  width: 100%;
+  padding: 0;
 }
 .portal .apiPlanSummary.section.apimMainContent {
   padding: 20px 0;
@@ -1383,5 +1414,17 @@ span.flag-wrapper.flag-bookmarks {
   text-align: center;
 }
 .swaggerLoadingMessage.hiddenLoader {
+  display: none;
+}
+/* fix path to images for modules_filter module */
+#system-modules .expand.inner {
+  background: transparent url(../../../../../misc/menu-collapsed.png) left 0.6em no-repeat;
+  margin-left: -12px;
+  padding-left: 12px;
+}
+#system-modules .expanded.expand.inner {
+  background: transparent url(../../../../../misc/menu-expanded.png) left 0.6em no-repeat;
+}
+.form-item.form-type-password-confirm.form-item-pass label:first-of-type {
   display: none;
 }

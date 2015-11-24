@@ -4,19 +4,19 @@
   </div>
 
   <ng-include
-    src="'../sites/all/modules/ibm_apim/swaggereditor/app/templates/error-presenter.html'"
+    src="'templates/error-presenter.html'"
     ng-controller="ErrorPresenterCtrl"
     ng-if="errors.length || warnings.length">
   </ng-include>
 
-  <ng-include src="'../sites/all/modules/ibm_apim/swaggereditor/app/templates/specs-info.html'"></ng-include>
+  <ng-include src="'templates/specs-info.html'"></ng-include>
 
   <ng-include
-    src="'../sites/all/modules/ibm_apim/swaggereditor/app/templates/security.html'"
+    src="'templates/security.html'"
     ng-if="specs.securityDefinitions">
   </ng-include>
 
-  <ng-include src="'../sites/all/modules/ibm_apim/swaggereditor/app/templates/tags.html'"></ng-include>
+  <ng-include src="'templates/tags.html'"></ng-include>
 
   <header>
     <h3 class="section-header">
@@ -37,7 +37,7 @@
     <li
       class="path"
       ng-include
-      src="'../sites/all/modules/ibm_apim/swaggereditor/app/templates/path.html'"
+      src="'templates/path.html'"
       ng-repeat="(pathName, path) in specs.paths"
       ng-if="showPath(path, pathName)">
     </li>

@@ -7,16 +7,10 @@ SwaggerEditor.controller('MainCtrl', function MainCtrl(
   Analytics.initialize();
 
   $rootScope.$on('$stateChangeStart', Editor.initializeEditor);
-  if (!$stateParams.mode) {
-    $rootScope.mode = 'preview';
-  } else {
-    $rootScope.mode = $stateParams.mode;
-  }
-
   $rootScope.$on('$stateChangeStart', loadYaml);
 
   // TODO: find a better way to add the branding class (grunt html template)
-  jQuery('body').addClass(defaults.brandingCssClass);
+  $('body').addClass(defaults.brandingCssClass);
 
   loadYaml();
 
@@ -24,8 +18,7 @@ SwaggerEditor.controller('MainCtrl', function MainCtrl(
   * Load Default or URL YAML
   */
   function loadYaml() {
-    /* reset for APIm */
-    Storage.reset();
+
     Storage.load('yaml').then(function (yaml) {
       var url;
       var disableProxy = false;
@@ -41,7 +34,6 @@ SwaggerEditor.controller('MainCtrl', function MainCtrl(
       } else if (!yaml) {
         url = defaults.examplesFolder + defaults.exampleFiles[0];
       }
-      url = Drupal.settings.ibm_apim.url;
 
       if (url) {
         FileLoader.loadFromUrl(url, disableProxy).then(assign);
@@ -56,8 +48,6 @@ SwaggerEditor.controller('MainCtrl', function MainCtrl(
   */
   function assign(yaml) {
     if (yaml) {
-      /* APIm */
-      Storage.reset();
       Storage.save('yaml', yaml);
       $rootScope.editorValue = yaml;
     }

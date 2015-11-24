@@ -67,6 +67,13 @@
                         print '</div>';
                         ?>
 					   </div>
+					   <div class="extraFields">
+						<?php if (is_array($customfields) && count($customfields) > 0) {
+  							foreach($customfields as $customfield) {
+   	 							print render($content[$customfield]);
+  							}
+						} ?>
+						</div>
 					</div>
 				</div>
 			</div>

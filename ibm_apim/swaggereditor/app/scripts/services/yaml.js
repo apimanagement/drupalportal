@@ -7,9 +7,7 @@ var compose = _.memoize(yaml.compose);
  * work
 */
 SwaggerEditor.service('YAML', function YAML() {
-  /* APIM */
-  var rootPath = Drupal.settings.basePath + 'sites/all/modules/ibm_apim/swaggereditor/app/';
-  var worker = new YAMLWorker(rootPath + '/bower_components/yaml-worker/');
+  var worker = new YAMLWorker('bower_components/yaml-worker/');
 
   // expose the methods that are being used
   this.load = worker.load.bind(worker);

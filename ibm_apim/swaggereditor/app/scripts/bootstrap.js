@@ -1,6 +1,6 @@
 'use strict';
 
-jQuery(function () {
+$(function () {
 
   // Try bootstrapping the app with embedded defaults if it exists
   var embeddedDefaults = window.$$embeddedDefaults;
@@ -15,10 +15,7 @@ jQuery(function () {
   if (embeddedDefaults) {
     bootstrap(embeddedDefaults);
   } else {
-  /* APIM */
-   var rootPath = Drupal.settings.basePath + 'sites/all/modules/ibm_apim/swaggereditor/app/';
-   var url = rootPath + './config/defaults.json';
-    jQuery.getJSON(url).done(bootstrap).fail(function (error) {
+    $.getJSON(url).done(bootstrap).fail(function (error) {
       console.error('Failed to load defaults.json from', url);
       console.error(error);
     });
@@ -30,10 +27,9 @@ jQuery(function () {
     var isProduction = !/localhost/.test(window.location.host);
 
     window.SwaggerEditor.$defaults = defaults;
-    window.SwaggerEditor.$defaults.backendEndpoint = Drupal.settings.ibm_apim.url;
 
     angular.bootstrap(window.document, ['SwaggerEditor'], {
-      //strictDi: isProduction
+      strictDi: isProduction
     });
   }
 });

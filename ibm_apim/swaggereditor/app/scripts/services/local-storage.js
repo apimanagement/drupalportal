@@ -57,19 +57,9 @@ SwaggerEditor.service('LocalStorage', function LocalStorage($localStorage,
       changeListeners[key].push(fn);
     }
   }
-  
-  /*
-  * APIM Change to clear local storage too
- */
- function reset() {
-   var result = $localStorage.$reset;
-   
-   $localStorage[storageKey] = {};
-   return result;
- }
 
   this.save = save;
-  this.reset = reset;
+  this.reset = $localStorage.$reset;
   this.load = load;
   this.addChangeListener = addChangeListener;
 });

@@ -29,6 +29,12 @@ function ibm_apim_theme_preprocess_html(&$vars) {
   foreach ($settings_array as $setting) {
     $vars['classes_array'][] = at_get_setting($setting);
   }
+  // add class for role
+  if (isset($vars['user']) && isset($vars['user']->roles)) {
+    foreach($vars['user']->roles as $role){
+      $vars['classes_array'][] = 'role-' . drupal_html_class($role);
+    }
+  }
 }
 
 /**

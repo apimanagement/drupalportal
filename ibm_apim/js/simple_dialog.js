@@ -22,39 +22,47 @@
   */
   Drupal.behaviors.simpleDialog = {
     attach: function (context, settings) {
+
       // Create a container div for the modal if one isn't there already
       if ($("#simple-dialog-container").length == 0) {
         // Add a container to the end of the body tag to hold the dialog
         $('body').append('<div id="simple-dialog-container" style="display:none;"></div>');
         try {
           // Attempt to invoke the simple dialog
-          $( "#simple-dialog-container", context).dialog({
-            autoOpen: false,
-            modal: true,
-            close: function(event, ui) {
+          if (typeof $('#simple-dialog-container').dialog === 'function') {
+            $( "#simple-dialog-container", context).dialog({
+              autoOpen: false,
+              modal: true,
+              close: function(event, ui) {
               // Clear the dialog on close. Not necessary for your average use
               // case, butis useful if you had a video that was playing in the
               // dialog so that it clears when it closes
-              $('#simple-dialog-container').html('');
-            }
-          });
-          var defaultOptions = Drupal.simpleDialog.explodeOptions('width:500;height:auto;position:[center,60]');
-          $('#simple-dialog-container').dialog('option', defaultOptions);
+                $('#simple-dialog-container').html('');
+              }
+            });
+            var defaultOptions = Drupal.simpleDialog.explodeOptions('width:500;height:auto;position:[center,60]');
+            $('#simple-dialog-container').dialog('option', defaultOptions);
+          }
         }
         catch (err) {
           // Catch any errors and report
           Drupal.simpleDialog.log('[error] Simple Dialog: ' + err);
         }
       }
+
       // Add support for custom classes if necessary
       var classes = '';
       $('button.simple-dialog' + classes, context).each(function(event) {
         if (!event.metaKey && !$(this).hasClass('simpleDialogProcessed')) {
+
           // Add a class to show that this link has been processed already
           $(this).addClass('simpleDialogProcessed');
+
           $(this).click(function(event) {
+
             // prevent the navigation
             event.preventDefault();
+
             // Set up some variables
             var url = $(this).attr('data-href');
 
@@ -65,41 +73,60 @@
 
             var selector = $(this).attr('data-name');
             var options = $(this).attr('data-rel');
-            if (url && title && selector) {
+            if (url && title && selector && $("#simple-dialog-container")) {
               // Set the custom options of the dialog
               $('#simple-dialog-container').dialog('option', options);
               // Set the title of the dialog
               $('#simple-dialog-container').dialog('option', 'title', title);
               // Add a little loader into the dialog while data is loaded
               $('#simple-dialog-container').html('<div class="simple-dialog-ajax-loader"></div>');
+
               // Change the height if it's set to auto
               if (options.height && options.height == 'auto') {
                 $('#simple-dialog-container').dialog('option', 'height', 200);
               }
+
               // Use jQuery .get() to request the target page
               $.get(url, function(data) {
+
                 // Re-apply the height if it's auto to accomodate the new content
                 if (options.height && options.height == 'auto') {
                   $('#simple-dialog-container').dialog('option', 'height', options.height);
                 }
+
                 // Some trickery to make sure any inline javascript gets run.
                 // Inline javascript gets removed/moved around when passed into
                 // $() so you have to create a fake div and add the raw data into
                 // it then find what you need and clone it. Fun.
-                $('#simple-dialog-container').html( $( '<div></div>' ).html( data ).find( '#' + selector ).clone() );
+                var dialogContent = $(data).find('#' + selector).clone();
+                if (dialogContent) {
+                  $('#simple-dialog-container').html( $( '<div></div>' ).html( dialogContent ) );
+                }
+                else {
+                  $('#simple-dialog-container').html('<div class="simple-dialog-error">Error loading dialog content</div>');
+                }
+
                 // Attach any behaviors to the loaded content
                 Drupal.attachBehaviors($('#simple-dialog-container'));
+
                 // Trigger a custom event
                 $('#simple-dialog-container').trigger('simpleDialogLoaded');
+              })
+              .fail(function() {
+                // If the request fails
+                $('#simple-dialog-container').html('<div class="simple-dialog-error">Error loading dialog content</div>');
               });
+
               // Open the dialog
               $('#simple-dialog-container').dialog('open');
+
               // Return false for good measure
               return false;
             }
           });
         }
       });
+
     }
   }
 
