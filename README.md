@@ -1,6 +1,9 @@
+<h1>API Connect</h1>
+<p>The API Connect version of the developer portal code can now be found in the following repository: <a href="https://github.com/ibm-apiconnect/devportal">ibm-apiconnect/devportal</a></p>
+
 <h1>Drupal CMS APIM Developer Portal</h1>
 
-<p>This repository contains the components necessary to create a developer portal for IBM API Management 
+<p>This repository contains the components necessary to create a developer portal for IBM API Management v4 
 using the drupal content management system.</p>
 
 <p><code>ibm_apim</code> = a drupal module containing the IBM API Management integration<br/>
